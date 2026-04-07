@@ -162,6 +162,7 @@ export function FormRenderer({
         isLastStep={effectiveIsLastStep}
         isMultiStep={engine.isMultiStep}
         loading={loading}
+        values={engine.values}
         onSubmit={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
         onNext={handleNext}
         onPrev={handlePrev}

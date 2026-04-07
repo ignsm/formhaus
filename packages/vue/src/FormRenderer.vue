@@ -187,6 +187,7 @@ function onPrimary() {
       :is-last-step="effectiveIsLastStep"
       :is-multi-step="isMultiStep"
       :loading="props.loading"
+      :values="values"
       :primary-label="primaryLabel"
       :show-back="showBack"
       :back-label="backLabel"

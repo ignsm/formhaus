@@ -26,6 +26,7 @@ export interface FormActionsProps {
   isLastStep: boolean;
   isMultiStep: boolean;
   loading?: boolean;
+  values?: Record<string, unknown>;
   primaryLabel?: string;
   showBack?: boolean;
   backLabel?: string;
