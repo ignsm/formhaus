@@ -4,18 +4,16 @@ import { computed, watch } from 'vue';
 import FormActions from './FormActions.vue';
 import FormFieldComponent from './FormField.vue';
 import FormStepProgress from './FormStepProgress.vue';
+import { useFieldOptions } from './composables/useFieldOptions';
 import { useFormEngine } from './composables/useFormEngine';
-import type { FieldComponentMap, FormRendererEmits, FormRendererProps } from './types';
+import type { FieldComponentMap, FormRendererEmits, FormRendererProps, OptionsProvider } from './types';
 
 const props = withDefaults(
   defineProps<
     FormRendererProps & {
       validators?: Record<string, ValidatorFn>;
       actions?: Record<string, (values: Record<string, unknown>) => Promise<void> | void>;
-      optionsProviders?: Record<
-        string,
-        (values: Record<string, unknown>) => unknown[] | Promise<unknown[]>
-      >;
+      optionsProviders?: Record<string, OptionsProvider>;
     }
   >(),
   {
@@ -45,7 +43,8 @@ const {
   isMultiStep,
 } = useFormEngine(props.schema, props.initialValues, engineOptions);
 
-// Watch for external errors
+const resolvedOptions = useFieldOptions(visibleFields, values, props.optionsProviders);
+
 watch(
   () => props.errors,
   (newErrors) => {
@@ -91,6 +90,13 @@ function onCancel() {
   emit('cancel');
 }
 
+const fieldsWithOptions = computed(() =>
+  visibleFields.value.map((field) => {
+    const resolved = resolvedOptions.value[field.key];
+    return resolved ? { ...field, options: resolved } : field;
+  }),
+);
+
 const effectiveIsLastStep = computed(() => isLastStep.value || !isMultiStep.value);
 
 const primaryLabel = computed(() => {
@@ -131,7 +137,7 @@ function onPrimary() {
 
     <div class="fh-form__fields">
       <FormFieldComponent
-        v-for="field in visibleFields"
+        v-for="field in fieldsWithOptions"
         :key="field.key"
         :field="field"
         :value="values[field.key]"

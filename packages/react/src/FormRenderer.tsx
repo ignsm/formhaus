@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { FormActions } from './FormActions';
 import { FormField } from './FormField';
 import { FormStepProgress } from './FormStepProgress';
+import { useFieldOptions } from './hooks/useFieldOptions';
 import { useFormEngine } from './hooks/useFormEngine';
 import type { FormRendererProps } from './types';
 
@@ -17,13 +18,14 @@ export function FormRenderer({
   errors: externalErrors,
   loading = false,
   components,
+  optionsProviders,
   ActionsComponent,
   ProgressComponent,
 }: FormRendererProps) {
   const engineOptions: FormEngineOptions = { validators };
   const engine = useFormEngine(schema, initialValues, engineOptions);
+  const resolvedOptions = useFieldOptions(engine.visibleFields, engine.values, optionsProviders);
 
-  // Sync external errors
   useEffect(() => {
     if (externalErrors) {
       engine.setErrors(externalErrors);
@@ -98,19 +100,24 @@ export function FormRenderer({
       )}
 
       <div className="fh-form__fields">
-        {engine.visibleFields.map((field) => (
-          <FormField
-            key={field.key}
-            field={field}
-            value={engine.values[field.key]}
-            error={engine.errors[field.key]}
-            loading={engine.fieldLoading[field.key]}
-            disabled={loading}
-            components={components}
-            onChange={(v) => handleFieldUpdate(field.key, v)}
-            onBlur={() => handleFieldBlur(field.key)}
-          />
-        ))}
+        {engine.visibleFields.map((field) => {
+          const fieldWithOptions = resolvedOptions[field.key]
+            ? { ...field, options: resolvedOptions[field.key] }
+            : field;
+          return (
+            <FormField
+              key={field.key}
+              field={fieldWithOptions}
+              value={engine.values[field.key]}
+              error={engine.errors[field.key]}
+              loading={engine.fieldLoading[field.key]}
+              disabled={loading}
+              components={components}
+              onChange={(v) => handleFieldUpdate(field.key, v)}
+              onBlur={() => handleFieldBlur(field.key)}
+            />
+          );
+        })}
       </div>
 
       {engine.topLevelErrors.length > 0 && (
