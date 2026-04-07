@@ -12,7 +12,6 @@ const props = withDefaults(
   defineProps<
     FormRendererProps & {
       validators?: Record<string, ValidatorFn>;
-      actions?: Record<string, (values: Record<string, unknown>) => Promise<void> | void>;
       optionsProviders?: Record<string, OptionsProvider>;
     }
   >(),
@@ -59,23 +58,45 @@ function onFieldUpdate(key: string, value: unknown) {
   emit('fieldChange', key, value, engine.values);
 }
 
-function onFieldBlur(_key: string) {
-  // Intentionally no validation on blur.
-  // Validation runs only on Submit / Continue click.
+function onFieldFocus(key: string) {
+  emit('analyticsEvent', { type: 'field_focused', fieldKey: key });
+}
+
+function onFieldBlur(key: string) {
+  emit('analyticsEvent', {
+    type: 'field_blurred',
+    fieldKey: key,
+    hasValue: values.value[key] !== undefined && values.value[key] !== '',
+  });
 }
 
 async function onSubmit() {
   const allErrors = engine.validate();
+  for (const [key, msg] of Object.entries(allErrors)) {
+    emit('analyticsEvent', { type: 'field_error', fieldKey: key, error: msg });
+  }
   if (Object.keys(allErrors).length > 0) return;
 
   const submitValues = engine.getSubmitValues();
+  emit('analyticsEvent', { type: 'form_submitted', fieldCount: Object.keys(submitValues).length });
   emit('submit', submitValues);
 }
 
 function onNext() {
+  const prevStep = currentStep.value;
   const success = engine.nextStep();
-  if (success && currentStep.value) {
-    emit('stepChange', currentStep.value.id, 'next');
+  if (success) {
+    if (prevStep) {
+      emit('analyticsEvent', { type: 'step_completed', stepId: prevStep.id });
+    }
+    if (currentStep.value) {
+      emit('stepChange', currentStep.value.id, 'next');
+      emit('analyticsEvent', {
+        type: 'step_viewed',
+        stepId: currentStep.value.id,
+        stepIndex: engine.currentStepIndex,
+      });
+    }
   }
 }
 
@@ -147,6 +168,7 @@ function onPrimary() {
         :components="props.components"
         @update:value="(v) => onFieldUpdate(field.key, v)"
         @blur="() => onFieldBlur(field.key)"
+        @focus="() => onFieldFocus(field.key)"
       />
     </div>
 

@@ -13,6 +13,7 @@ export interface FieldComponentProps {
   disabled?: boolean;
   onChange: (value: unknown) => void;
   onBlur: () => void;
+  onFocus?: () => void;
 }
 
 export type FieldComponentMap = Partial<Record<FieldType, ComponentType<FieldComponentProps>>>;
