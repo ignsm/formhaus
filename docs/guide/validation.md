@@ -1,6 +1,6 @@
 # Validation
 
-Validation runs when the user clicks Submit or Continue. No validation on blur.
+Validation runs on Submit or Continue click. No validation on blur.
 
 ## Built-in rules
 
@@ -32,7 +32,7 @@ All rules are optional. Combine them freely.
 | `matchField` | `string` | Value equals another field's value | "Fields must match" |
 | `validator` | `string` | Custom validator function returns null | (your message) |
 
-Every rule has a corresponding `...Message` field for custom error text. If you pass `required: "Please enter your name"`, that string is the error message.
+Every rule has a `...Message` field for custom error text. Pass `required: "Please enter your name"` and that string becomes the error message.
 
 ## matchField
 
@@ -61,22 +61,26 @@ Useful for "confirm email" or "confirm password" fields. When either field chang
 
 ## Custom validators
 
-For validation that can't be expressed in JSON (API checks, complex business rules), register a validator function:
+For validation that can't be expressed in JSON (API checks, business rules), register a validator function:
 
 ::: code-group
 ```vue [Vue]
-<FormRenderer
-  :schema="schema"
-  :validators="{ checkFormat: validateFormat }"
-  @submit="onSubmit"
-/>
-
 <script setup>
+import { FormRenderer } from '@formhaus/vue';
+
 function validateFormat(value, allValues) {
   if (!value) return null;
   return isValidFormat(value) ? null : 'Invalid format';
 }
 </script>
+
+<template>
+  <FormRenderer
+    :schema="schema"
+    :validators="{ checkFormat: validateFormat }"
+    @submit="onSubmit"
+  />
+</template>
 ```
 
 ```tsx [React]
@@ -106,7 +110,7 @@ Reference the validator by name in the schema:
 
 ## When validation runs
 
-- **On Submit/Continue click:** All visible fields on the current step are validated.
-- **Never on blur.** Fields don't show errors while the user is still filling them in.
-- **Hidden fields are skipped.** If a field is hidden by a `show` condition, it's not validated.
+- **On Submit/Continue click.** All visible fields on the current step are validated.
+- **Never on blur.** No errors while the user is still typing.
+- **Hidden fields are skipped.** If a `show` condition hides a field, it's not validated.
 - **Empty non-required fields are skipped.** `minLength`, `pattern`, etc. only run on non-empty values.

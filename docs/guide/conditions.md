@@ -1,10 +1,10 @@
 # Conditional Fields
 
-Show or hide fields based on other field values. No code needed, just JSON.
+Show or hide fields based on other field values. No code, just JSON.
 
 ## How it works
 
-Add `show` or `showAny` to any field or step. The renderer re-evaluates visibility on every value change.
+Add `show` or `showAny` to any field or step. Visibility re-evaluates on every value change.
 
 - `show`: AND logic. All conditions must match.
 - `showAny`: OR logic. At least one condition must match.
@@ -83,13 +83,13 @@ Show a field when country is US AND method is credit or debit:
 
 ## Hidden field cleanup
 
-When a field becomes hidden, its value is cleared from the engine state immediately. This is intentional: you never submit data the user can't see.
+When a field becomes hidden, its value is cleared from engine state. You never submit data the user can't see.
 
-If field A hides field B, and field B's value was used by field C's show condition, field C will also be re-evaluated. This cascades until stable (bounded by field count, max 50 iterations).
+If field A hides field B, and field B's value was used by field C's show condition, C gets re-evaluated too. Cascades until stable (max 50 iterations).
 
 ## Conditional steps
 
-Steps support the same `show`/`showAny` conditions. A hidden step is skipped during navigation.
+Steps support `show`/`showAny` too. Hidden steps are skipped during navigation.
 
 ```json
 {

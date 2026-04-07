@@ -1,6 +1,6 @@
 # Multi-Step Forms
 
-Split a form into steps. The renderer handles navigation, progress indicator, and per-step validation.
+Split a form into steps. The renderer handles navigation, progress, and per-step validation.
 
 ## Basic multi-step
 
@@ -42,9 +42,9 @@ Use `steps` instead of `fields` in the schema:
 
 ## Navigation behavior
 
-- **Continue** validates the current step. If valid, moves to the next visible step. If invalid, shows errors.
+- **Continue** validates the current step. If valid, moves to the next visible step. If not, shows errors.
 - **Back** goes to the previous visible step. No validation.
-- **Submit** appears on the last visible step instead of Continue.
+- **Submit** replaces Continue on the last visible step.
 - **Progress bar** shows "Step N of M" based on visible steps.
 
 ## Custom CTA per step
@@ -73,7 +73,7 @@ Set `back` to `false` to hide the Back button on a step:
 
 ## Conditional steps
 
-Steps support `show`/`showAny` conditions, same as fields. A hidden step is skipped during navigation and its fields are not validated or submitted.
+Steps support `show`/`showAny` conditions, same as fields. Hidden steps are skipped, and their fields are not validated or submitted.
 
 ```json
 {
@@ -87,17 +87,19 @@ Steps support `show`/`showAny` conditions, same as fields. A hidden step is skip
 }
 ```
 
-When the user picks "personal" instead of "business," this step vanishes. The progress bar updates from "Step 2 of 4" to "Step 2 of 3." The user never sees it.
+When the user picks "personal" instead of "business", this step vanishes. The progress bar updates from "Step 2 of 4" to "Step 2 of 3".
 
 ## Step change callback
 
 ::: code-group
 ```vue [Vue]
-<FormRenderer
-  :schema="schema"
-  @step-change="(stepId, direction) => console.log(stepId, direction)"
-  @submit="onSubmit"
-/>
+<template>
+  <FormRenderer
+    :schema="schema"
+    @step-change="(stepId, direction) => console.log(stepId, direction)"
+    @submit="onSubmit"
+  />
+</template>
 ```
 
 ```tsx [React]
@@ -113,4 +115,4 @@ When the user picks "personal" instead of "business," this step vanishes. The pr
 
 ## getSubmitValues
 
-On submit, all visible fields across all visible steps are returned. Fields in hidden steps are not included. This means the submit payload only contains data the user actually saw and confirmed.
+On submit, all visible fields across all visible steps are returned. Fields in hidden steps are excluded.

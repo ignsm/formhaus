@@ -1,10 +1,10 @@
 # Schema Reference
 
-Every form is a JSON object that follows the `FormSchema` type. The renderer reads it and builds the UI.
+Every form is a JSON object following the `FormSchema` type.
 
 ## FormSchema
 
-Top-level structure. Either `fields` (single-step) or `steps` (multi-step), never both.
+Top-level structure. Use `fields` (single-step) or `steps` (multi-step), never both.
 
 ```ts
 interface FormSchema {
@@ -19,7 +19,7 @@ interface FormSchema {
 
 ## FormField
 
-A single form field. The `type` determines which UI component renders.
+A single form field. `type` determines which UI component renders.
 
 ```ts
 interface FormField {
@@ -50,7 +50,7 @@ type FieldType =
 
 ## FormStep
 
-A step in a multi-step form. Contains its own fields and optional CTA overrides.
+A step in a multi-step form. Has its own fields and optional CTA overrides.
 
 ```ts
 interface FormStep {
@@ -80,7 +80,7 @@ interface FormAction {
 
 ## ShowCondition
 
-Conditional visibility. Used on fields and steps. See [Conditional Fields](/guide/conditions) for details.
+Conditional visibility for fields and steps. See [Conditional Fields](/guide/conditions).
 
 ```ts
 interface ShowCondition {
@@ -95,7 +95,7 @@ interface ShowCondition {
 
 ## FieldValidation
 
-Built-in validation rules. See [Validation](/guide/validation) for details.
+Built-in validation rules. See [Validation](/guide/validation).
 
 ```ts
 interface FieldValidation {

@@ -6,3 +6,5 @@ dist/
 coverage/
 .vite/
 storybook-static/
+docs/.vitepress/cache/
+docs/.vitepress/dist/

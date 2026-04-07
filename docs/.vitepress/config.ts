@@ -7,6 +7,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/' },
       { text: 'API', link: '/api/schema' },
+      { text: 'Playground', link: '/playground' },
       { text: 'GitHub', link: 'https://github.com/ignsm/formhaus' }
     ],
     sidebar: [
@@ -26,6 +27,12 @@ export default defineConfig({
         text: 'API Reference',
         items: [
           { text: 'Schema', link: '/api/schema' },
+        ]
+      },
+      {
+        text: 'Interactive',
+        items: [
+          { text: 'Playground', link: '/playground' },
         ]
       }
     ],

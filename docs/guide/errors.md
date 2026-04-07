@@ -1,10 +1,10 @@
 # Error Handling
 
-After the user submits, the server might reject the data. Pass errors back to the form and it handles the display.
+The server might reject submitted data. Pass errors back to the form and it handles display.
 
 ## Field-level errors
 
-Pass a `{ fieldKey: message }` object. The error appears on the field and the form navigates to the step containing it.
+Pass a `{ fieldKey: message }` object. The error shows on the field, and the form navigates to the step containing it.
 
 ::: code-group
 ```vue [Vue]
@@ -60,9 +60,9 @@ In a multi-step form, if the error is on a field in step 1 and the user is on st
 
 ## Top-level errors
 
-If the server returns an error for a field that doesn't exist in the form (or is hidden), the error shows as a banner above the action buttons.
+If the error targets a field that doesn't exist (or is hidden), it shows as a banner above the action buttons.
 
-This handles cases like:
+Covers cases like:
 - Account suspended
 - Rate limit exceeded
 - Generic server errors
@@ -72,19 +72,21 @@ This handles cases like:
 setErrors({ _general: 'Your account has been temporarily suspended.' });
 ```
 
-The banner renders between the form fields and the Submit/Continue buttons.
+The banner renders between the fields and the Submit/Continue buttons.
 
 ## Loading state
 
-Show a loading indicator on the submit button while the request is in flight:
+Show a loading indicator on the submit button while the request is pending:
 
 ::: code-group
 ```vue [Vue]
-<FormRenderer
-  :schema="schema"
-  :loading="isSubmitting"
-  @submit="onSubmit"
-/>
+<template>
+  <FormRenderer
+    :schema="schema"
+    :loading="isSubmitting"
+    @submit="onSubmit"
+  />
+</template>
 ```
 
 ```tsx [React]
@@ -96,11 +98,11 @@ Show a loading indicator on the submit button while the request is in flight:
 ```
 :::
 
-When `loading` is true, the submit button shows a spinner or is disabled.
+When `loading` is true, the submit button shows a spinner and is disabled.
 
 ## Field-level loading
 
-Some fields load data asynchronously (e.g. looking up a value from an API). Use `setFieldLoading` on the engine:
+Some fields load data asynchronously (e.g. looking up a city by zip code). Use `setFieldLoading` on the engine:
 
 ::: code-group
 ```vue [Vue]

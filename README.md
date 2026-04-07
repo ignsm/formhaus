@@ -12,12 +12,22 @@ Define a form once as a JSON schema, render it anywhere: React, Vue, or Figma.
 | `@formhaus/vue` | Vue 3 adapter with native HTML defaults and custom component support | `npm i @formhaus/vue` |
 | `@formhaus/figma` | Figma plugin to generate form mockups from JSON schemas | TBD, use via `manifest.json` for now |
 
+Svelte, Solid, or anything else: use `@formhaus/core` directly. See the [playground](/playground) for an example.
+
 ## Install
 
 ```bash
-npm install @formhaus/core @formhaus/react   # React
-npm install @formhaus/core @formhaus/vue     # Vue
+npm install @formhaus/core
 ```
+
+If you need a framework adapter:
+
+```bash
+npm install @formhaus/react   # React
+npm install @formhaus/vue     # Vue
+```
+
+Or use `@formhaus/core` directly with any framework. See the [Svelte example in the playground](/playground).
 
 ## Quick Start
 

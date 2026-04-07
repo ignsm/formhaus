@@ -1,11 +1,13 @@
 {
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview"
   },
   "devDependencies": {
-    "vitepress": "^1.6.0"
+    "sandpack-vue3": "^3.0.0",
+    "vitepress": "^1.6.4"
   }
 }

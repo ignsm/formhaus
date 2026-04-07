@@ -1,6 +1,6 @@
 # Field Types
 
-Each field `type` maps to a UI component. The default adapters use native HTML elements. You can override any field type with your own component via the `components` prop.
+Each field `type` maps to a UI component. Default adapters use native HTML elements. Override any field type with your own component via the `components` prop.
 
 ## Text fields
 
@@ -20,7 +20,7 @@ Types `text`, `email`, `phone`, `number`, `password` all render a text input. Th
 }
 ```
 
-Use `inputMode` to control the mobile keyboard without changing the field type:
+`inputMode` controls the mobile keyboard without changing the field type:
 
 ```json
 {
@@ -34,7 +34,7 @@ Use `inputMode` to control the mobile keyboard without changing the field type:
 
 ## Select
 
-Dropdown with predefined options. Options are defined inline or loaded dynamically.
+Dropdown with predefined options. Define options inline or load them dynamically.
 
 ```json
 {
@@ -67,11 +67,13 @@ Then pass the provider to the renderer:
 
 ::: code-group
 ```vue [Vue]
-<FormRenderer
-  :schema="schema"
-  :options-providers="{ categories: loadCategories }"
-  @submit="onSubmit"
-/>
+<template>
+  <FormRenderer
+    :schema="schema"
+    :options-providers="{ categories: loadCategories }"
+    @submit="onSubmit"
+  />
+</template>
 ```
 
 ```tsx [React]
@@ -85,7 +87,7 @@ Then pass the provider to the renderer:
 
 ## Checkbox
 
-Single boolean toggle with a label.
+Boolean toggle with a label.
 
 ```json
 {
@@ -98,7 +100,7 @@ Single boolean toggle with a label.
 
 ## Radio
 
-Single selection from a list of options. Options render vertically.
+Pick one from a list. Options render vertically.
 
 ```json
 {
@@ -142,7 +144,7 @@ Multi-line text input. Set `rows` to control the height.
 
 ## Date
 
-Date picker. Uses native `<input type="date">` as a fallback until a custom date picker component is available.
+Date picker. Uses native `<input type="date">` for now.
 
 ```json
 {
@@ -167,15 +169,17 @@ File upload. Uses native file input. Set `accept` to restrict file types.
 
 ## Custom field components
 
-Override the default component for any field type by passing a `components` prop:
+Override any field type by passing a `components` prop:
 
 ::: code-group
 ```vue [Vue]
-<FormRenderer
-  :schema="schema"
-  :components="{ phone: CustomPhoneInput }"
-  @submit="onSubmit"
-/>
+<template>
+  <FormRenderer
+    :schema="schema"
+    :components="{ phone: CustomPhoneInput }"
+    @submit="onSubmit"
+  />
+</template>
 ```
 
 ```tsx [React]

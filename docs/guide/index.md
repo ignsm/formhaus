@@ -1,8 +1,22 @@
 # Getting Started
 
-Render forms from JSON. One schema drives Vue, React, and (eventually) Swift.
+Framework-agnostic JSON-schema-driven form ecosystem.
+Define a form once as a JSON schema, render it anywhere: React, Vue, or Figma.
 
-Instead of hand-building each form per platform, you describe the form in JSON and let the renderer do the work.
+## Install
+
+```bash
+npm install @formhaus/core
+```
+
+If you need a framework adapter:
+
+```bash
+npm install @formhaus/react   # React
+npm install @formhaus/vue     # Vue
+```
+
+Or use `@formhaus/core` directly with any framework. See the [Svelte example in the playground](/playground#svelte).
 
 ## Quick start
 
@@ -37,7 +51,7 @@ function MyForm() {
 ```
 :::
 
-That's it. The renderer reads the schema, renders the right field components, handles validation, and gives you the values on submit.
+The renderer reads the schema, renders fields, handles validation, and gives you values on submit.
 
 ## How it works
 
@@ -51,7 +65,7 @@ JSON Schema --> FormEngine (pure TS) --> Adapter --> UI Components
                          computed refs (Vue)
 ```
 
-Three packages:
+3 packages:
 
 | Package | What it does | Dependencies |
 |---------|-------------|--------------|
@@ -59,23 +73,23 @@ Three packages:
 | `@formhaus/vue` | Vue adapter with default HTML field components | @formhaus/core |
 | `@formhaus/react` | React adapter with default HTML field components | @formhaus/core |
 
-The engine is framework-agnostic. It holds the form state, runs validation, tracks which fields are visible, and manages step navigation. The adapters are thin wrappers that connect the engine to framework-specific reactivity and render the right UI components.
+The engine is framework-agnostic. It holds form state, runs validation, tracks field visibility, and manages step navigation. Adapters connect the engine to framework-specific reactivity and render UI components.
 
 ## Packages
 
 ### @formhaus/core
 
-Pure TypeScript. Zero framework deps. Contains:
+Pure TypeScript, zero deps. Contains:
 - Type definitions for the JSON schema
 - `FormEngine` class (state machine for the form)
 - Visibility evaluation (`show`/`showAny` conditions)
 - Validation (built-in rules + custom validators)
 - Schema validation (DAG cycle detection for show conditions)
 
-### Vue adapter
+### @formhaus/vue
 
-`@formhaus/vue` -- uses default HTML form elements (input, select, checkbox, etc.) out of the box. Override any field type with your own components via the `components` prop.
+Vue 3.3+. Renders native HTML form elements by default. Override any field type with your own components via the `components` prop.
 
-### React adapter
+### @formhaus/react
 
-`@formhaus/react` -- uses default HTML form elements out of the box. Same structure as the Vue adapter. Override any field type with your own components via the `components` prop.
+React 18+. Same idea as the Vue adapter. Native HTML by default, override via `components` prop.
