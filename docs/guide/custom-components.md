@@ -94,9 +94,11 @@ For full control, the raw props are still available:
 |------|------|-------------|
 | `submitAction` | `FormAction?` | Label and variant for the submit button |
 | `backAction` | `FormAction \| false?` | Back button config, or `false` to hide |
+| `cancelAction` | `FormAction?` | Cancel button config |
 | `isFirstStep` | `boolean` | Whether this is the first step |
 | `isLastStep` | `boolean` | Whether this is the last step |
 | `isMultiStep` | `boolean` | Whether the form has multiple steps |
+| `loading` | `boolean?` | Whether the form is submitting |
 
 In Vue, you can also emit `submit`, `next`, `prev`, `cancel` events directly. In React, call `onSubmit`, `onNext`, `onPrev`, `onCancel` callbacks.
 
