@@ -2,20 +2,22 @@
 layout: home
 hero:
   name: Formhaus
-  text: JSON-schema-driven forms
-  tagline: Engine, validation, conditional logic. React & Vue adapters. Figma plugin.
+  tagline: Define a form once as a JSON schema, render it anywhere in code or Figma.
   actions:
     - theme: brand
       text: Get Started
       link: /guide/
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/ignsm/formhaus
+      text: Playground
+      link: /playground
 features:
-  - title: Schema-Driven
-    details: Define forms as JSON. Get validation, visibility, multi-step navigation for free.
-  - title: Framework Adapters
-    details: Native HTML defaults for React and Vue. Plug in your own UI kit via FieldComponentMap.
-  - title: Figma Plugin
-    details: Paste your schema, get a Figma mockup. Configurable component mapping.
+  - title: Schema Reference
+    details: Types, field options, validation rules, conditional visibility, multi-step config.
+    link: /api/schema
+  - title: Conditional Fields
+    details: Show and hide fields based on other field values. AND/OR logic, cascading cleanup.
+    link: /guide/conditions
+  - title: Validation
+    details: Required, pattern, min/max, matchField, custom validators. All from JSON.
+    link: /guide/validation
 ---
