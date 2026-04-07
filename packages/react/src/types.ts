@@ -25,6 +25,10 @@ export interface FormActionsProps {
   onNext: () => void;
   onPrev: () => void;
   onCancel: () => void;
+  primaryLabel?: string;
+  showBack?: boolean;
+  backLabel?: string;
+  onPrimary?: () => void;
 }
 
 export interface FormStepProgressProps {

@@ -118,6 +118,24 @@ export function FormRenderer({
         onNext={handleNext}
         onPrev={handlePrev}
         onCancel={handleCancel}
+        primaryLabel={
+          engine.isMultiStep && !(engine.isLastStep || !engine.isMultiStep)
+            ? (engine.currentStep?.next?.label ?? 'Continue')
+            : (schema.submit?.label ?? 'Submit')
+        }
+        showBack={engine.isMultiStep && !engine.isFirstStep && engine.currentStep?.back !== false}
+        backLabel={
+          typeof engine.currentStep?.back === 'object'
+            ? (engine.currentStep.back.label ?? 'Back')
+            : 'Back'
+        }
+        onPrimary={() => {
+          if (engine.isMultiStep && !(engine.isLastStep || !engine.isMultiStep)) {
+            handleNext();
+          } else {
+            handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+          }
+        }}
       />
     </form>
   );
