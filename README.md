@@ -1,0 +1,193 @@
+# Formhaus
+
+Framework-agnostic JSON-schema-driven form ecosystem.
+Define a form once as a JSON schema, render it anywhere: React, Vue, or Figma.
+
+## Packages
+
+| Package | Description | npm |
+|---------|-------------|-----|
+| `@formhaus/core` | Zero-dependency form engine: types, validation, visibility, multi-step | `npm i @formhaus/core` |
+| `@formhaus/react` | React adapter with native HTML defaults and custom component support | `npm i @formhaus/react` |
+| `@formhaus/vue` | Vue 3 adapter with native HTML defaults and custom component support | `npm i @formhaus/vue` |
+| `@formhaus/figma` | Figma plugin to generate form mockups from JSON schemas | TBD, use via `manifest.json` for now |
+
+## Quick Start
+
+### Define a schema
+
+```json
+{
+  "id": "contact",
+  "title": "Contact Us",
+  "submit": { "label": "Send" },
+  "fields": [
+    {
+      "key": "name",
+      "type": "text",
+      "label": "Name",
+      "placeholder": "Your name",
+      "validation": { "required": true, "minLength": 2 }
+    },
+    {
+      "key": "email",
+      "type": "email",
+      "label": "Email",
+      "placeholder": "you@example.com",
+      "validation": {
+        "required": true,
+        "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+        "patternMessage": "Please enter a valid email address"
+      }
+    },
+    {
+      "key": "message",
+      "type": "textarea",
+      "label": "Message",
+      "placeholder": "How can we help?",
+      "rows": 4,
+      "validation": { "required": true }
+    }
+  ]
+}
+```
+
+### React
+
+```bash
+npm install @formhaus/core @formhaus/react
+```
+
+```tsx
+import { FormRenderer } from '@formhaus/react';
+import schema from './contact-schema.json';
+
+function ContactPage() {
+  async function handleSubmit(values: Record<string, unknown>) {
+    await fetch('/api/contact', {
+      method: 'POST',
+      body: JSON.stringify(values),
+    });
+  }
+
+  return <FormRenderer schema={schema} onSubmit={handleSubmit} />;
+}
+```
+
+### Vue
+
+```bash
+npm install @formhaus/core @formhaus/vue
+```
+
+```vue
+<script setup lang="ts">
+import { FormRenderer } from '@formhaus/vue';
+import schema from './contact-schema.json';
+
+async function handleSubmit(values: Record<string, unknown>) {
+  await fetch('/api/contact', {
+    method: 'POST',
+    body: JSON.stringify(values),
+  });
+}
+</script>
+
+<template>
+  <FormRenderer :schema="schema" @submit="handleSubmit" />
+</template>
+```
+
+By default, both adapters render native HTML inputs.
+
+## Architecture
+
+```
+                    +------------------+
+                    |   JSON Schema    |
+                    +--------+---------+
+                             |
+                    +--------v---------+
+                    |  @formhaus/core  |
+                    |                  |
+                    |  - FormEngine    |
+                    |  - Validation    |
+                    |  - Visibility    |
+                    |  - Multi-step    |
+                    +--------+---------+
+                             |
+              +--------------+--------------+
+              |              |              |
+     +--------v---+   +-----v------+  +----v-------+
+     |   /react   |   |    /vue    |  |   /figma   |
+     |  adapter   |   |  adapter   |  |   plugin   |
+     +------------+   +------------+  +------------+
+```
+
+`@formhaus/core` owns all form logic: state management, field validation, conditional visibility, and multi-step navigation. The framework adapters are thin rendering layers that delegate to the core engine via `useFormEngine` (React hook) or `useFormEngine` (Vue composable).
+
+## Custom Components
+
+Both adapters accept a `components` prop (a `FieldComponentMap`) that lets you swap native HTML inputs for your own UI kit.
+
+### React
+
+```tsx
+import type { FieldComponentMap, FieldComponentProps } from '@formhaus/react';
+
+function MyTextInput({ field, value, error, onChange, onBlur }: FieldComponentProps) {
+  return (
+    <div>
+      <label>{field.label}</label>
+      <input
+        type={field.type}
+        value={value as string}
+        placeholder={field.placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+      />
+      {error && <span className="error">{error}</span>}
+    </div>
+  );
+}
+
+const components: FieldComponentMap = {
+  text: MyTextInput,
+  email: MyTextInput,
+};
+
+<FormRenderer schema={schema} onSubmit={handleSubmit} components={components} />;
+```
+
+### Vue
+
+```vue
+<script setup lang="ts">
+import type { FormFieldProps } from '@formhaus/vue';
+
+defineProps<FormFieldProps>();
+defineEmits<{ (e: 'update:modelValue', value: unknown): void }>();
+</script>
+```
+
+```vue
+<FormRenderer
+  :schema="schema"
+  :components="{ text: MyTextInput, email: MyTextInput }"
+  @submit="handleSubmit"
+/>
+```
+
+Each field component receives the full `FormField` descriptor, the current value, and any validation error. Implement as many or as few field types as you need. Unmapped types fall back to native HTML.
+
+## Figma Plugin
+
+`@formhaus/figma` is a Figma plugin that takes a formhaus JSON schema and generates a styled form mockup directly on the canvas. Useful for rapid prototyping and design handoff.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)
