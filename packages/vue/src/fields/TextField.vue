@@ -43,7 +43,7 @@ function onInput(event: Event) {
       class="fh-field__input"
       :type="inputType"
       :value="String(props.value ?? '')"
-      :placeholder="props.field.placeholder"
+      :placeholder="props.field.placeholder ?? props.field.mask"
       :disabled="props.disabled || props.loading"
       :inputmode="props.field.inputMode"
       :aria-invalid="!!props.error || undefined"

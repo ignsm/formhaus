@@ -44,7 +44,7 @@ export function TextField({
         type={inputType}
         className="fh-field__input"
         value={value != null ? String(value) : ''}
-        placeholder={field.placeholder}
+        placeholder={field.placeholder ?? field.mask}
         disabled={disabled || loading}
         aria-invalid={!!error}
         aria-describedby={describedBy}
