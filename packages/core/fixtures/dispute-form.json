@@ -1,0 +1,91 @@
+{
+  "id": "dispute-form",
+  "title": "File a Dispute",
+  "submit": { "label": "Submit Dispute" },
+  "cancel": { "label": "Cancel", "variant": "text" },
+  "steps": [
+    {
+      "id": "transaction",
+      "title": "Transaction Details",
+      "description": "Which transaction are you disputing?",
+      "fields": [
+        {
+          "key": "transactionId",
+          "type": "text",
+          "label": "Transaction ID",
+          "helperText": "Found in your transaction history",
+          "validation": { "required": true }
+        },
+        {
+          "key": "disputeType",
+          "type": "radio",
+          "label": "Reason for Dispute",
+          "options": [
+            { "value": "unauthorized", "label": "Unauthorized transaction" },
+            { "value": "not_received", "label": "Transfer not received" },
+            { "value": "wrong_amount", "label": "Wrong amount" },
+            { "value": "duplicate", "label": "Duplicate charge" },
+            { "value": "other", "label": "Other" }
+          ],
+          "validation": { "required": true }
+        },
+        {
+          "key": "disputeAmount",
+          "type": "number",
+          "label": "Disputed Amount (USD)",
+          "show": [{ "field": "disputeType", "eq": "wrong_amount" }],
+          "validation": { "required": true, "min": 0.01 },
+          "inputMode": "numeric"
+        }
+      ]
+    },
+    {
+      "id": "details",
+      "title": "Additional Details",
+      "fields": [
+        {
+          "key": "description",
+          "type": "textarea",
+          "label": "Describe the issue",
+          "helperText": "Please provide as much detail as possible",
+          "validation": {
+            "required": true,
+            "minLength": 20,
+            "minLengthMessage": "Please provide more detail (at least 20 characters)"
+          },
+          "rows": 5
+        },
+        {
+          "key": "contactPreference",
+          "type": "select",
+          "label": "How should we contact you?",
+          "options": [
+            { "value": "email", "label": "Email" },
+            { "value": "phone", "label": "Phone" }
+          ],
+          "defaultValue": "email"
+        },
+        {
+          "key": "phoneNumber",
+          "type": "phone",
+          "label": "Phone Number",
+          "show": [{ "field": "contactPreference", "eq": "phone" }],
+          "validation": { "required": true },
+          "inputMode": "tel"
+        }
+      ]
+    },
+    {
+      "id": "confirm",
+      "title": "Review & Submit",
+      "fields": [
+        {
+          "key": "acknowledgement",
+          "type": "checkbox",
+          "label": "I certify that the information provided is accurate and complete",
+          "validation": { "required": "You must certify the information is accurate" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,309 @@
+import { describe, expect, it, vi } from 'vitest';
+import { FormEngine } from '../../src/engine';
+import type { FormSchema } from '../../src/types';
+
+const basicSchema: FormSchema = {
+  id: 'basic',
+  title: 'Basic Form',
+  submit: { label: 'Submit' },
+  fields: [
+    { key: 'name', type: 'text', label: 'Name', validation: { required: true } },
+    { key: 'email', type: 'email', label: 'Email' },
+  ],
+};
+
+const conditionalSchema: FormSchema = {
+  id: 'conditional',
+  title: 'Conditional',
+  submit: { label: 'Submit' },
+  fields: [
+    {
+      key: 'country',
+      type: 'select',
+      label: 'Country',
+      options: [
+        { value: 'MX', label: 'Mexico' },
+        { value: 'US', label: 'US' },
+      ],
+    },
+    { key: 'clabe', type: 'text', label: 'CLABE', show: [{ field: 'country', eq: 'MX' }] },
+    { key: 'routing', type: 'text', label: 'Routing', show: [{ field: 'country', eq: 'US' }] },
+  ],
+};
+
+describe('FormEngine', () => {
+  describe('constructor', () => {
+    it('creates engine with fields-only schema', () => {
+      const engine = new FormEngine(basicSchema);
+      expect(engine.isMultiStep).toBe(false);
+      expect(engine.values).toEqual({});
+    });
+
+    it('applies initialValues', () => {
+      const engine = new FormEngine(basicSchema, { name: 'John' });
+      expect(engine.values.name).toBe('John');
+    });
+
+    it('applies field defaultValue', () => {
+      const schema: FormSchema = {
+        id: 'defaults',
+        title: 'Defaults',
+        submit: { label: 'Submit' },
+        fields: [{ key: 'country', type: 'select', label: 'Country', defaultValue: 'US' }],
+      };
+      const engine = new FormEngine(schema);
+      expect(engine.values.country).toBe('US');
+    });
+
+    it('initialValues override defaultValue', () => {
+      const schema: FormSchema = {
+        id: 'defaults',
+        title: 'Defaults',
+        submit: { label: 'Submit' },
+        fields: [{ key: 'country', type: 'select', label: 'Country', defaultValue: 'US' }],
+      };
+      const engine = new FormEngine(schema, { country: 'MX' });
+      expect(engine.values.country).toBe('MX');
+    });
+
+    it('throws when both fields and steps are non-empty', () => {
+      const schema: FormSchema = {
+        id: 'invalid',
+        title: 'Invalid',
+        submit: { label: 'Submit' },
+        fields: [{ key: 'a', type: 'text', label: 'A' }],
+        steps: [{ id: 's1', title: 'S1', fields: [{ key: 'b', type: 'text', label: 'B' }] }],
+      };
+      expect(() => new FormEngine(schema)).toThrow('cannot have both');
+    });
+  });
+
+  describe('setValue', () => {
+    it('sets a value and clears field error', () => {
+      const engine = new FormEngine(basicSchema);
+      engine.errors = { name: 'Required' };
+      engine.setValue('name', 'John');
+      expect(engine.values.name).toBe('John');
+      expect(engine.errors.name).toBeUndefined();
+    });
+
+    it('notifies subscribers', () => {
+      const engine = new FormEngine(basicSchema);
+      const listener = vi.fn();
+      engine.subscribe(listener);
+      engine.setValue('name', 'John');
+      expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it('clears hidden fields on cascade', () => {
+      const engine = new FormEngine(conditionalSchema, { country: 'MX', clabe: '123' });
+      expect(engine.values.clabe).toBe('123');
+
+      // Change country to US, clabe should be cleared
+      engine.setValue('country', 'US');
+      expect(engine.values.clabe).toBeUndefined();
+    });
+
+    it('cascade: field A hides field B which hides field C', () => {
+      const schema: FormSchema = {
+        id: 'cascade',
+        title: 'Cascade',
+        submit: { label: 'Submit' },
+        fields: [
+          { key: 'a', type: 'select', label: 'A' },
+          { key: 'b', type: 'text', label: 'B', show: [{ field: 'a', eq: 'show' }] },
+          { key: 'c', type: 'text', label: 'C', show: [{ field: 'b', notEmpty: true }] },
+        ],
+      };
+      const engine = new FormEngine(schema, { a: 'show', b: 'hello', c: 'world' });
+      expect(engine.values.c).toBe('world');
+
+      // Hide B by changing A
+      engine.setValue('a', 'hide');
+      // B cleared (hidden), C cleared (depends on B which is now empty)
+      expect(engine.values.b).toBeUndefined();
+      expect(engine.values.c).toBeUndefined();
+    });
+  });
+
+  describe('visibleFields', () => {
+    it('returns only visible fields', () => {
+      const engine = new FormEngine(conditionalSchema, { country: 'MX' });
+      const keys = engine.visibleFields.map((f) => f.key);
+      expect(keys).toContain('country');
+      expect(keys).toContain('clabe');
+      expect(keys).not.toContain('routing');
+    });
+  });
+
+  describe('validate', () => {
+    it('returns errors for invalid visible fields', () => {
+      const engine = new FormEngine(basicSchema);
+      const errors = engine.validate();
+      expect(errors.name).toBe('This field is required');
+    });
+
+    it('does not validate hidden fields', () => {
+      const schema: FormSchema = {
+        id: 'hidden-validation',
+        title: 'Hidden',
+        submit: { label: 'Submit' },
+        fields: [
+          {
+            key: 'hidden',
+            type: 'text',
+            label: 'Hidden',
+            validation: { required: true },
+            show: [{ field: 'x', eq: 'y' }],
+          },
+        ],
+      };
+      const engine = new FormEngine(schema);
+      const errors = engine.validate();
+      expect(errors.hidden).toBeUndefined();
+    });
+  });
+
+  describe('validateField', () => {
+    it('validates a single field and updates errors', () => {
+      const engine = new FormEngine(basicSchema);
+      const error = engine.validateField('name');
+      expect(error).toBe('This field is required');
+      expect(engine.errors.name).toBe('This field is required');
+    });
+
+    it('clears error when field is valid', () => {
+      const engine = new FormEngine(basicSchema, { name: 'John' });
+      engine.errors = { name: 'old error' };
+      const error = engine.validateField('name');
+      expect(error).toBeNull();
+      expect(engine.errors.name).toBeUndefined();
+    });
+  });
+
+  describe('getSubmitValues', () => {
+    it('returns only visible field values', () => {
+      const engine = new FormEngine(conditionalSchema, {
+        country: 'MX',
+        clabe: '123',
+        routing: '456',
+      });
+      // routing should have been cascade-cleared since country=MX hides it
+      const values = engine.getSubmitValues();
+      expect(values.country).toBe('MX');
+      expect(values.clabe).toBe('123');
+      expect(values.routing).toBeUndefined();
+    });
+  });
+
+  describe('setErrors', () => {
+    it('sets errors on visible fields', () => {
+      const engine = new FormEngine(basicSchema);
+      engine.setErrors({ name: 'Server says no' });
+      expect(engine.errors.name).toBe('Server says no');
+    });
+
+    it('surfaces errors on hidden fields as top-level errors', () => {
+      const engine = new FormEngine(conditionalSchema, { country: 'US' });
+      engine.setErrors({ clabe: 'Invalid CLABE' });
+      // clabe is hidden (country != MX), so error goes to topLevelErrors
+      expect(engine.errors.clabe).toBeUndefined();
+      expect(engine.topLevelErrors).toContain('Invalid CLABE');
+    });
+  });
+
+  describe('subscribe / getSnapshot', () => {
+    it('increments version on mutation', () => {
+      const engine = new FormEngine(basicSchema);
+      const v1 = engine.getSnapshot();
+      engine.setValue('name', 'test');
+      expect(engine.getSnapshot()).toBe(v1 + 1);
+    });
+
+    it('unsubscribe stops listener', () => {
+      const engine = new FormEngine(basicSchema);
+      const listener = vi.fn();
+      const unsub = engine.subscribe(listener);
+      engine.setValue('name', 'test');
+      expect(listener).toHaveBeenCalledOnce();
+
+      unsub();
+      engine.setValue('name', 'test2');
+      expect(listener).toHaveBeenCalledOnce(); // Not called again
+    });
+
+    it('multiple subscribers work independently', () => {
+      const engine = new FormEngine(basicSchema);
+      const listener1 = vi.fn();
+      const listener2 = vi.fn();
+      const unsub1 = engine.subscribe(listener1);
+      engine.subscribe(listener2);
+
+      engine.setValue('name', 'test');
+      expect(listener1).toHaveBeenCalledOnce();
+      expect(listener2).toHaveBeenCalledOnce();
+
+      unsub1();
+      engine.setValue('name', 'test2');
+      expect(listener1).toHaveBeenCalledOnce(); // Not called
+      expect(listener2).toHaveBeenCalledTimes(2); // Still works
+    });
+  });
+
+  describe('reset', () => {
+    it('resets to defaults and step 0', () => {
+      const schema: FormSchema = {
+        id: 'reset',
+        title: 'Reset',
+        submit: { label: 'Submit' },
+        fields: [{ key: 'name', type: 'text', label: 'Name', defaultValue: 'default' }],
+      };
+      const engine = new FormEngine(schema, { name: 'modified' });
+      engine.errors = { name: 'error' };
+      engine.reset();
+      expect(engine.values.name).toBe('default');
+      expect(engine.errors).toEqual({});
+    });
+
+    it('resets to provided values', () => {
+      const engine = new FormEngine(basicSchema);
+      engine.setValue('name', 'modified');
+      engine.reset({ name: 'new' });
+      expect(engine.values.name).toBe('new');
+    });
+  });
+
+  describe('setFieldLoading', () => {
+    it('sets and clears loading state', () => {
+      const engine = new FormEngine(basicSchema);
+      engine.setFieldLoading('name', true);
+      expect(engine.fieldLoading.name).toBe(true);
+      engine.setFieldLoading('name', false);
+      expect(engine.fieldLoading.name).toBeUndefined();
+    });
+  });
+
+  describe('custom validators in constructor', () => {
+    it('uses validators passed to constructor during validate', () => {
+      const schema: FormSchema = {
+        id: 'custom',
+        title: 'Custom',
+        submit: { label: 'Submit' },
+        fields: [
+          { key: 'code', type: 'text', label: 'Code', validation: { validator: 'checkCode' } },
+        ],
+      };
+      const engine = new FormEngine(
+        schema,
+        { code: 'bad' },
+        {
+          validators: {
+            checkCode: (value) => (value === 'good' ? null : 'Invalid code'),
+          },
+        },
+      );
+      const errors = engine.validate();
+      expect(errors.code).toBe('Invalid code');
+    });
+  });
+});

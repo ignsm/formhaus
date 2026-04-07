@@ -1,0 +1,84 @@
+{
+  "id": "conditional-fields",
+  "title": "Payment Details",
+  "submit": { "label": "Continue" },
+  "fields": [
+    {
+      "key": "paymentMethod",
+      "type": "select",
+      "label": "Payment Method",
+      "options": [
+        { "value": "bank", "label": "Bank Transfer" },
+        { "value": "card", "label": "Credit/Debit Card" },
+        { "value": "crypto", "label": "Cryptocurrency" }
+      ],
+      "validation": { "required": true }
+    },
+    {
+      "key": "bankName",
+      "type": "text",
+      "label": "Bank Name",
+      "show": [{ "field": "paymentMethod", "eq": "bank" }],
+      "validation": { "required": true }
+    },
+    {
+      "key": "accountNumber",
+      "type": "text",
+      "label": "Account Number",
+      "show": [{ "field": "paymentMethod", "eq": "bank" }],
+      "validation": { "required": true },
+      "inputMode": "numeric"
+    },
+    {
+      "key": "routingNumber",
+      "type": "text",
+      "label": "Routing Number",
+      "show": [{ "field": "paymentMethod", "eq": "bank" }],
+      "validation": {
+        "required": true,
+        "pattern": "^[0-9]{9}$",
+        "patternMessage": "Routing number must be 9 digits"
+      },
+      "inputMode": "numeric"
+    },
+    {
+      "key": "cardNumber",
+      "type": "text",
+      "label": "Card Number",
+      "show": [{ "field": "paymentMethod", "eq": "card" }],
+      "validation": { "required": true },
+      "inputMode": "numeric"
+    },
+    {
+      "key": "cardExpiry",
+      "type": "text",
+      "label": "Expiry (MM/YY)",
+      "placeholder": "MM/YY",
+      "show": [{ "field": "paymentMethod", "eq": "card" }],
+      "validation": {
+        "required": true,
+        "pattern": "^(0[1-9]|1[0-2])/[0-9]{2}$",
+        "patternMessage": "Format: MM/YY"
+      }
+    },
+    {
+      "key": "walletAddress",
+      "type": "text",
+      "label": "Wallet Address",
+      "show": [{ "field": "paymentMethod", "eq": "crypto" }],
+      "validation": { "required": true }
+    },
+    {
+      "key": "cryptoNetwork",
+      "type": "select",
+      "label": "Network",
+      "show": [{ "field": "paymentMethod", "eq": "crypto" }],
+      "options": [
+        { "value": "ethereum", "label": "Ethereum" },
+        { "value": "tron", "label": "Tron" },
+        { "value": "solana", "label": "Solana" }
+      ],
+      "validation": { "required": true }
+    }
+  ]
+}

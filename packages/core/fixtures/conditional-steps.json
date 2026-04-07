@@ -1,0 +1,79 @@
+{
+  "id": "conditional-steps",
+  "title": "Open Account",
+  "submit": { "label": "Open Account" },
+  "steps": [
+    {
+      "id": "account-type",
+      "title": "Account Type",
+      "fields": [
+        {
+          "key": "accountType",
+          "type": "radio",
+          "label": "What type of account?",
+          "options": [
+            { "value": "personal", "label": "Personal" },
+            { "value": "business", "label": "Business" }
+          ],
+          "validation": { "required": true }
+        },
+        {
+          "key": "fullName",
+          "type": "text",
+          "label": "Full Name",
+          "validation": { "required": true }
+        },
+        {
+          "key": "email",
+          "type": "email",
+          "label": "Email",
+          "validation": { "required": true }
+        }
+      ]
+    },
+    {
+      "id": "business-info",
+      "title": "Business Information",
+      "description": "Tell us about your business",
+      "show": [{ "field": "accountType", "eq": "business" }],
+      "fields": [
+        {
+          "key": "companyName",
+          "type": "text",
+          "label": "Company Name",
+          "validation": { "required": true }
+        },
+        {
+          "key": "taxId",
+          "type": "text",
+          "label": "Tax ID / EIN",
+          "validation": { "required": true }
+        },
+        {
+          "key": "companySize",
+          "type": "select",
+          "label": "Company Size",
+          "options": [
+            { "value": "1-10", "label": "1-10 employees" },
+            { "value": "11-50", "label": "11-50 employees" },
+            { "value": "51-200", "label": "51-200 employees" },
+            { "value": "200+", "label": "200+ employees" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "title": "Review & Confirm",
+      "description": "Please review your information",
+      "fields": [
+        {
+          "key": "termsAccepted",
+          "type": "checkbox",
+          "label": "I accept the Terms of Service and Privacy Policy",
+          "validation": { "required": "You must accept the terms to continue" }
+        }
+      ]
+    }
+  ]
+}
