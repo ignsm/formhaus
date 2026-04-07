@@ -1,0 +1,335 @@
+import { validateSchema } from '../schema-validation';
+import type { FormField, FormSchema, FormStep } from '../types';
+import type { ValidatorFn } from '../validation';
+import { validateField, validateFields, validateStep } from '../validation';
+import { isStepVisible, isVisible } from '../visibility';
+
+const MAX_CASCADE_ITERATIONS = 50;
+
+export interface FormEngineOptions {
+  validators?: Record<string, ValidatorFn>;
+}
+
+export class FormEngine {
+  readonly schema: FormSchema;
+
+  values: Record<string, unknown>;
+  errors: Record<string, string>;
+  topLevelErrors: string[];
+  currentStepIndex: number;
+  fieldLoading: Record<string, boolean>;
+
+  private _version: number;
+  private _listeners: Set<() => void>;
+  private _validators: Record<string, ValidatorFn>;
+  private _allFields: FormField[];
+
+  constructor(
+    schema: FormSchema,
+    initialValues?: Record<string, unknown>,
+    options?: FormEngineOptions,
+  ) {
+    // Validate schema structure
+    const hasFields = schema.fields && schema.fields.length > 0;
+    const hasSteps = schema.steps && schema.steps.length > 0;
+    if (hasFields && hasSteps) {
+      throw new Error('FormSchema cannot have both "fields" and "steps" as non-empty arrays.');
+    }
+
+    // Run schema validation (warnings only, don't throw)
+    const warnings = validateSchema(schema);
+    if (warnings.length > 0) {
+      for (const w of warnings) {
+        console.warn(`[FormEngine] ${w}`);
+      }
+    }
+
+    this.schema = schema;
+    this._validators = options?.validators ?? {};
+    this._version = 0;
+    this._listeners = new Set();
+    this.currentStepIndex = 0;
+    this.errors = {};
+    this.topLevelErrors = [];
+    this.fieldLoading = {};
+
+    this._allFields = this._computeAllFields();
+
+    // Initialize values with defaults, then overlay initialValues
+    this.values = {};
+    for (const field of this._allFields) {
+      if (field.defaultValue !== undefined) {
+        this.values[field.key] = field.defaultValue;
+      }
+    }
+    if (initialValues) {
+      Object.assign(this.values, initialValues);
+    }
+  }
+
+  // --- React integration ---
+
+  subscribe(listener: () => void): () => void {
+    this._listeners.add(listener);
+    return () => {
+      this._listeners.delete(listener);
+    };
+  }
+
+  getSnapshot(): number {
+    return this._version;
+  }
+
+  // --- Computed getters ---
+
+  get isMultiStep(): boolean {
+    return (this.schema.steps ?? []).length > 0;
+  }
+
+  get visibleSteps(): FormStep[] {
+    if (!this.isMultiStep) return [];
+    const steps = this.schema.steps ?? [];
+    return steps.filter((s) => isStepVisible(s, this.values));
+  }
+
+  get currentStep(): FormStep | null {
+    const steps = this.visibleSteps;
+    if (steps.length === 0) return null;
+    // Find the step at currentStepIndex within visible steps
+    return steps[this.currentStepIndex] ?? steps[steps.length - 1] ?? null;
+  }
+
+  get visibleFields(): FormField[] {
+    if (this.isMultiStep) {
+      const step = this.currentStep;
+      if (!step) return [];
+      return step.fields.filter((f) => isVisible(f, this.values));
+    }
+    return (this.schema.fields ?? []).filter((f) => isVisible(f, this.values));
+  }
+
+  get isFirstStep(): boolean {
+    return this.currentStepIndex === 0;
+  }
+
+  get isLastStep(): boolean {
+    return this.currentStepIndex >= this.visibleSteps.length - 1;
+  }
+
+  get canGoNext(): boolean {
+    if (!this.isMultiStep) return false;
+    const step = this.currentStep;
+    if (!step) return false;
+    const stepErrors = validateStep(step, this.values, this._validators);
+    return Object.keys(stepErrors).length === 0;
+  }
+
+  get progress(): { current: number; total: number } {
+    const total = this.visibleSteps.length;
+    return { current: Math.min(this.currentStepIndex + 1, total), total };
+  }
+
+  // --- Mutations ---
+
+  setValue(key: string, value: unknown): void {
+    this.values[key] = value;
+
+    // Clear error for this field
+    delete this.errors[key];
+
+    // Cascade: clear hidden fields, loop until stable
+    this._cascadeClearHiddenFields();
+
+    this._notify();
+  }
+
+  setErrors(errors: Record<string, string>): void {
+    this.topLevelErrors = [];
+
+    for (const [key, message] of Object.entries(errors)) {
+      // Check if field is visible
+      const field = this._allFields.find((f) => f.key === key);
+      if (field && isVisible(field, this.values)) {
+        this.errors[key] = message;
+      } else {
+        // Field is hidden or doesn't exist: surface as top-level error
+        this.topLevelErrors.push(message);
+      }
+    }
+
+    // Navigate to step containing first visible error
+    if (this.isMultiStep) {
+      const firstErrorKey = Object.keys(errors).find((k) => this.errors[k] !== undefined);
+      if (firstErrorKey) {
+        this.goToStepWithField(firstErrorKey);
+      }
+    }
+
+    this._notify();
+  }
+
+  setFieldLoading(key: string, loading: boolean): void {
+    if (loading) {
+      this.fieldLoading[key] = true;
+    } else {
+      delete this.fieldLoading[key];
+    }
+    this._notify();
+  }
+
+  nextStep(): boolean {
+    if (!this.isMultiStep) return false;
+
+    const step = this.currentStep;
+    if (!step) return false;
+
+    // Validate current step
+    const stepErrors = validateStep(step, this.values, this._validators);
+    if (Object.keys(stepErrors).length > 0) {
+      Object.assign(this.errors, stepErrors);
+      this._notify();
+      return false;
+    }
+
+    // Move to next visible step
+    if (this.isLastStep) return false;
+
+    this.currentStepIndex++;
+    this._notify();
+    return true;
+  }
+
+  prevStep(): void {
+    if (!this.isMultiStep) return;
+    if (this.isFirstStep) return;
+
+    this.currentStepIndex--;
+    this._notify();
+  }
+
+  validate(): Record<string, string> {
+    if (this.isMultiStep) {
+      const allErrors: Record<string, string> = {};
+      for (const step of this.visibleSteps) {
+        const stepErrors = validateStep(step, this.values, this._validators);
+        Object.assign(allErrors, stepErrors);
+      }
+      this.errors = allErrors;
+      this._notify();
+      return allErrors;
+    }
+
+    const errors = validateFields(this.schema.fields ?? [], this.values, this._validators);
+    this.errors = errors;
+    this._notify();
+    return errors;
+  }
+
+  validateField(key: string): string | null {
+    const field = this._allFields.find((f) => f.key === key);
+    if (!field) return null;
+    if (!isVisible(field, this.values)) return null;
+
+    const error = validateField(field, this.values[key], this.values, this._validators);
+    if (error) {
+      this.errors[key] = error;
+    } else {
+      delete this.errors[key];
+    }
+    this._notify();
+    return error;
+  }
+
+  getSubmitValues(): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    const visibleKeys = new Set<string>();
+
+    if (this.isMultiStep) {
+      for (const step of this.visibleSteps) {
+        for (const field of step.fields) {
+          if (isVisible(field, this.values)) {
+            visibleKeys.add(field.key);
+          }
+        }
+      }
+    } else {
+      for (const field of this.schema.fields ?? []) {
+        if (isVisible(field, this.values)) {
+          visibleKeys.add(field.key);
+        }
+      }
+    }
+
+    for (const key of visibleKeys) {
+      if (this.values[key] !== undefined) {
+        result[key] = this.values[key];
+      }
+    }
+
+    return result;
+  }
+
+  goToStepWithField(fieldKey: string): void {
+    if (!this.isMultiStep) return;
+
+    const visibleSteps = this.visibleSteps;
+    for (let i = 0; i < visibleSteps.length; i++) {
+      const hasField = visibleSteps[i].fields.some((f) => f.key === fieldKey);
+      if (hasField) {
+        this.currentStepIndex = i;
+        this._notify();
+        return;
+      }
+    }
+    // Field not found in any visible step: no-op
+  }
+
+  reset(values?: Record<string, unknown>): void {
+    this.values = {};
+    for (const field of this._allFields) {
+      if (field.defaultValue !== undefined) {
+        this.values[field.key] = field.defaultValue;
+      }
+    }
+    if (values) {
+      Object.assign(this.values, values);
+    }
+    this.errors = {};
+    this.topLevelErrors = [];
+    this.currentStepIndex = 0;
+    this._notify();
+  }
+
+  // --- Private ---
+
+  private _computeAllFields(): FormField[] {
+    if (this.isMultiStep) {
+      const steps = this.schema.steps ?? [];
+      return steps.flatMap((s) => s.fields);
+    }
+    return this.schema.fields ?? [];
+  }
+
+  private _cascadeClearHiddenFields(): void {
+    for (let i = 0; i < MAX_CASCADE_ITERATIONS; i++) {
+      let changed = false;
+
+      for (const field of this._allFields) {
+        if (!isVisible(field, this.values) && this.values[field.key] !== undefined) {
+          delete this.values[field.key];
+          delete this.errors[field.key];
+          changed = true;
+        }
+      }
+
+      if (!changed) break;
+    }
+  }
+
+  private _notify(): void {
+    this._version++;
+    for (const listener of this._listeners) {
+      listener();
+    }
+  }
+}

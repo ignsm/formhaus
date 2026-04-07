@@ -1,0 +1,33 @@
+{
+  "name": "@formhaus/core",
+  "version": "0.1.0",
+  "description": "Framework-agnostic JSON-schema-driven form engine with validation, conditional visibility, and multi-step support",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist", "fixtures"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.2"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ignsm/formhaus.git",
+    "directory": "packages/core"
+  },
+  "keywords": ["form", "json-schema", "validation", "form-engine", "multi-step", "conditional-forms"]
+}
