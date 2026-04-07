@@ -8,6 +8,7 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "lib": ["ES2020"],
+    "types": [],
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
