@@ -1,7 +1,7 @@
 # Formhaus
 
 Framework-agnostic JSON-schema-driven form ecosystem.
-Define a form once as a JSON schema, render it anywhere: React, Vue, or Figma.
+Define a form once as a JSON schema, render it anywhere in code or Figma.
 
 ## Packages
 
@@ -10,7 +10,8 @@ Define a form once as a JSON schema, render it anywhere: React, Vue, or Figma.
 | `@formhaus/core` | Zero-dependency form engine: types, validation, visibility, multi-step | `npm i @formhaus/core` |
 | `@formhaus/react` | React adapter with native HTML defaults and custom component support | `npm i @formhaus/react` |
 | `@formhaus/vue` | Vue 3 adapter with native HTML defaults and custom component support | `npm i @formhaus/vue` |
-| `@formhaus/figma` | Figma plugin to generate form mockups from JSON schemas | TBD, use via `manifest.json` for now |
+
+There is also a Figma plugin (`@formhaus/figma`) that generates form mockups from JSON schemas. Available via `manifest.json` for now.
 
 Svelte, Solid, or anything else: use `@formhaus/core` directly. See the [playground](/playground) for an example.
 
