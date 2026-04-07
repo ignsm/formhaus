@@ -156,6 +156,7 @@ const components: FieldComponentMap = {
 ### Vue
 
 ```vue
+<!-- MyTextInput.vue -->
 <script setup lang="ts">
 import type { FormFieldProps } from '@formhaus/vue';
 
@@ -165,11 +166,19 @@ defineEmits<{ (e: 'update:modelValue', value: unknown): void }>();
 ```
 
 ```vue
-<FormRenderer
-  :schema="schema"
-  :components="{ text: MyTextInput, email: MyTextInput }"
-  @submit="handleSubmit"
-/>
+<!-- Usage -->
+<script setup>
+import { FormRenderer } from '@formhaus/vue';
+import MyTextInput from './MyTextInput.vue';
+</script>
+
+<template>
+  <FormRenderer
+    :schema="schema"
+    :components="{ text: MyTextInput, email: MyTextInput }"
+    @submit="handleSubmit"
+  />
+</template>
 ```
 
 Each field component receives the full `FormField` descriptor, the current value, and any validation error. Implement as many or as few field types as you need. Unmapped types fall back to native HTML.
