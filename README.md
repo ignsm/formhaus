@@ -12,9 +12,18 @@ Define a form once as a JSON schema, render it anywhere: React, Vue, or Figma.
 | `@formhaus/vue` | Vue 3 adapter with native HTML defaults and custom component support | `npm i @formhaus/vue` |
 | `@formhaus/figma` | Figma plugin to generate form mockups from JSON schemas | TBD, use via `manifest.json` for now |
 
+## Install
+
+```bash
+npm install @formhaus/core @formhaus/react   # React
+npm install @formhaus/core @formhaus/vue     # Vue
+```
+
 ## Quick Start
 
 ### Define a schema
+
+You can write the JSON by hand or use the [Claude skill](.claude/skills/form-schema/SKILL.md) to generate it from a text description.
 
 ```json
 {
@@ -99,32 +108,6 @@ async function handleSubmit(values: Record<string, unknown>) {
 ```
 
 By default, both adapters render native HTML inputs.
-
-## Architecture
-
-```
-                    +------------------+
-                    |   JSON Schema    |
-                    +--------+---------+
-                             |
-                    +--------v---------+
-                    |  @formhaus/core  |
-                    |                  |
-                    |  - FormEngine    |
-                    |  - Validation    |
-                    |  - Visibility    |
-                    |  - Multi-step    |
-                    +--------+---------+
-                             |
-              +--------------+--------------+
-              |              |              |
-     +--------v---+   +-----v------+  +----v-------+
-     |   /react   |   |    /vue    |  |   /figma   |
-     |  adapter   |   |  adapter   |  |   plugin   |
-     +------------+   +------------+  +------------+
-```
-
-`@formhaus/core` owns all form logic: state management, field validation, conditional visibility, and multi-step navigation. The framework adapters are thin rendering layers that delegate to the core engine via `useFormEngine` (React hook) or `useFormEngine` (Vue composable).
 
 ## Custom Components
 
