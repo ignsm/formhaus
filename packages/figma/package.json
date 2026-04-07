@@ -1,0 +1,26 @@
+{
+  "name": "@formhaus/figma",
+  "version": "0.1.0",
+  "description": "Figma plugin: generates form mockups from @formhaus/core JSON schemas",
+  "scripts": {
+    "build": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2020 --format=iife",
+    "watch": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2020 --format=iife --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@formhaus/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.100.0",
+    "esbuild": "^0.24.0",
+    "vitest": "^2.1.0",
+    "typescript": "^5.6.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ignsm/formhaus.git",
+    "directory": "packages/figma"
+  }
+}
