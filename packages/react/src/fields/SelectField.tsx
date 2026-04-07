@@ -20,7 +20,7 @@ export function SelectField({
       {field.label && (
         <label className="fh-field__label" htmlFor={inputId}>
           {field.label}
-          {field.required && <span className="fh-field__required" aria-hidden="true"> *</span>}
+          {field.validation?.required && <span className="fh-field__required" aria-hidden="true"> *</span>}
         </label>
       )}
       <select
