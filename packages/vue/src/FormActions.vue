@@ -35,7 +35,13 @@ function getButtonClass(variant?: string): string {
 }
 
 function onPrimaryClick() {
-  emit('primary');
+  if (props.primaryLabel !== undefined) {
+    emit('primary');
+  } else if (props.isMultiStep && !props.isLastStep) {
+    emit('next');
+  } else {
+    emit('submit');
+  }
 }
 
 function resolvedPrimaryLabel(): string {
