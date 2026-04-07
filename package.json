@@ -1,12 +1,12 @@
 {
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
-  "packageManager": "yarn@1.22.21",
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "build": "yarn workspaces foreach -pt run build",
-    "test": "yarn workspaces foreach -p run test",
-    "clean": "yarn workspaces foreach -p run clean"
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "clean": "pnpm -r run clean"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
