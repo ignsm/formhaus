@@ -13,7 +13,7 @@ Define a form once as a JSON schema, render it anywhere in code or Figma.
 
 There is also a Figma plugin (`@formhaus/figma`) that generates form mockups from JSON schemas. Available via `manifest.json` for now.
 
-Svelte, Solid, or anything else: use `@formhaus/core` directly. See the [playground](/playground) for an example.
+Svelte, Solid, or anything else: use `@formhaus/core` directly. See the [playground](https://formhaus.dev/playground) for an example.
 
 ## Install
 
