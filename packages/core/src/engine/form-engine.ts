@@ -238,6 +238,8 @@ export class FormEngine {
       const result = await this._onStepValidate(step.id, this.values);
 
       if (this.currentStepIndex !== stepIndexBefore) {
+        this.stepValidating = false;
+        this._notify();
         return false;
       }
 
@@ -250,17 +252,25 @@ export class FormEngine {
             this.topLevelErrors.push(message);
           }
         }
+        this.stepValidating = false;
         this._notify();
         return false;
       }
 
-      if (this.isLastStep) return false;
+      if (this.isLastStep) {
+        this.stepValidating = false;
+        this._notify();
+        return false;
+      }
+
+      this.stepValidating = false;
       this.currentStepIndex++;
       this._notify();
       return true;
-    } finally {
+    } catch (e) {
       this.stepValidating = false;
       this._notify();
+      throw e;
     }
   }
 
