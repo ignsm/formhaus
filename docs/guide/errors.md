@@ -74,6 +74,12 @@ setErrors({ _general: 'Your account has been temporarily suspended.' });
 
 The banner renders between the fields and the Submit/Continue buttons.
 
+## Async step validation errors
+
+When using `onStepValidate`, returned errors display on the current step — same as sync validation errors. Errors for hidden or non-existent fields are surfaced as top-level errors (banner above the buttons).
+
+See [Async Step Validation](/guide/steps#async-step-validation) for setup.
+
 ## Loading state
 
 Show a loading indicator on the submit button while the request is pending:

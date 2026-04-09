@@ -113,6 +113,54 @@ When the user picks "personal" instead of "business", this step vanishes. The pr
 
 `direction` is `'next'` or `'back'`.
 
+## Async step validation
+
+Validate step data on the server before the transition happens. Useful for uniqueness checks, server-side business rules, or anything that can't run client-side.
+
+Pass `onStepValidate` — an async function that runs after sync validation passes but before the step advances. Return `{ fieldKey: message }` to block the transition and show errors, or `null`/`void` to allow it.
+
+::: code-group
+```vue [Vue]
+<script setup>
+async function validateStep(stepId, values) {
+  if (stepId === 'account') {
+    const res = await api.checkEmail(values.email);
+    if (res.taken) return { email: 'Already registered' };
+  }
+  return null;
+}
+</script>
+
+<template>
+  <FormRenderer
+    :schema="schema"
+    :on-step-validate="validateStep"
+    @submit="onSubmit"
+  />
+</template>
+```
+
+```tsx [React]
+async function validateStep(stepId: string, values: Record<string, unknown>) {
+  if (stepId === 'account') {
+    const res = await api.checkEmail(values.email);
+    if (res.taken) return { email: 'Already registered' };
+  }
+  return null;
+}
+
+<FormRenderer
+  schema={schema}
+  onStepValidate={validateStep}
+  onSubmit={handleSubmit}
+/>
+```
+:::
+
+While the async validation runs, the Continue button shows a loading state automatically. Concurrent clicks are ignored — only one validation can run at a time.
+
+If `onStepValidate` throws (network error, server 500), the error propagates to the caller. The form resets to its pre-validation state so the user can retry.
+
 ## getSubmitValues
 
 On submit, all visible fields across all visible steps are returned. Fields in hidden steps are excluded.
