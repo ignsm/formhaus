@@ -142,7 +142,7 @@ type ValidatorFn = (
 
 ## StepValidateFn
 
-Async step-level validator. Runs after sync validation passes, before the step transition. Return errors to block, or `null`/`void` to allow.
+Async step-level validator. See [Async Step Validation](/guide/async-validation) for the full guide.
 
 ```ts
 type StepValidateFn = (
@@ -151,14 +151,14 @@ type StepValidateFn = (
 ) => Promise<Record<string, string> | null | void>;
 ```
 
-## FormEngine
+## FormEngine (async)
 
 | Property / Method | Type | Description |
 |---|---|---|
 | `stepValidating` | `boolean` | `true` while `onStepValidate` is running |
-| `nextStepAsync()` | `Promise<boolean>` | Async version of `nextStep()` — runs sync validation, then `onStepValidate`, then advances |
+| `nextStepAsync()` | `Promise<boolean>` | Async version of `nextStep()`. Runs sync validation, then `onStepValidate`, then advances |
 
-See [Async Step Validation](/guide/steps#async-step-validation) for usage.
+See [Using the engine directly](/guide/async-validation#using-the-engine-directly) for examples.
 
 ## Minimal example
 
