@@ -153,8 +153,6 @@ type StepValidateFn = (
 
 ## FormEngine
 
-Core engine class. The `stepValidating` property and `nextStepAsync()` method support async step validation.
-
 | Property / Method | Type | Description |
 |---|---|---|
 | `stepValidating` | `boolean` | `true` while `onStepValidate` is running |

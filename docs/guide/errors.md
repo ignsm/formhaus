@@ -76,7 +76,7 @@ The banner renders between the fields and the Submit/Continue buttons.
 
 ## Async step validation errors
 
-When using `onStepValidate`, returned errors display on the current step — same as sync validation errors. Errors for hidden or non-existent fields are surfaced as top-level errors (banner above the buttons).
+When using `onStepValidate`, returned errors display on the current step — same as sync validation errors. Errors for hidden or non-existent fields show as top-level errors (banner above the buttons).
 
 See [Async Step Validation](/guide/steps#async-step-validation) for setup.
 
