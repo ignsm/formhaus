@@ -244,6 +244,8 @@ export class FormEngine {
       }
 
       if (result && Object.keys(result).length > 0) {
+        this.errors = {};
+        this.topLevelErrors = [];
         for (const [key, message] of Object.entries(result)) {
           const field = this._allFields.find((f) => f.key === key);
           if (field && isVisible(field, this.values)) {
