@@ -10,6 +10,7 @@ export default defineConfig({
       formats: ['es'],
       fileName: 'index',
     },
+    sourcemap: true,
     rollupOptions: {
       external: ['vue', '@formhaus/core'],
     },
