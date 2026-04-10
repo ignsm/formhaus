@@ -1,12 +1,12 @@
 {
   "name": "@formhaus/react",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "React components for Formhaus forms. Define a form once in JSON, render with native HTML or your own components.",
   "type": "module",
   "sideEffects": false,
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
+    "test:watch": "vitest",
     "test:resolve": "node --input-type=module -e \"import('./dist/index.js').then(m => { if (!m.FormRenderer) process.exit(1); console.log('ESM resolve OK'); })\"",
     "clean": "rm -rf dist"
   },
@@ -42,7 +43,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ignsm/formhaus.git",
+    "url": "git+https://github.com/ignsm/formhaus.git",
     "directory": "packages/react"
   }
 }

@@ -4,23 +4,22 @@
 
 ### `@formhaus/core`
 
-- New `onStepValidate` option and `nextStepAsync()` method for async step validation (e.g. server-side checks between steps). Exposes `stepValidating` state, `StepValidateFn` type, and routes top-level errors through `topLevelErrors`.
+- New `onStepValidate` option runs an async validator between steps. `nextStepAsync()` awaits it. Exposes `stepValidating` and the `StepValidateFn` type.
 
 ### `@formhaus/react`
 
-- `FormRenderer` accepts `onStepValidate`; Continue button shows loading during async validation.
+- `FormRenderer` accepts `onStepValidate`. Continue button shows a loading state while the validator runs.
 
 ### `@formhaus/vue`
 
-- `FormRenderer` accepts `onStepValidate`; `useFormEngine` exposes `stepValidating`.
+- `FormRenderer` accepts `onStepValidate`. `useFormEngine` now returns `stepValidating`.
 
-### Build
+### Packaging
 
-- `@formhaus/core` and `@formhaus/react` now ship as single bundled ESM via `tsup` instead of `tsc` directory output. Sizes: core 2.87 KB gzipped, react 3.15 KB gzipped.
-- `"sideEffects": false` on core and react, `"sideEffects": ["**/*.vue", "**/*.css"]` on vue.
-- Reordered `exports` field so `types` comes before `import`.
-- New `test:resolve` script in core and react runs built `dist/index.js` through Node's strict ESM resolver in CI.
-- Dropped "JSON-schema-driven" wording from package descriptions and removed `json-schema` from core keywords.
+- **Breaking:** ESM-only. Dropped legacy `main` and `module` fields. Minimum Node is 18.
+- Fixed `@formhaus/vue` type resolution under `moduleResolution: "node16"` and `"nodenext"`.
+- `@formhaus/core` and `@formhaus/react` down to 2.87 KB and 3.15 KB gzipped.
+- `sideEffects: false` on core, react, and vue.
 
 ## 0.3.0 - 2026-04-07
 
