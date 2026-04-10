@@ -3,21 +3,23 @@
   "version": "0.3.0",
   "description": "React components for Formhaus forms. Define a form once in JSON, render with native HTML or your own components.",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "test": "vitest run",
+    "test:resolve": "node --input-type=module -e \"import('./dist/index.js').then(m => { if (!m.FormRenderer) process.exit(1); console.log('ESM resolve OK'); })\"",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -33,6 +35,7 @@
     "jsdom": "^29.0.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "tsup": "^8.5.1",
     "typescript": "^5.7.3",
     "vitest": "^4.1.3"
   },
