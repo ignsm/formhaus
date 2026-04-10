@@ -24,4 +24,6 @@ jobs:
 
       - run: pnpm build
 
+      - run: pnpm --filter @formhaus/core --filter @formhaus/react run test:resolve
+
       - run: pnpm test

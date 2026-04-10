@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.1 - 2026-04-10
+
+### Build
+
+- `@formhaus/core` and `@formhaus/react` now build to a single bundled ESM file via `tsup` instead of `tsc` directory output. The previous `tsc` output used extension-less relative imports that broke under strict Node ESM resolution — Bundlephobia couldn't follow the re-exports and was displaying ~500 bytes for `@formhaus/core` instead of the real size. Current sizes: `@formhaus/core` 2.87 KB gzipped, `@formhaus/react` 3.15 KB gzipped.
+- Added `"sideEffects": false` to `@formhaus/core` and `@formhaus/react`, and `"sideEffects": ["**/*.vue", "**/*.css"]` to `@formhaus/vue` for better consumer tree-shaking.
+- Reordered `exports` field so `types` comes before `import`, matching TypeScript's resolution rules.
+- New `test:resolve` script in core and react runs the built `dist/index.js` through Node's strict ESM resolver in CI as a regression guard.
+
+### Docs
+
+- Dropped leftover "JSON-schema-driven" wording from the four package `description` fields and removed `json-schema` from `@formhaus/core` keywords, finishing the terminology cleanup started in 0.3.0.
+
 ## 0.3.0 - 2026-04-07
 
 ### Docs
