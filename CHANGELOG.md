@@ -2,6 +2,11 @@
 
 ## 0.3.1 - 2026-04-10
 
+### Breaking
+
+- `FormSchema` type renamed to `FormDefinition`. `validateSchema()` renamed to `validateDefinition()`.
+- `FormRenderer` prop `schema` renamed to `definition` (React and Vue).
+
 ### `@formhaus/core`
 
 - New `onStepValidate` option runs an async validator between steps. `nextStepAsync()` awaits it. Exposes `stepValidating` and the `StepValidateFn` type.
