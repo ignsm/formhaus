@@ -40,7 +40,7 @@ Or use `@formhaus/core` directly with any framework. See the [Svelte example](ht
 
 ### Define a form
 
-You can write the JSON by hand or use the [Claude skill](.claude/skills/formhaus-create-form/SKILL.md) to generate it from a text description.
+Write the JSON by hand, or use the [`/formhaus-create-form`](https://formhaus.dev/guide/formhaus-create-form.html) Claude Code skill to generate it from a text description, a CSV table, or a screenshot of an existing form.
 
 ```json
 {
@@ -191,7 +191,7 @@ Each field component receives the full `FormField` descriptor, the current value
 
 ## Figma Plugin
 
-`@formhaus/figma` generates styled form mockups on the Figma canvas from a form definition. Map your design system components to field types via a `componentMap`. Not on Figma Community yet, install as a local plugin via `packages/figma/manifest.json`.
+`@formhaus/figma` generates styled form mockups on the Figma canvas from a form definition. Map your design system components to field types via a `componentMap` that the [`/formhaus-figma-connect`](https://formhaus.dev/guide/formhaus-figma-connect.html) Claude Code skill can generate for you by scanning your Figma file. Not on Figma Community yet, install as a local plugin via `packages/figma/manifest.json`.
 
 ## Contributing
 

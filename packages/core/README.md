@@ -12,6 +12,10 @@ npm install @formhaus/core
 
 Requires Node ≥18.
 
+## Generating a definition
+
+Write the JSON by hand, or use the [`/formhaus-create-form`](https://formhaus.dev/guide/formhaus-create-form.html) Claude Code skill to generate it from a text description, a CSV table, or a screenshot of an existing form.
+
 ## Usage
 
 ```ts

@@ -22,7 +22,11 @@ The plugin creates a frame per step with all fields rendered as instances of you
 
 ## Component map
 
-To make the plugin use your own design system instead of the default component keys, go to the **Component Map** tab in the plugin UI and paste a JSON that maps form field types to your Figma component keys and text layer names. The plugin remembers this map across runs.
+The plugin ships with a default component map. To make it use your own design system, you need a JSON that maps each form field type (`text`, `select`, `checkbox`, etc.) to a Figma component key in your library.
+
+Writing that map by hand means digging through the Figma API for component keys. Instead, use the **[`/formhaus-figma-connect`](https://formhaus.dev/guide/formhaus-figma-connect.html) Claude skill**: it scans your Figma design system via MCP, auto-detects form components, shows screenshots for confirmation, and generates the full `componentMap` JSON. Copy the output, open the plugin's **Component Map** tab, paste, save. The plugin remembers the map across runs.
+
+If you don't use Claude Code, the full `ComponentMap` TypeScript interface lives in [`packages/figma/src/constants.ts`](https://github.com/ignsm/formhaus/blob/main/packages/figma/src/constants.ts). Paste a JSON that conforms to it.
 
 ## Docs
 
