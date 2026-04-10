@@ -3,6 +3,7 @@
   "version": "0.3.0",
   "description": "Vue 3 components for Formhaus forms. Define a form once in JSON, render with native HTML or your own components.",
   "type": "module",
+  "sideEffects": ["**/*.vue", "**/*.css"],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
