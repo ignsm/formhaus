@@ -4,15 +4,17 @@ import { Sandpack } from 'sandpack-vue3';
 import PlaygroundDefinitionPanel from './PlaygroundDefinitionPanel.vue';
 import { fixtures, fixtureNames } from './fixtures';
 import * as reactMui from './loaders/react-mui';
+import * as reactDefault from './loaders/react-default';
 import * as vueVuetify from './loaders/vue-vuetify';
 import * as vanillaSvelte from './loaders/vanilla-svelte';
 
-const props = defineProps<{ framework: 'react' | 'vue' | 'svelte' }>();
+const props = defineProps<{ framework: 'react' | 'vue' | 'svelte' | 'no-library' }>();
 
 const loaders = {
   react: reactMui,
   vue: vueVuetify,
   svelte: vanillaSvelte,
+  'no-library': reactDefault,
 } as const;
 
 const selected = ref(fixtureNames[0]);
@@ -24,6 +26,12 @@ const definitionJson = computed(() =>
 );
 
 const files = computed(() => loader.value.buildFiles(definitionJson.value));
+
+const customSetup = computed(() => {
+  const setup: Record<string, unknown> = { dependencies: loader.value.deps };
+  if (loader.value.entry) setup.entry = loader.value.entry;
+  return setup;
+});
 </script>
 
 <template>
@@ -46,7 +54,7 @@ const files = computed(() => loader.value.buildFiles(definitionJson.value));
         activeFile: loader.activeFile,
         visibleFiles: loader.visibleFiles,
       }"
-      :custom-setup="{ dependencies: loader.deps }"
+      :custom-setup="customSetup"
     />
     <PlaygroundDefinitionPanel :definition="fixtures[selected]" />
   </div>

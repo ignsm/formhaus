@@ -10,6 +10,7 @@ export function buildFiles(definitionJson: string) {
 }
 
 export const template = 'svelte' as const;
+export const entry: string | undefined = undefined;
 export const activeFile = 'App.svelte';
 export const visibleFiles = ['App.svelte'];
 export const editorHeight = 520;

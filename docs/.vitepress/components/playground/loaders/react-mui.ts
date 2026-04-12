@@ -30,6 +30,7 @@ export function buildFiles(definitionJson: string) {
 }
 
 export const template = 'react-ts' as const;
+export const entry: string | undefined = undefined;
 export const activeFile = '/App.tsx';
 export const visibleFiles = ['/App.tsx', '/componentMap.ts'];
 export const editorHeight = 480;

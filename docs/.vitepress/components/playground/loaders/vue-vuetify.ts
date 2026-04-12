@@ -33,6 +33,7 @@ export const template = 'vue3-ts' as const;
 export const activeFile = 'src/App.vue';
 export const visibleFiles = ['src/App.vue', 'src/componentMap.ts'];
 export const editorHeight = 480;
+export const entry = '/src/main.ts';
 export const deps: Record<string, string> = {
   '@formhaus/core': '0.3.1',
   '@formhaus/vue': '0.3.1',
