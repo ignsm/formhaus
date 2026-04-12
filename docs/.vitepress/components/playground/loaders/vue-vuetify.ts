@@ -1,5 +1,5 @@
 import AppVue from '../../../../../examples/vue-vuetify/src/App.vue?raw';
-import componentMapTs from '../../../../../examples/vue-vuetify/src/componentMap.ts?raw';
+import componentMapTs from '../../../../../examples/vue-vuetify/src/component-map.ts?raw';
 import mainTs from '../../../../../examples/vue-vuetify/src/main.ts?raw';
 import TextFieldVue from '../../../../../examples/vue-vuetify/src/fields/TextField.vue?raw';
 import SelectFieldVue from '../../../../../examples/vue-vuetify/src/fields/SelectField.vue?raw';
@@ -14,7 +14,7 @@ import StepProgressVue from '../../../../../examples/vue-vuetify/src/actions/Ste
 export function buildFiles(definitionJson: string) {
   return {
     'src/App.vue': AppVue,
-    'src/componentMap.ts': componentMapTs,
+    'src/component-map.ts': componentMapTs,
     'src/main.ts': mainTs,
     'src/fields/TextField.vue': TextFieldVue,
     'src/fields/SelectField.vue': SelectFieldVue,
@@ -31,7 +31,7 @@ export function buildFiles(definitionJson: string) {
 
 export const template = 'vue3-ts' as const;
 export const activeFile = 'src/App.vue';
-export const visibleFiles = ['src/App.vue', 'src/componentMap.ts'];
+export const visibleFiles = ['src/App.vue', 'src/component-map.ts'];
 export const editorHeight = 480;
 export const entry = '/src/main.ts';
 export const deps: Record<string, string> = {

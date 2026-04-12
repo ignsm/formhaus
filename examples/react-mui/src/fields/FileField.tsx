@@ -9,6 +9,11 @@ export function FileField({
   disabled,
   onChange,
 }: FieldComponentProps) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    onChange(files && files.length > 0 ? files[0] : null);
+  }
+
   return (
     <div style={{ marginTop: 16, marginBottom: 8 }}>
       <label style={{ display: 'block', marginBottom: 4, fontSize: 14, color: 'rgba(0,0,0,0.6)' }}>
@@ -21,10 +26,7 @@ export function FileField({
           type="file"
           accept={field.accept}
           hidden
-          onChange={(e) => {
-            const files = e.target.files;
-            onChange(files && files.length > 0 ? files[0] : null);
-          }}
+          onChange={handleChange}
         />
       </Button>
       {error && <FormHelperText error>{error}</FormHelperText>}

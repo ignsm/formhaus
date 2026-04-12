@@ -2,7 +2,7 @@ import { FormRenderer } from '@formhaus/react';
 import { Container, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { FormActions } from './actions/FormActions';
 import { StepProgress } from './actions/StepProgress';
-import { components } from './componentMap';
+import { components } from './component-map';
 import definition from './definition.json';
 
 const theme = createTheme();

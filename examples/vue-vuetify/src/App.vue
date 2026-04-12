@@ -1,6 +1,6 @@
 <script setup>
 import { FormRenderer } from '@formhaus/vue';
-import { components } from './componentMap';
+import { components } from './component-map';
 import FormActions from './actions/FormActions.vue';
 import StepProgress from './actions/StepProgress.vue';
 import definition from './definition.json';

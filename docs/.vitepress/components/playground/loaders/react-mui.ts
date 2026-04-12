@@ -1,5 +1,5 @@
 import AppTsx from '../../../../../examples/react-mui/src/App.tsx?raw';
-import componentMapTs from '../../../../../examples/react-mui/src/componentMap.ts?raw';
+import componentMapTs from '../../../../../examples/react-mui/src/component-map.ts?raw';
 import mainTsx from '../../../../../examples/react-mui/src/main.tsx?raw';
 import TextFieldTsx from '../../../../../examples/react-mui/src/fields/TextField.tsx?raw';
 import SelectFieldTsx from '../../../../../examples/react-mui/src/fields/SelectField.tsx?raw';
@@ -14,7 +14,7 @@ import StepProgressTsx from '../../../../../examples/react-mui/src/actions/StepP
 export function buildFiles(definitionJson: string) {
   return {
     '/App.tsx': AppTsx,
-    '/componentMap.ts': componentMapTs,
+    '/component-map.ts': componentMapTs,
     '/main.tsx': mainTsx,
     '/fields/TextField.tsx': TextFieldTsx,
     '/fields/SelectField.tsx': SelectFieldTsx,
@@ -32,7 +32,7 @@ export function buildFiles(definitionJson: string) {
 export const template = 'react-ts' as const;
 export const entry: string | undefined = undefined;
 export const activeFile = '/App.tsx';
-export const visibleFiles = ['/App.tsx', '/componentMap.ts'];
+export const visibleFiles = ['/App.tsx', '/component-map.ts'];
 export const editorHeight = 480;
 export const deps: Record<string, string> = {
   '@formhaus/core': '0.3.1',
