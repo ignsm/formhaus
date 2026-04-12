@@ -6,20 +6,29 @@ import { fixtures, fixtureNames } from './fixtures';
 import * as reactMui from './loaders/react-mui';
 import * as reactDefault from './loaders/react-default';
 import * as vueVuetify from './loaders/vue-vuetify';
+import * as vueDefault from './loaders/vue-default';
 import * as vanillaSvelte from './loaders/vanilla-svelte';
 
-const props = defineProps<{ framework: 'react' | 'vue' | 'svelte' | 'no-library' }>();
+const props = defineProps<{ framework: 'react' | 'vue' | 'svelte' }>();
 
-const loaders = {
-  react: reactMui,
-  vue: vueVuetify,
-  svelte: vanillaSvelte,
-  'no-library': reactDefault,
+type Variant = 'library' | 'no-library';
+
+const variants: Record<string, { library: string; noLibrary: string } | null> = {
+  react: { library: 'MUI', noLibrary: 'No library' },
+  vue: { library: 'Vuetify', noLibrary: 'No library' },
+  svelte: null,
+};
+
+const loaderMap = {
+  react: { library: reactMui, 'no-library': reactDefault },
+  vue: { library: vueVuetify, 'no-library': vueDefault },
+  svelte: { library: vanillaSvelte, 'no-library': vanillaSvelte },
 } as const;
 
+const variant = ref<Variant>('library');
 const selected = ref(fixtureNames[0]);
 
-const loader = computed(() => loaders[props.framework]);
+const loader = computed(() => loaderMap[props.framework][variant.value]);
 
 const definitionJson = computed(() =>
   JSON.stringify(fixtures[selected.value], null, 2),
@@ -32,10 +41,22 @@ const customSetup = computed(() => {
   if (loader.value.entry) setup.entry = loader.value.entry;
   return setup;
 });
+
+const variantConfig = computed(() => variants[props.framework]);
 </script>
 
 <template>
   <div>
+    <div v-if="variantConfig" class="fh-variant-toggle">
+      <button
+        :class="['fh-variant-btn', { active: variant === 'library' }]"
+        @click="variant = 'library'"
+      >{{ variantConfig.library }}</button>
+      <button
+        :class="['fh-variant-btn', { active: variant === 'no-library' }]"
+        @click="variant = 'no-library'"
+      >{{ variantConfig.noLibrary }}</button>
+    </div>
     <div class="fh-playground-tabs">
       <button
         v-for="name in fixtureNames"
@@ -45,7 +66,7 @@ const customSetup = computed(() => {
       >{{ name }}</button>
     </div>
     <Sandpack
-      :key="framework + '-' + selected"
+      :key="framework + '-' + variant + '-' + selected"
       :template="loader.template"
       :files="files"
       :options="{
@@ -61,6 +82,35 @@ const customSetup = computed(() => {
 </template>
 
 <style scoped>
+.fh-variant-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 10px;
+}
+.fh-variant-btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--vp-c-border);
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+}
+.fh-variant-btn:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.fh-variant-btn:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: none;
+}
+.fh-variant-btn.active {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+.fh-variant-btn.active + .fh-variant-btn {
+  border-left: none;
+}
 .fh-playground-tabs {
   display: flex;
   gap: 6px;
