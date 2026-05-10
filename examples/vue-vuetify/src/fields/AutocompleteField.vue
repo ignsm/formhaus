@@ -1,5 +1,5 @@
 <script setup>
-const props = defineProps({
+defineProps({
   field: { type: Object, required: true },
   value: { default: undefined },
   error: { type: String, default: undefined },
@@ -8,29 +8,22 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:value', 'blur', 'focus']);
-
-const inputType =
-  props.field.type === 'email' ? 'email'
-  : props.field.type === 'password' ? 'password'
-  : props.field.type === 'number' ? 'number'
-  : props.field.type === 'date' ? 'date'
-  : props.field.type === 'datetime' ? 'datetime-local'
-  : props.field.type === 'phone' ? 'tel'
-  : 'text';
 </script>
 
 <template>
-  <v-text-field
+  <v-autocomplete
     :id="field.key"
     :label="field.label"
-    :type="inputType"
-    :model-value="value != null ? String(value) : ''"
-    :placeholder="field.placeholder"
+    :model-value="value ?? ''"
+    :items="field.options ?? []"
+    item-title="label"
+    item-value="value"
+    :placeholder="field.placeholder || 'Type to filter…'"
     :error-messages="error ? [error] : []"
     :hint="field.helperText"
     :persistent-hint="!!field.helperText"
     :disabled="disabled || loading"
-    @update:model-value="(v) => emit('update:value', field.type === 'number' ? Number(v) : v)"
+    @update:model-value="(v) => emit('update:value', v ?? '')"
     @blur="emit('blur')"
     @focus="emit('focus')"
   />
