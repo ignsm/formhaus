@@ -170,6 +170,38 @@ describe('FormEngine validation and errors', () => {
     expect(engine.values.routing).toBeUndefined();
   });
 
+  it('clears values for fields hidden by the initial values', () => {
+    const engine = new FormEngine(conditionalDefinition, { country: 'MX', routing: 'STALE' });
+    expect(engine.values.routing).toBeUndefined();
+
+    engine.setValue('country', 'US');
+    expect(engine.values.routing).toBeUndefined();
+  });
+
+  it('clears values in steps hidden by the reset values', () => {
+    const definition: FormDefinition = {
+      id: 'hidden-step-reset',
+      title: 'Hidden step reset',
+      submit: { label: 'Submit' },
+      steps: [
+        { id: 'main', title: 'Main', fields: [{ key: 'accountType', type: 'text', label: 'Type' }] },
+        {
+          id: 'business',
+          title: 'Business',
+          fields: [
+            { key: 'taxId', type: 'text', label: 'Tax ID' },
+            { key: 'vat', type: 'text', label: 'VAT' },
+          ],
+          show: [{ field: 'accountType', eq: 'business' }],
+        },
+      ],
+    };
+    const engine = new FormEngine(definition);
+    engine.reset({ accountType: 'personal', taxId: 'STALE', vat: 'STALE' });
+    expect(engine.values.taxId).toBeUndefined();
+    expect(engine.values.vat).toBeUndefined();
+  });
+
   it('sets and clears field loading state', () => {
     const engine = new FormEngine(basicDefinition);
     engine.setFieldLoading('name', true);

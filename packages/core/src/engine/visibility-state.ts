@@ -17,7 +17,6 @@ export class VisibilityState {
   private fieldDependents = new Map<string, Set<FormField>>();
   private stepDependents = new Map<string, Set<FormStep>>();
   private stepByFieldKey = new Map<string, FormStep>();
-  private pendingKeys: Set<string>;
   private visibilityDirty = true;
   private canGoNextDirty = true;
   private cache: VisibilityCache = {
@@ -34,10 +33,6 @@ export class VisibilityState {
       for (const field of step.fields) this.stepByFieldKey.set(field.key, step);
     }
     this.buildIndexes();
-    this.pendingKeys = new Set([
-      ...this.fieldDependents.keys(),
-      ...this.stepDependents.keys(),
-    ]);
   }
 
   markChanged(structureChanged: boolean, valuesChanged: boolean): void {
@@ -93,14 +88,10 @@ export class VisibilityState {
     values: Record<string, unknown>,
     errors: Record<string, string>,
   ): Set<string> {
-    const seed = new Set(this.pendingKeys);
-    seed.add(changedKey);
-    this.pendingKeys.clear();
-    return this.drainQueue(seed, values, errors);
+    return this.drainQueue(new Set([changedKey]), values, errors);
   }
 
   reconcileHidden(values: Record<string, unknown>, errors: Record<string, string>): Set<string> {
-    this.pendingKeys.clear();
     const seed = new Set([...this.fieldDependents.keys(), ...this.stepDependents.keys()]);
     return this.drainQueue(seed, values, errors);
   }

@@ -43,6 +43,7 @@ export class FormEngine {
     this.onStepValidate = options?.onStepValidate;
     this.visibility = new VisibilityState(definition);
     this.values = createValues(this.visibility.allFields, initialValues);
+    this.visibility.reconcileHidden(this.values, this.errors);
   }
 
   get isMultiStep(): boolean {
