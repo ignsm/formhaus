@@ -450,6 +450,7 @@ export class FormEngine {
     this.errors = {};
     this.topLevelErrors = [];
     this.currentStepIndex = 0;
+    this._reconcileHiddenFields();
     const changedValues = this._getChangedKeys(previousValues, this.values);
     const changedFields = new Set([
       ...changedValues,
@@ -503,8 +504,20 @@ export class FormEngine {
   }
 
   private _cascadeClearHiddenFields(changedKey: string): Set<string> {
-    const queue = [...this._pendingVisibilityKeys];
+    const seed = new Set(this._pendingVisibilityKeys);
+    seed.add(changedKey);
     this._pendingVisibilityKeys.clear();
+    return this._drainVisibilityQueue(seed);
+  }
+
+  private _reconcileHiddenFields(): Set<string> {
+    this._pendingVisibilityKeys.clear();
+    const seed = new Set([...this._fieldDependents.keys(), ...this._stepDependents.keys()]);
+    return this._drainVisibilityQueue(seed);
+  }
+
+  private _drainVisibilityQueue(seed: Set<string>): Set<string> {
+    const queue = [...seed];
     const queued = new Set(queue);
     const cleared = new Set<string>();
 
@@ -513,8 +526,6 @@ export class FormEngine {
       queued.add(key);
       queue.push(key);
     };
-
-    enqueue(changedKey);
 
     for (let index = 0; index < queue.length; index++) {
       const key = queue[index];

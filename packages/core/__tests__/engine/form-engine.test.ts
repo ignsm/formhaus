@@ -345,6 +345,15 @@ describe('FormEngine', () => {
       engine.reset({ name: 'new' });
       expect(engine.values.name).toBe('new');
     });
+
+    it('clears values for fields hidden by the reset values', () => {
+      const engine = new FormEngine(conditionalDefinition);
+      engine.reset({ country: 'MX', routing: 'STALE' });
+      expect(engine.values.routing).toBeUndefined();
+
+      engine.setValue('country', 'US');
+      expect(engine.values.routing).toBeUndefined();
+    });
   });
 
   describe('setFieldLoading', () => {
