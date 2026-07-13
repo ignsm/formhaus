@@ -33,6 +33,15 @@ describe('FormEngine async step validation', () => {
     expect(engine.currentStep?.id).toBe('personal');
   });
 
+  it('clears validating state before notifying about async errors', async () => {
+    const onStepValidate: StepValidateFn = async () => ({ name: 'Already taken' });
+    const engine = new FormEngine(multiStepDefinition, { name: 'John' }, { onStepValidate });
+    const seen: boolean[] = [];
+    engine.subscribe(() => seen.push(engine.stepValidating));
+    await engine.nextStepAsync();
+    expect(seen.at(-1)).toBe(false);
+  });
+
   it.each([null, undefined])('allows transition for %s', async (validationResult) => {
     const onStepValidate: StepValidateFn = async () => validationResult;
     const engine = new FormEngine(multiStepDefinition, { name: 'John' }, { onStepValidate });

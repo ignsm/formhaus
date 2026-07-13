@@ -47,8 +47,8 @@ export async function nextStepAsync(engine: EngineInternals): Promise<boolean> {
     if (engine.validationEpoch !== validationEpoch) return false;
     if (engine.currentStepIndex !== stepIndexBefore) return finishValidation(engine, false);
     if (result && Object.keys(result).length > 0) {
-      applyValidationErrors(engine, result);
       engine.stepValidating = false;
+      applyValidationErrors(engine, result);
       return false;
     }
     return finishValidation(engine, advanceAfterValidation(engine));
