@@ -60,6 +60,30 @@ describe('FormEngine validation and errors', () => {
     expect(engine.topLevelErrors).toContain('Invalid CLABE');
   });
 
+  it('surfaces errors from hidden steps as top-level errors', () => {
+    const definition: FormDefinition = {
+      id: 'hidden-step-errors',
+      title: 'Hidden step errors',
+      submit: { label: 'Submit' },
+      steps: [
+        { id: 'main', title: 'Main', fields: [{ key: 'kind', type: 'text', label: 'Kind' }] },
+        {
+          id: 'business',
+          title: 'Business',
+          show: [{ field: 'kind', eq: 'business' }],
+          fields: [{ key: 'company', type: 'text', label: 'Company' }],
+        },
+      ],
+    };
+    const engine = new FormEngine(definition, { kind: 'personal' });
+
+    engine.setErrors({ company: 'Invalid company' });
+
+    expect(engine.errors.company).toBeUndefined();
+    expect(engine.topLevelErrors).toEqual(['Invalid company']);
+    expect(engine.currentStep?.id).toBe('main');
+  });
+
   it('replaces previous errors instead of merging', () => {
     const engine = new FormEngine(basicDefinition);
     engine.setErrors({ name: 'First error' });
@@ -123,6 +147,13 @@ describe('FormEngine validation and errors', () => {
     expect(engine.fieldLoading.name).toBe(true);
     engine.setFieldLoading('name', false);
     expect(engine.fieldLoading.name).toBeUndefined();
+  });
+
+  it('clears field loading state on reset', () => {
+    const engine = new FormEngine(basicDefinition);
+    engine.setFieldLoading('name', true);
+    engine.reset();
+    expect(engine.fieldLoading).toEqual({});
   });
 
   it('uses validators passed to the constructor', () => {

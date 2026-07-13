@@ -12,6 +12,11 @@ function getAllFields(definition: FormDefinition): FormField[] {
   return definition.fields ?? [];
 }
 
+function addDependencies(graph: Map<string, string[]>, key: string, dependencies: string[]): void {
+  if (dependencies.length === 0) return;
+  graph.set(key, [...(graph.get(key) ?? []), ...dependencies]);
+}
+
 function detectCycles(graph: Map<string, string[]>): string[][] {
   const state = new Map<string, 'visiting' | 'visited'>();
   const cycles: string[][] = [];
@@ -96,8 +101,20 @@ export function validateDefinition(definition: FormDefinition): string[] {
       }
     }
 
-    if (deps.length > 0) {
-      graph.set(field.key, deps);
+    addDependencies(graph, field.key, deps);
+  }
+
+  for (const step of definition.steps ?? []) {
+    const deps = [...extractDependencies(step.show), ...extractDependencies(step.showAny)];
+    for (const dep of deps) {
+      if (!fieldKeys.has(dep)) {
+        warnings.push(
+          `Step "${step.id}" has show condition referencing non-existent field "${dep}"`,
+        );
+      }
+    }
+    for (const field of step.fields) {
+      addDependencies(graph, field.key, deps);
     }
   }
 

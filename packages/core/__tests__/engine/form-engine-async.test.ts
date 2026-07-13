@@ -92,6 +92,22 @@ describe('FormEngine async step validation', () => {
     expect(engine.currentStep?.id).toBe('personal');
   });
 
+  it('discards a result after the form is reset', async () => {
+    let resolve!: (value: null) => void;
+    const onStepValidate: StepValidateFn = () => new Promise((done) => {
+      resolve = done;
+    });
+    const engine = new FormEngine(multiStepDefinition, { name: 'John' }, { onStepValidate });
+    const pending = engine.nextStepAsync();
+
+    engine.reset({ name: 'Reset name' });
+    resolve(null);
+
+    await expect(pending).resolves.toBe(false);
+    expect(engine.currentStep?.id).toBe('personal');
+    expect(engine.stepValidating).toBe(false);
+  });
+
   it('routes errors for hidden fields to top-level errors', async () => {
     const onStepValidate: StepValidateFn = async () => ({
       name: 'Server error',

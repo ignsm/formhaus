@@ -23,6 +23,7 @@ export class FormEngine {
   currentStepIndex = 0;
   fieldLoading: Record<string, boolean> = {};
   stepValidating = false;
+  private validationEpoch = 0;
 
   private readonly validators: Record<string, ValidatorFn>;
   private readonly onStepValidate?: StepValidateFn;

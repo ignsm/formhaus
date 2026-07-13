@@ -81,14 +81,19 @@ export function getSubmitValues(engine: EngineInternals): Record<string, unknown
 export function resetEngine(engine: EngineInternals, values?: Record<string, unknown>): void {
   const previousValues = engine.values;
   const previousErrors = engine.errors;
+  const loadingFields = Object.keys(engine.fieldLoading);
+  engine.validationEpoch++;
   engine.values = createValues(engine.visibility.allFields, values);
   engine.errors = {};
   engine.topLevelErrors = [];
+  engine.fieldLoading = {};
+  engine.stepValidating = false;
   engine.currentStepIndex = 0;
   const changedValues = getChangedKeys(previousValues, engine.values);
   const changedFields = new Set([
     ...changedValues,
     ...getChangedKeys(previousErrors, engine.errors),
+    ...loadingFields,
   ]);
   engine.notify({
     fieldKeys: changedFields,

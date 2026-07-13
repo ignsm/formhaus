@@ -39,10 +39,12 @@ export async function nextStepAsync(engine: EngineInternals): Promise<boolean> {
   if (!engine.onStepValidate) return advance(engine);
 
   const stepIndexBefore = engine.currentStepIndex;
+  const validationEpoch = engine.validationEpoch;
   engine.stepValidating = true;
   engine.notify();
   try {
     const result = await engine.onStepValidate(step.id, engine.values);
+    if (engine.validationEpoch !== validationEpoch) return false;
     if (engine.currentStepIndex !== stepIndexBefore) return finishValidation(engine, false);
     if (result && Object.keys(result).length > 0) {
       applyValidationErrors(engine, result);
@@ -51,6 +53,7 @@ export async function nextStepAsync(engine: EngineInternals): Promise<boolean> {
     }
     return finishValidation(engine, advanceAfterValidation(engine));
   } catch (error) {
+    if (engine.validationEpoch !== validationEpoch) return false;
     engine.stepValidating = false;
     engine.notify();
     throw error;

@@ -16,6 +16,7 @@ export interface EngineInternals {
   currentStepIndex: number;
   fieldLoading: Record<string, boolean>;
   stepValidating: boolean;
+  validationEpoch: number;
   readonly validators: Record<string, ValidatorFn>;
   readonly onStepValidate?: StepValidateFn;
   readonly visibility: VisibilityState;

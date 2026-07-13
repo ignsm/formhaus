@@ -16,6 +16,7 @@ export class VisibilityState {
 
   private fieldDependents = new Map<string, Set<FormField>>();
   private stepDependents = new Map<string, Set<FormStep>>();
+  private stepByFieldKey = new Map<string, FormStep>();
   private pendingKeys: Set<string>;
   private visibilityDirty = true;
   private canGoNextDirty = true;
@@ -29,6 +30,9 @@ export class VisibilityState {
   constructor(private definition: FormDefinition) {
     this.allFields = this.computeAllFields();
     this.fieldByKey = new Map(this.allFields.map((field) => [field.key, field]));
+    for (const step of definition.steps ?? []) {
+      for (const field of step.fields) this.stepByFieldKey.set(field.key, step);
+    }
     this.buildIndexes();
     this.pendingKeys = new Set([
       ...this.fieldDependents.keys(),
@@ -111,7 +115,9 @@ export class VisibilityState {
 
   isFieldVisible(key: string, values: Record<string, unknown>): boolean {
     const field = this.fieldByKey.get(key);
-    return field !== undefined && isVisible(field, values);
+    if (!field || !isVisible(field, values)) return false;
+    const step = this.stepByFieldKey.get(key);
+    return !step || isStepVisible(step, values);
   }
 
   getVisibleFieldKeys(values: Record<string, unknown>, stepIndex: number): Set<string> {
