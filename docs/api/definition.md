@@ -9,7 +9,7 @@ Top-level structure. Use `fields` (single-step) or `steps` (multi-step), never b
 ```ts
 interface FormDefinition {
   id: string;            // Unique form identifier
-  title: string;         // Form title (rendered by the adapter or parent)
+  title: string;         // Form title for host UI and Figma output
   submit: FormAction;    // Submit button config
   cancel?: FormAction;   // Cancel button (optional)
   fields?: FormField[];  // Single-step form
@@ -151,14 +151,9 @@ type StepValidateFn = (
 ) => Promise<Record<string, string> | null | void>;
 ```
 
-## FormEngine (async)
+`FormRenderer` does not render the form title. Use it in your page heading or other host UI. The Figma plugin uses it for frame names and headings.
 
-| Property / Method | Type | Description |
-|---|---|---|
-| `stepValidating` | `boolean` | `true` while `onStepValidate` is running |
-| `nextStepAsync()` | `Promise<boolean>` | Async version of `nextStep()`. Runs sync validation, then `onStepValidate`, then advances |
-
-See [Using the engine directly](/guide/async-validation#using-the-engine-directly) for examples.
+For runtime state and methods, see the [FormEngine reference](/api/form-engine).
 
 ## Minimal example
 

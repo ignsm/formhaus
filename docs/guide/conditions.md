@@ -83,9 +83,9 @@ Show a field when country is US AND method is credit or debit:
 
 ## Hidden field cleanup
 
-When a field becomes hidden, its value is cleared from engine state. You never submit data the user can't see.
+Hidden field values are removed during engine construction, after `reset()`, and whenever a dependency changes. Hidden values are not submitted.
 
-If field A hides field B, and field B's value was used by field C's show condition, C gets re-evaluated too. Cascades until stable (max 50 iterations).
+If field A hides field B, and field B controls field C, the engine checks C next. It continues until no more fields or steps become hidden, with no fixed depth limit.
 
 ## Conditional steps
 
