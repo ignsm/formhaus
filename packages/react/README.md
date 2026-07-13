@@ -44,7 +44,7 @@ function MyInput({ field, value, error, onChange, onBlur }: FieldComponentProps)
     <div>
       <label>{field.label}</label>
       <input
-        value={value as string}
+        value={(value as string) ?? ''}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
       />

@@ -104,9 +104,9 @@ Steps support `show`/`showAny` too. Hidden steps are skipped during navigation.
 
 If the user selects "personal" account type, this entire step disappears and the step counter updates.
 
-## Conditional button disabled
+## Conditional submit button
 
-The `submit` and `cancel` actions accept `disabled` conditions using the same syntax:
+The default adapters evaluate `disabled` conditions on the top-level `submit` action:
 
 ```json
 {
@@ -118,6 +118,8 @@ The `submit` and `cancel` actions accept `disabled` conditions using the same sy
 ```
 
 The submit button stays disabled until `termsAccepted` is `true`. All conditions must pass (AND logic) for the button to be disabled.
+
+Other actions also expose `disabled` to custom action components, but the built-in adapters do not evaluate it for next, back, or cancel buttons.
 
 ## Next steps
 

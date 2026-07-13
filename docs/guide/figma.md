@@ -4,18 +4,19 @@ The Formhaus Figma plugin renders form mockups from form definitions using your 
 
 ## Install
 
-1. Open the `packages/figma` folder in the repo
-2. In Figma, go to **Plugins > Development > Import plugin from manifest**
-3. Select `packages/figma/manifest.json`
-4. The plugin appears under **Plugins > Development > Formhaus**
+1. Clone the repo and install dependencies
+2. Build the plugin
 
-::: tip Building from source
 ```bash
-cd packages/figma
-pnpm build
+pnpm install
+pnpm --filter @formhaus/figma build
 ```
-This compiles `code.ts` into the bundled plugin code that Figma runs.
-:::
+
+3. In Figma, go to **Plugins > Development > Import plugin from manifest**
+4. Select `packages/figma/manifest.json`
+5. The plugin appears under **Plugins > Development > Formhaus**
+
+The build bundles the plugin code and its UI into `packages/figma/dist`.
 
 ## Usage
 
