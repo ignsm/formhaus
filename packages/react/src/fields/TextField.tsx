@@ -17,7 +17,7 @@ export function TextField({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
-    onChange(field.type === 'number' ? Number(v) : v);
+    onChange(field.type === 'number' && v !== '' ? Number(v) : v);
   };
 
   const inputType =
