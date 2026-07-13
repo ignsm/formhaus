@@ -89,6 +89,7 @@ export function resetEngine(engine: EngineInternals, values?: Record<string, unk
   engine.fieldLoading = {};
   engine.stepValidating = false;
   engine.currentStepIndex = 0;
+  engine.visibility.reconcileHidden(engine.values, engine.errors);
   const changedValues = getChangedKeys(previousValues, engine.values);
   const changedFields = new Set([
     ...changedValues,

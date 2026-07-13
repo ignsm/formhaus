@@ -38,6 +38,26 @@ describe('FormEngine validation and errors', () => {
     expect(engine.errors.name).toBeUndefined();
   });
 
+  it('does not validate a field whose containing step is hidden', () => {
+    const definition: FormDefinition = {
+      id: 'hidden-step',
+      title: 'Hidden step',
+      submit: { label: 'Submit' },
+      steps: [
+        { id: 'main', title: 'Main', fields: [{ key: 'accountType', type: 'text', label: 'Account type' }] },
+        {
+          id: 'business',
+          title: 'Business',
+          fields: [{ key: 'taxId', type: 'text', label: 'Tax ID', validation: { required: true } }],
+          show: [{ field: 'accountType', eq: 'business' }],
+        },
+      ],
+    };
+    const engine = new FormEngine(definition);
+    expect(engine.validateField('taxId')).toBeNull();
+    expect(engine.errors.taxId).toBeUndefined();
+  });
+
   it('returns only visible field values for submission', () => {
     const engine = new FormEngine(conditionalDefinition, {
       country: 'MX',
@@ -139,6 +159,15 @@ describe('FormEngine validation and errors', () => {
     const engine = new FormEngine(basicDefinition, { name: 'modified' });
     engine.reset({ name: 'new' });
     expect(engine.values.name).toBe('new');
+  });
+
+  it('clears values for fields hidden by the reset values', () => {
+    const engine = new FormEngine(conditionalDefinition);
+    engine.reset({ country: 'MX', routing: 'STALE' });
+    expect(engine.values.routing).toBeUndefined();
+
+    engine.setValue('country', 'US');
+    expect(engine.values.routing).toBeUndefined();
   });
 
   it('sets and clears field loading state', () => {

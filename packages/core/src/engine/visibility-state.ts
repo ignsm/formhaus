@@ -93,8 +93,24 @@ export class VisibilityState {
     values: Record<string, unknown>,
     errors: Record<string, string>,
   ): Set<string> {
-    const queue = [...this.pendingKeys];
+    const seed = new Set(this.pendingKeys);
+    seed.add(changedKey);
     this.pendingKeys.clear();
+    return this.drainQueue(seed, values, errors);
+  }
+
+  reconcileHidden(values: Record<string, unknown>, errors: Record<string, string>): Set<string> {
+    this.pendingKeys.clear();
+    const seed = new Set([...this.fieldDependents.keys(), ...this.stepDependents.keys()]);
+    return this.drainQueue(seed, values, errors);
+  }
+
+  private drainQueue(
+    seed: Set<string>,
+    values: Record<string, unknown>,
+    errors: Record<string, string>,
+  ): Set<string> {
+    const queue = [...seed];
     const queued = new Set(queue);
     const cleared = new Set<string>();
     const enqueue = (key: string) => {
@@ -102,7 +118,6 @@ export class VisibilityState {
       queued.add(key);
       queue.push(key);
     };
-    enqueue(changedKey);
 
     for (let index = 0; index < queue.length; index++) {
       const key = queue[index];
