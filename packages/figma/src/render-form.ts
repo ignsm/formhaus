@@ -23,7 +23,7 @@ export async function renderForm(definition: FormDefinition): Promise<FrameNode[
   try {
     const [fieldsComponentSet, buttonComponentSet] = await loadResources();
     const steps = getSteps(definition) as RenderableStep[];
-    let cursorX = getNextFrameX();
+    let cursorX = nextFrameX(figma.currentPage.children, existingFrames);
     for (let index = 0; index < steps.length; index++) {
       const frame = await renderStep(
         definition,
@@ -62,9 +62,14 @@ function findExistingFrames(definitionId: string): FrameNode[] {
   ));
 }
 
-function getNextFrameX(): number {
-  const rightEdge = figma.currentPage.children.reduce((maximum, node) => {
-    const width = 'width' in node ? node.width : 0;
+export function nextFrameX(
+  children: readonly { x: number; width?: number }[],
+  exclude: Iterable<{ x: number }>,
+): number {
+  const excluded = new Set(exclude);
+  const rightEdge = children.reduce((maximum, node) => {
+    if (excluded.has(node)) return maximum;
+    const width = 'width' in node ? node.width ?? 0 : 0;
     return Math.max(maximum, node.x + width);
   }, 0);
   return rightEdge + 100;

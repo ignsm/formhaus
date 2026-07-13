@@ -1,6 +1,6 @@
 import type { FormDefinition } from '@formhaus/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderForm } from '../render-form';
+import { nextFrameX, renderForm } from '../render-form';
 
 const definition: FormDefinition = {
   id: 'existing-form',
@@ -30,5 +30,18 @@ describe('renderForm', () => {
     await expect(renderForm(definition)).rejects.toThrow('Import failed');
 
     expect(remove).not.toHaveBeenCalled();
+  });
+});
+
+describe('nextFrameX', () => {
+  it('places the new form past unrelated content', () => {
+    const children = [{ x: 0, width: 300 }, { x: 500, width: 200 }];
+    expect(nextFrameX(children, [])).toBe(800);
+  });
+
+  it('ignores the frames about to be removed so position stays stable on regeneration', () => {
+    const oldForm = { x: 0, width: 300 };
+    const children = [oldForm];
+    expect(nextFrameX(children, [oldForm])).toBe(100);
   });
 });
