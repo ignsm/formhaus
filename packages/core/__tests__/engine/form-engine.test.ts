@@ -134,6 +134,46 @@ describe('FormEngine', () => {
       expect(keys).toContain('clabe');
       expect(keys).not.toContain('routing');
     });
+
+    it('does not validate the current step until canGoNext is read', () => {
+      const validator = vi.fn(() => null);
+      const definition: FormDefinition = {
+        id: 'lazy-validation',
+        title: 'Lazy validation',
+        submit: { label: 'Submit' },
+        steps: [
+          {
+            id: 'details',
+            title: 'Details',
+            fields: [
+              {
+                key: 'code',
+                type: 'text',
+                label: 'Code',
+                validation: { validator: 'checkCode' },
+              },
+            ],
+          },
+        ],
+      };
+      const engine = new FormEngine(definition, { code: 'first' }, {
+        validators: { checkCode: validator },
+      });
+
+      expect(engine.visibleFields).toHaveLength(1);
+      expect(validator).not.toHaveBeenCalled();
+
+      expect(engine.canGoNext).toBe(true);
+      expect(engine.canGoNext).toBe(true);
+      expect(validator).toHaveBeenCalledOnce();
+
+      engine.setValue('code', 'second');
+      expect(engine.visibleFields).toHaveLength(1);
+      expect(validator).toHaveBeenCalledOnce();
+
+      expect(engine.canGoNext).toBe(true);
+      expect(validator).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('validate', () => {

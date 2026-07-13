@@ -31,7 +31,8 @@ export class FormEngine {
   private _validators: Record<string, ValidatorFn>;
   private _onStepValidate?: StepValidateFn;
   private _allFields: FormField[];
-  private _isDirty: boolean;
+  private _isVisibilityDirty: boolean;
+  private _isCanGoNextDirty: boolean;
   private _cache: {
     visibleSteps: FormStep[];
     currentStep: FormStep | null;
@@ -69,7 +70,8 @@ export class FormEngine {
     this.stepValidating = false;
 
     this._allFields = this._computeAllFields();
-    this._isDirty = true;
+    this._isVisibilityDirty = true;
+    this._isCanGoNextDirty = true;
     this._cache = { visibleSteps: [], currentStep: null, visibleFields: [], canGoNext: false };
 
     // Initialize values with defaults, then overlay initialValues
@@ -104,17 +106,17 @@ export class FormEngine {
   }
 
   get visibleSteps(): FormStep[] {
-    this._recomputeIfDirty();
+    this._recomputeVisibilityIfDirty();
     return this._cache.visibleSteps;
   }
 
   get currentStep(): FormStep | null {
-    this._recomputeIfDirty();
+    this._recomputeVisibilityIfDirty();
     return this._cache.currentStep;
   }
 
   get visibleFields(): FormField[] {
-    this._recomputeIfDirty();
+    this._recomputeVisibilityIfDirty();
     return this._cache.visibleFields;
   }
 
@@ -127,7 +129,7 @@ export class FormEngine {
   }
 
   get canGoNext(): boolean {
-    this._recomputeIfDirty();
+    this._recomputeCanGoNextIfDirty();
     return this._cache.canGoNext;
   }
 
@@ -413,15 +415,14 @@ export class FormEngine {
     }
   }
 
-  private _recomputeIfDirty(): void {
-    if (!this._isDirty) return;
-    this._isDirty = false;
+  private _recomputeVisibilityIfDirty(): void {
+    if (!this._isVisibilityDirty) return;
+    this._isVisibilityDirty = false;
 
     if (!this.isMultiStep) {
       this._cache.visibleSteps = [];
       this._cache.currentStep = null;
       this._cache.visibleFields = (this.definition.fields ?? []).filter((f) => isVisible(f, this.values));
-      this._cache.canGoNext = false;
       return;
     }
 
@@ -433,13 +434,26 @@ export class FormEngine {
 
     const step = this._cache.currentStep;
     this._cache.visibleFields = step ? step.fields.filter((f) => isVisible(f, this.values)) : [];
+  }
 
+  private _recomputeCanGoNextIfDirty(): void {
+    this._recomputeVisibilityIfDirty();
+    if (!this._isCanGoNextDirty) return;
+    this._isCanGoNextDirty = false;
+
+    if (!this.isMultiStep) {
+      this._cache.canGoNext = false;
+      return;
+    }
+
+    const step = this._cache.currentStep;
     const stepErrors = step ? validateStep(step, this.values, this._validators) : {};
     this._cache.canGoNext = Object.keys(stepErrors).length === 0;
   }
 
   private _notify(): void {
-    this._isDirty = true;
+    this._isVisibilityDirty = true;
+    this._isCanGoNextDirty = true;
     this._version++;
     for (const listener of this._listeners) {
       listener();
