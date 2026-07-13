@@ -14,6 +14,12 @@ export interface FormEngineOptions {
   onStepValidate?: StepValidateFn;
 }
 
+interface NotifyOptions {
+  fieldKeys?: Iterable<string>;
+  structureChanged?: boolean;
+  valuesChanged?: boolean;
+}
+
 export class FormEngine {
   readonly definition: FormDefinition;
 
@@ -26,9 +32,14 @@ export class FormEngine {
 
   private _version: number;
   private _listeners: Set<() => void>;
+  private _fieldVersions: Map<string, number>;
+  private _fieldListeners: Map<string, Set<() => void>>;
+  private _structureVersion: number;
+  private _structureListeners: Set<() => void>;
   private _validators: Record<string, ValidatorFn>;
   private _onStepValidate?: StepValidateFn;
   private _allFields: FormField[];
+  private _fieldByKey: Map<string, FormField>;
   private _fieldDependents: Map<string, Set<FormField>>;
   private _stepDependents: Map<string, Set<FormStep>>;
   private _pendingVisibilityKeys: Set<string>;
@@ -64,6 +75,10 @@ export class FormEngine {
     this._onStepValidate = options?.onStepValidate;
     this._version = 0;
     this._listeners = new Set();
+    this._fieldVersions = new Map();
+    this._fieldListeners = new Map();
+    this._structureVersion = 0;
+    this._structureListeners = new Set();
     this.currentStepIndex = 0;
     this.errors = {};
     this.topLevelErrors = [];
@@ -71,6 +86,7 @@ export class FormEngine {
     this.stepValidating = false;
 
     this._allFields = this._computeAllFields();
+    this._fieldByKey = new Map(this._allFields.map((field) => [field.key, field]));
     this._fieldDependents = new Map();
     this._stepDependents = new Map();
     this._buildVisibilityIndexes();
@@ -105,6 +121,33 @@ export class FormEngine {
 
   getSnapshot(): number {
     return this._version;
+  }
+
+  subscribeField(key: string, listener: () => void): () => void {
+    const listeners = this._fieldListeners.get(key) ?? new Set();
+    listeners.add(listener);
+    this._fieldListeners.set(key, listeners);
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) {
+        this._fieldListeners.delete(key);
+      }
+    };
+  }
+
+  getFieldSnapshot(key: string): number {
+    return this._fieldVersions.get(key) ?? 0;
+  }
+
+  subscribeStructure(listener: () => void): () => void {
+    this._structureListeners.add(listener);
+    return () => {
+      this._structureListeners.delete(listener);
+    };
+  }
+
+  getStructureSnapshot(): number {
+    return this._structureVersion;
   }
 
   // --- Computed getters ---
@@ -149,24 +192,37 @@ export class FormEngine {
   // --- Mutations ---
 
   setValue(key: string, value: unknown): void {
+    const valueChanged = !Object.is(this.values[key], value);
+    const hadError = this.errors[key] !== undefined;
     this.values[key] = value;
 
     // Clear error for this field
     delete this.errors[key];
 
     // Cascade: clear hidden fields, loop until stable
-    this._cascadeClearHiddenFields(key);
+    const clearedFields = this._cascadeClearHiddenFields(key);
+    const changedFields = new Set(clearedFields);
+    if (valueChanged || hadError) {
+      changedFields.add(key);
+    }
+    const valuesChanged = valueChanged || clearedFields.size > 0;
+    const structureChanged = valuesChanged && (
+      this._fieldDependents.has(key) ||
+      this._stepDependents.has(key) ||
+      clearedFields.size > 0
+    );
 
-    this._notify();
+    this._notify({ fieldKeys: changedFields, structureChanged, valuesChanged });
   }
 
   setErrors(errors: Record<string, string>): void {
+    const previousErrors = this.errors;
     this.errors = {};
     this.topLevelErrors = [];
 
     for (const [key, message] of Object.entries(errors)) {
       // Check if field is visible
-      const field = this._allFields.find((f) => f.key === key);
+      const field = this._fieldByKey.get(key);
       if (field && isVisible(field, this.values)) {
         this.errors[key] = message;
       } else {
@@ -176,23 +232,32 @@ export class FormEngine {
     }
 
     // Navigate to step containing first visible error
+    let structureChanged = false;
     if (this.isMultiStep) {
       const firstErrorKey = Object.keys(errors).find((k) => this.errors[k] !== undefined);
       if (firstErrorKey) {
-        this.goToStepWithField(firstErrorKey);
+        const targetIndex = this._findVisibleStepIndexWithField(firstErrorKey);
+        if (targetIndex !== null) {
+          structureChanged = targetIndex !== this.currentStepIndex;
+          this.currentStepIndex = targetIndex;
+        }
       }
     }
 
-    this._notify();
+    this._notify({
+      fieldKeys: this._getChangedKeys(previousErrors, this.errors),
+      structureChanged,
+    });
   }
 
   setFieldLoading(key: string, loading: boolean): void {
+    const previous = this.fieldLoading[key] === true;
     if (loading) {
       this.fieldLoading[key] = true;
     } else {
       delete this.fieldLoading[key];
     }
-    this._notify();
+    this._notify({ fieldKeys: previous === loading ? [] : [key] });
   }
 
   nextStep(): boolean {
@@ -204,8 +269,9 @@ export class FormEngine {
     // Validate current step
     const stepErrors = validateStep(step, this.values, this._validators);
     if (Object.keys(stepErrors).length > 0) {
+      const previousErrors = { ...this.errors };
       Object.assign(this.errors, stepErrors);
-      this._notify();
+      this._notify({ fieldKeys: this._getChangedKeys(previousErrors, this.errors) });
       return false;
     }
 
@@ -213,7 +279,7 @@ export class FormEngine {
     if (this.isLastStep) return false;
 
     this.currentStepIndex++;
-    this._notify();
+    this._notify({ structureChanged: true });
     return true;
   }
 
@@ -226,15 +292,16 @@ export class FormEngine {
 
     const stepErrors = validateStep(step, this.values, this._validators);
     if (Object.keys(stepErrors).length > 0) {
+      const previousErrors = { ...this.errors };
       Object.assign(this.errors, stepErrors);
-      this._notify();
+      this._notify({ fieldKeys: this._getChangedKeys(previousErrors, this.errors) });
       return false;
     }
 
     if (!this._onStepValidate) {
       if (this.isLastStep) return false;
       this.currentStepIndex++;
-      this._notify();
+      this._notify({ structureChanged: true });
       return true;
     }
 
@@ -252,10 +319,11 @@ export class FormEngine {
       }
 
       if (result && Object.keys(result).length > 0) {
+        const previousErrors = this.errors;
         this.errors = {};
         this.topLevelErrors = [];
         for (const [key, message] of Object.entries(result)) {
-          const field = this._allFields.find((f) => f.key === key);
+          const field = this._fieldByKey.get(key);
           if (field && isVisible(field, this.values)) {
             this.errors[key] = message;
           } else {
@@ -263,7 +331,7 @@ export class FormEngine {
           }
         }
         this.stepValidating = false;
-        this._notify();
+        this._notify({ fieldKeys: this._getChangedKeys(previousErrors, this.errors) });
         return false;
       }
 
@@ -275,7 +343,7 @@ export class FormEngine {
 
       this.stepValidating = false;
       this.currentStepIndex++;
-      this._notify();
+      this._notify({ structureChanged: true });
       return true;
     } catch (e) {
       this.stepValidating = false;
@@ -289,10 +357,11 @@ export class FormEngine {
     if (this.isFirstStep) return;
 
     this.currentStepIndex--;
-    this._notify();
+    this._notify({ structureChanged: true });
   }
 
   validate(): Record<string, string> {
+    const previousErrors = this.errors;
     if (this.isMultiStep) {
       const allErrors: Record<string, string> = {};
       for (const step of this.visibleSteps) {
@@ -300,28 +369,29 @@ export class FormEngine {
         Object.assign(allErrors, stepErrors);
       }
       this.errors = allErrors;
-      this._notify();
+      this._notify({ fieldKeys: this._getChangedKeys(previousErrors, this.errors) });
       return allErrors;
     }
 
     const errors = validateFields(this.definition.fields ?? [], this.values, this._validators);
     this.errors = errors;
-    this._notify();
+    this._notify({ fieldKeys: this._getChangedKeys(previousErrors, this.errors) });
     return errors;
   }
 
   validateField(key: string): string | null {
-    const field = this._allFields.find((f) => f.key === key);
+    const field = this._fieldByKey.get(key);
     if (!field) return null;
     if (!isVisible(field, this.values)) return null;
 
+    const previousError = this.errors[key];
     const error = validateField(field, this.values[key], this.values, this._validators);
     if (error) {
       this.errors[key] = error;
     } else {
       delete this.errors[key];
     }
-    this._notify();
+    this._notify({ fieldKeys: Object.is(previousError, this.errors[key]) ? [] : [key] });
     return error;
   }
 
@@ -357,19 +427,17 @@ export class FormEngine {
   goToStepWithField(fieldKey: string): void {
     if (!this.isMultiStep) return;
 
-    const visibleSteps = this.visibleSteps;
-    for (let i = 0; i < visibleSteps.length; i++) {
-      const hasField = visibleSteps[i].fields.some((f) => f.key === fieldKey);
-      if (hasField) {
-        this.currentStepIndex = i;
-        this._notify();
-        return;
-      }
-    }
-    // Field not found in any visible step: no-op
+    const targetIndex = this._findVisibleStepIndexWithField(fieldKey);
+    if (targetIndex === null) return;
+
+    const structureChanged = targetIndex !== this.currentStepIndex;
+    this.currentStepIndex = targetIndex;
+    this._notify({ structureChanged });
   }
 
   reset(values?: Record<string, unknown>): void {
+    const previousValues = this.values;
+    const previousErrors = this.errors;
     this.values = {};
     for (const field of this._allFields) {
       if (field.defaultValue !== undefined) {
@@ -382,7 +450,16 @@ export class FormEngine {
     this.errors = {};
     this.topLevelErrors = [];
     this.currentStepIndex = 0;
-    this._notify();
+    const changedValues = this._getChangedKeys(previousValues, this.values);
+    const changedFields = new Set([
+      ...changedValues,
+      ...this._getChangedKeys(previousErrors, this.errors),
+    ]);
+    this._notify({
+      fieldKeys: changedFields,
+      structureChanged: true,
+      valuesChanged: changedValues.size > 0,
+    });
   }
 
   // --- Private ---
@@ -415,10 +492,21 @@ export class FormEngine {
     }
   }
 
-  private _cascadeClearHiddenFields(changedKey: string): void {
+  private _findVisibleStepIndexWithField(fieldKey: string): number | null {
+    const visibleSteps = this.visibleSteps;
+    for (let index = 0; index < visibleSteps.length; index++) {
+      if (visibleSteps[index].fields.some((field) => field.key === fieldKey)) {
+        return index;
+      }
+    }
+    return null;
+  }
+
+  private _cascadeClearHiddenFields(changedKey: string): Set<string> {
     const queue = [...this._pendingVisibilityKeys];
     this._pendingVisibilityKeys.clear();
     const queued = new Set(queue);
+    const cleared = new Set<string>();
 
     const enqueue = (key: string) => {
       if (queued.has(key)) return;
@@ -436,6 +524,7 @@ export class FormEngine {
         if (!isVisible(field, this.values) && this.values[field.key] !== undefined) {
           delete this.values[field.key];
           delete this.errors[field.key];
+          cleared.add(field.key);
           enqueue(field.key);
         }
       }
@@ -447,10 +536,21 @@ export class FormEngine {
           if (this.values[field.key] === undefined) continue;
           delete this.values[field.key];
           delete this.errors[field.key];
+          cleared.add(field.key);
           enqueue(field.key);
         }
       }
     }
+
+    return cleared;
+  }
+
+  private _getChangedKeys(
+    previous: Record<string, unknown>,
+    next: Record<string, unknown>,
+  ): Set<string> {
+    const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
+    return new Set([...keys].filter((key) => !Object.is(previous[key], next[key])));
   }
 
   private _recomputeVisibilityIfDirty(): void {
@@ -489,9 +589,32 @@ export class FormEngine {
     this._cache.canGoNext = Object.keys(stepErrors).length === 0;
   }
 
-  private _notify(): void {
-    this._isVisibilityDirty = true;
-    this._isCanGoNextDirty = true;
+  private _notify({
+    fieldKeys = [],
+    structureChanged = false,
+    valuesChanged = false,
+  }: NotifyOptions = {}): void {
+    if (structureChanged) {
+      this._isVisibilityDirty = true;
+      this._isCanGoNextDirty = true;
+    } else if (valuesChanged) {
+      this._isCanGoNextDirty = true;
+    }
+
+    for (const key of new Set(fieldKeys)) {
+      this._fieldVersions.set(key, (this._fieldVersions.get(key) ?? 0) + 1);
+      for (const listener of this._fieldListeners.get(key) ?? []) {
+        listener();
+      }
+    }
+
+    if (structureChanged) {
+      this._structureVersion++;
+      for (const listener of this._structureListeners) {
+        listener();
+      }
+    }
+
     this._version++;
     for (const listener of this._listeners) {
       listener();
