@@ -4,8 +4,6 @@ import type { ValidatorFn } from '../validation';
 import { validateField, validateFields, validateStep } from '../validation';
 import { isStepVisible, isVisible } from '../visibility';
 
-const MAX_CASCADE_ITERATIONS = 50;
-
 export type StepValidateFn = (
   stepId: string,
   values: Record<string, unknown>,
@@ -31,6 +29,9 @@ export class FormEngine {
   private _validators: Record<string, ValidatorFn>;
   private _onStepValidate?: StepValidateFn;
   private _allFields: FormField[];
+  private _fieldDependents: Map<string, Set<FormField>>;
+  private _stepDependents: Map<string, Set<FormStep>>;
+  private _pendingVisibilityKeys: Set<string>;
   private _isVisibilityDirty: boolean;
   private _isCanGoNextDirty: boolean;
   private _cache: {
@@ -70,6 +71,13 @@ export class FormEngine {
     this.stepValidating = false;
 
     this._allFields = this._computeAllFields();
+    this._fieldDependents = new Map();
+    this._stepDependents = new Map();
+    this._buildVisibilityIndexes();
+    this._pendingVisibilityKeys = new Set([
+      ...this._fieldDependents.keys(),
+      ...this._stepDependents.keys(),
+    ]);
     this._isVisibilityDirty = true;
     this._isCanGoNextDirty = true;
     this._cache = { visibleSteps: [], currentStep: null, visibleFields: [], canGoNext: false };
@@ -147,7 +155,7 @@ export class FormEngine {
     delete this.errors[key];
 
     // Cascade: clear hidden fields, loop until stable
-    this._cascadeClearHiddenFields();
+    this._cascadeClearHiddenFields(key);
 
     this._notify();
   }
@@ -387,31 +395,61 @@ export class FormEngine {
     return this.definition.fields ?? [];
   }
 
-  private _cascadeClearHiddenFields(): void {
-    const hiddenStepFields = new Set<string>();
-    if (this.isMultiStep) {
-      for (const step of this.definition.steps ?? []) {
-        if (!isStepVisible(step, this.values)) {
-          for (const field of step.fields) {
-            hiddenStepFields.add(field.key);
-          }
-        }
+  private _buildVisibilityIndexes(): void {
+    for (const field of this._allFields) {
+      const dependencies = [...(field.show ?? []), ...(field.showAny ?? [])];
+      for (const condition of dependencies) {
+        const dependents = this._fieldDependents.get(condition.field) ?? new Set<FormField>();
+        dependents.add(field);
+        this._fieldDependents.set(condition.field, dependents);
       }
     }
 
-    for (let i = 0; i < MAX_CASCADE_ITERATIONS; i++) {
-      let changed = false;
+    for (const step of this.definition.steps ?? []) {
+      const dependencies = [...(step.show ?? []), ...(step.showAny ?? [])];
+      for (const condition of dependencies) {
+        const dependents = this._stepDependents.get(condition.field) ?? new Set<FormStep>();
+        dependents.add(step);
+        this._stepDependents.set(condition.field, dependents);
+      }
+    }
+  }
 
-      for (const field of this._allFields) {
-        const fieldHidden = !isVisible(field, this.values) || hiddenStepFields.has(field.key);
-        if (fieldHidden && this.values[field.key] !== undefined) {
+  private _cascadeClearHiddenFields(changedKey: string): void {
+    const queue = [...this._pendingVisibilityKeys];
+    this._pendingVisibilityKeys.clear();
+    const queued = new Set(queue);
+
+    const enqueue = (key: string) => {
+      if (queued.has(key)) return;
+      queued.add(key);
+      queue.push(key);
+    };
+
+    enqueue(changedKey);
+
+    for (let index = 0; index < queue.length; index++) {
+      const key = queue[index];
+      queued.delete(key);
+
+      for (const field of this._fieldDependents.get(key) ?? []) {
+        if (!isVisible(field, this.values) && this.values[field.key] !== undefined) {
           delete this.values[field.key];
           delete this.errors[field.key];
-          changed = true;
+          enqueue(field.key);
         }
       }
 
-      if (!changed) break;
+      for (const step of this._stepDependents.get(key) ?? []) {
+        if (isStepVisible(step, this.values)) continue;
+
+        for (const field of step.fields) {
+          if (this.values[field.key] === undefined) continue;
+          delete this.values[field.key];
+          delete this.errors[field.key];
+          enqueue(field.key);
+        }
+      }
     }
   }
 

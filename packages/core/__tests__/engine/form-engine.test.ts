@@ -124,6 +124,30 @@ describe('FormEngine', () => {
       expect(engine.values.b).toBeUndefined();
       expect(engine.values.c).toBeUndefined();
     });
+
+    it('clears visibility dependency chains longer than the old pass limit', () => {
+      const fieldCount = 75; // > 50, the old fixed-pass limit
+      const fields = Array.from({ length: fieldCount }, (_, index) => ({
+        key: `field-${index}`,
+        type: 'text' as const,
+        label: `Field ${index}`,
+        ...(index < fieldCount - 1
+          ? { show: [{ field: `field-${index + 1}`, eq: 'visible' }] }
+          : {}),
+      }));
+      const initialValues = Object.fromEntries(fields.map((field) => [field.key, 'visible']));
+      const definition: FormDefinition = {
+        id: 'long-cascade',
+        title: 'Long cascade',
+        submit: { label: 'Submit' },
+        fields,
+      };
+      const engine = new FormEngine(definition, initialValues);
+
+      engine.setValue(`field-${fieldCount - 1}`, 'hidden');
+
+      expect(engine.values).toEqual({ [`field-${fieldCount - 1}`]: 'hidden' });
+    });
   });
 
   describe('visibleFields', () => {
