@@ -42,7 +42,6 @@ export class FormEngine {
   private _fieldByKey: Map<string, FormField>;
   private _fieldDependents: Map<string, Set<FormField>>;
   private _stepDependents: Map<string, Set<FormStep>>;
-  private _pendingVisibilityKeys: Set<string>;
   private _isVisibilityDirty: boolean;
   private _isCanGoNextDirty: boolean;
   private _cache: {
@@ -90,10 +89,6 @@ export class FormEngine {
     this._fieldDependents = new Map();
     this._stepDependents = new Map();
     this._buildVisibilityIndexes();
-    this._pendingVisibilityKeys = new Set([
-      ...this._fieldDependents.keys(),
-      ...this._stepDependents.keys(),
-    ]);
     this._isVisibilityDirty = true;
     this._isCanGoNextDirty = true;
     this._cache = { visibleSteps: [], currentStep: null, visibleFields: [], canGoNext: false };
@@ -108,6 +103,7 @@ export class FormEngine {
     if (initialValues) {
       Object.assign(this.values, initialValues);
     }
+    this._reconcileHiddenFields();
   }
 
   // --- React integration ---
@@ -504,14 +500,10 @@ export class FormEngine {
   }
 
   private _cascadeClearHiddenFields(changedKey: string): Set<string> {
-    const seed = new Set(this._pendingVisibilityKeys);
-    seed.add(changedKey);
-    this._pendingVisibilityKeys.clear();
-    return this._drainVisibilityQueue(seed);
+    return this._drainVisibilityQueue(new Set([changedKey]));
   }
 
   private _reconcileHiddenFields(): Set<string> {
-    this._pendingVisibilityKeys.clear();
     const seed = new Set([...this._fieldDependents.keys(), ...this._stepDependents.keys()]);
     return this._drainVisibilityQueue(seed);
   }
