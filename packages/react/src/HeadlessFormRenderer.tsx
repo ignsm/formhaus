@@ -7,7 +7,7 @@ import { FormTopLevelErrors } from './FormTopLevelErrors';
 import { useFormEngineStore } from './hooks/useFormEngine';
 import type { FormRendererProps } from './types';
 
-export function FormRenderer({
+export function HeadlessFormRenderer({
   definition,
   initialValues,
   onSubmit,
