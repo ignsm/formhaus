@@ -156,10 +156,10 @@ const engine = new FormEngine(definition, initialValues, {
 const advanced = await engine.nextStepAsync();
 
 // Check loading state for your UI:
-engine.stepValidating; // true while onStepValidate is running
+engine.stepValidating; // true while navigation validation and hooks are running
 ```
 
-`nextStep()` is unchanged and ignores `onStepValidate`.
+`nextStep()` ignores `onStepValidate` and lifecycle hooks. `nextStepAsync()` also awaits the [before/after navigation hooks](/guide/steps#lifecycle-hooks); a before-hook can cancel an otherwise valid transition.
 
 ## Next steps
 

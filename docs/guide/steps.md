@@ -184,3 +184,64 @@ Submission runs whole-form validation → `onBeforeSubmit` → the awaited submi
 Use `nextStepAsync()`, `prevStepAsync()` and `submitAsync(handler)` for lifecycle-aware core actions. Existing synchronous `nextStep()`, `prevStep()`, `goToStepWithField()`, error redirection and `reset()` remain low-level operations and do not call async lifecycle hooks. They can invalidate pending navigation. `onStepChange`/Vue `stepChange` still report committed Next/Back transitions before the after-hook.
 
 Vue uses `:on-before-step-change`, `:on-after-step-change`, `:on-before-submit`, `:on-after-submit` and `:on-error` callback props. To await saving, pass `:submit-handler="save"`. The existing `@submit` event still fires after that handler succeeds; without `submitHandler`, after-submit means the event was dispatched. Vue event listeners cannot be awaited, so do not put the same network request in both places.
+
+### Vue lifecycle example
+
+This component accepts an application's `save` and `mayLeave` callbacks. `save` must return its request Promise and reject on failure; `mayLeave` may return `false` to cancel navigation. The form handles busy state while waiting.
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { FormRenderer } from '@formhaus/vue'
+import type { BeforeStepChangeFn, FormDefinition, StepChangeContext, SubmitFn } from '@formhaus/core'
+
+const props = defineProps<{ save: SubmitFn; mayLeave: BeforeStepChangeFn }>()
+const message = ref('')
+const error = ref('')
+const definition: FormDefinition = {
+  id: 'survey', title: 'Survey', submit: { label: 'Send' },
+  steps: [
+    {
+      id: 'choice', title: 'Choose a plan', next: false,
+      fields: [{
+        key: 'plan', type: 'radio', label: 'Plan', autoAdvance: true,
+        helperText: 'Click or press Space/Enter to continue. Arrows only select.',
+        validation: { required: true },
+        options: [{ value: 'basic', label: 'Basic' }, { value: 'pro', label: 'Pro' }],
+      }],
+    },
+    { id: 'review', title: 'Review', fields: [] },
+  ],
+}
+
+function afterStep({ toStepId }: StepChangeContext) {
+  message.value = `Opened ${toStepId}`
+}
+function beforeSubmit() {
+  error.value = ''
+  return window.confirm('Send these answers?')
+}
+function afterSubmit() {
+  message.value = 'Saved'
+}
+function showError(cause: unknown) {
+  error.value = cause instanceof Error ? cause.message : 'Could not finish the action'
+}
+</script>
+
+<template>
+  <FormRenderer
+    :definition="definition"
+    :on-before-step-change="props.mayLeave"
+    :on-after-step-change="afterStep"
+    :on-before-submit="beforeSubmit"
+    :submit-handler="props.save"
+    :on-after-submit="afterSubmit"
+    :on-error="showError"
+  />
+  <p role="status">{{ message }}</p>
+  <p v-if="error" role="alert">{{ error }}</p>
+</template>
+```
+
+For `HeadlessFormRenderer`, pass these same callbacks along with your fields, actions and progress components. See the [custom activation and action contracts](/guide/custom-components#headless-renderer).
