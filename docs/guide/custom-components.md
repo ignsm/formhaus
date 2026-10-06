@@ -248,9 +248,9 @@ Events emitted:
 | `field_error` | Validation fails | `fieldKey`, `error` |
 | `step_completed` | User advances past a step | `stepId` |
 | `step_viewed` | A step becomes active | `stepId`, `stepIndex` |
-| `form_submitted` | Form submits successfully | `fieldCount` |
+| `form_submitted` | Client validation passes and the renderer is about to call the submit handler | `fieldCount` |
 
-All events are optional. If you don't pass a handler, nothing fires.
+`form_submitted` records a submission attempt after validation; it does not confirm that the server saved the values. Record save success after the request succeeds in your application. All events are optional. If you don't pass a handler, nothing fires.
 
 ## Next steps
 

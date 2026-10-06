@@ -119,7 +119,7 @@ async function validateStep(stepId, values) {
 
 **Back while validating.** The async call finishes but the result is discarded. No stale errors on the wrong step.
 
-**Last step.** `onStepValidate` runs on the last step too. Errors block submit.
+**Last step.** The renderer Submit action does not invoke `onStepValidate`. Perform final server validation in the submit handler before saving.
 
 ## Type reference
 

@@ -33,7 +33,7 @@ Use `steps` instead of `fields` in the definition:
       "id": "confirm",
       "title": "Confirm",
       "fields": [
-        { "key": "terms", "type": "checkbox", "label": "I accept the terms", "validation": { "required": "You must accept" } }
+        { "key": "terms", "type": "checkbox", "label": "I accept the terms", "validation": { "required": "You must accept", "pattern": "^true$", "patternMessage": "You must accept" } }
       ]
     }
   ]

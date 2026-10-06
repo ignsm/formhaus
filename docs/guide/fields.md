@@ -162,7 +162,11 @@ Boolean toggle with a label.
   "key": "termsAccepted",
   "type": "checkbox",
   "label": "I accept the Terms of Service",
-  "validation": { "required": "You must accept the terms" }
+  "validation": {
+    "required": "You must accept the terms",
+    "pattern": "^true$",
+    "patternMessage": "You must accept the terms"
+  }
 }
 ```
 
