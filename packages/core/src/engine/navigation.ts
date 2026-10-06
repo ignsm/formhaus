@@ -76,7 +76,7 @@ async function changeStep(engine: EngineInternals, direction: 'next' | 'back', r
     }
     if (stale()) return false;
     if (engine.visibleSteps[toIndex]?.id !== target.id) return false;
-    if (direction === 'next' && publishStepErrors(engine, validateStep(step, engine.values, engine.validators))) return false;
+    if (direction === 'next' && publishStepErrors(engine, validateStep(step, getValidationValues(engine), engine.validators))) return false;
     committed = true;
     engine.currentStepIndex = toIndex;
     engine.validationEpoch++;
