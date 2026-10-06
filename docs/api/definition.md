@@ -63,6 +63,7 @@ interface FormStep {
   fields: FormField[];
   show?: ShowCondition[];       // Step-level visibility
   showAny?: ShowCondition[];
+  routes?: StepRoute[];         // Ordered forward destinations
   next?: FormAction | false;    // Override or hide "Continue" button
   back?: FormAction | false;    // Override or hide "Back" button
 }
@@ -205,4 +206,4 @@ interface StepRoute {
 
 The first matching route with a visible target wins. An unconditional last route is a fallback; no match continues to the next visible declared step. `to: null` makes this step terminal without submitting. Targets must be later declared step ids. Route conditions may reference this or earlier steps. Invalid targets and forward-field references are reported by `validateDefinition()` and rejected by `FormEngine`.
 
-With routes enabled, progress, Back, validation, hooks and submission use the active path. Skipped values remain in `engine.values` but are excluded from the active projection. See [branch convergence, visibility, retained values and reconciliation](../guide/steps#route-between-branches) and [the complete JSON example](https://github.com/ignsm/formhaus/blob/main/examples/definitions/branching-form.json).
+With routes enabled, progress, Back, validation, hooks and submission use the active path. Skipped values remain in `engine.values` but are excluded from the active projection. See [branch convergence, visibility, retained values and reconciliation](../guide/steps#route-between-branches) and [the complete JSON example](https://github.com/ignsm/formhaus/blob/c2bc73d57a13733352151590af1bb3fdcc796434/examples/definitions/branching-form.json).
