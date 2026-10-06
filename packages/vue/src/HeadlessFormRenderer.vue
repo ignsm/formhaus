@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { FormEngineOptions } from '@formhaus/core';
-import { computed, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import FieldResolver from './FieldResolver.vue';
 import { useFieldOptions } from './composables/useFieldOptions';
+import { useRendererActions } from './composables/useRendererActions';
 import { useFormEngine } from './composables/useFormEngine';
 import type { FormRendererEmits, FormRendererProps } from './types';
 
@@ -10,9 +11,21 @@ const props = withDefaults(defineProps<FormRendererProps>(), { loading: false })
 
 const emit = defineEmits<FormRendererEmits>();
 
+const formRef = ref<HTMLFormElement>();
 const engineOptions: FormEngineOptions = {
   validators: props.validators,
-  onStepValidate: props.onStepValidate,
+  get onStepValidate() { return props.onStepValidate; },
+  get onBeforeStepChange() { return props.onBeforeStepChange; },
+  get onBeforeSubmit() { return props.onBeforeSubmit; },
+  get onAfterSubmit() { return props.onAfterSubmit; },
+  onAfterStepChange: async (context) => {
+    emit('stepChange', context.toStepId, context.direction);
+    if (context.direction === 'next') {
+      emit('analyticsEvent', { type: 'step_completed', stepId: context.fromStepId });
+      emit('analyticsEvent', { type: 'step_viewed', stepId: context.toStepId, stepIndex: form.engine.currentStepIndex });
+    }
+    await props.onAfterStepChange?.(context);
+  },
 };
 
 const form = useFormEngine(() => props.definition, props.initialValues, engineOptions);
@@ -28,6 +41,7 @@ const {
   progress,
   isMultiStep,
   stepValidating,
+  submitting,
 } = form;
 
 const resolvedOptions = useFieldOptions(visibleFields, () => form.engine, props.optionsProviders);
@@ -41,10 +55,22 @@ watch(
   },
 );
 
-function onFieldUpdate(key: string, value: unknown) {
-  form.engine.setValue(key, value);
-  emit('fieldChange', key, value, form.engine.values);
-}
+const { update: onFieldUpdate, commit: onFieldCommit, next: onNext, prev: onPrev, submit: onSubmit } =
+  useRendererActions(form, props, emit);
+
+let previousStep = currentStep.value?.id;
+let focusPending = false;
+watch([currentStep, stepValidating, submitting], async () => {
+  if (currentStep.value?.id !== previousStep) focusPending = true;
+  previousStep = currentStep.value?.id;
+  if (!focusPending || stepValidating.value || submitting.value) return;
+  focusPending = false;
+  await nextTick();
+  const target = formRef.value?.querySelector<HTMLElement>(
+    '.fh-form__fields input:not(:disabled), .fh-form__fields select:not(:disabled), .fh-form__fields textarea:not(:disabled), .fh-form__fields button:not(:disabled)',
+  );
+  (target ?? formRef.value)?.focus();
+}, { flush: 'post' });
 
 function onFieldFocus(key: string) {
   emit('analyticsEvent', { type: 'field_focused', fieldKey: key });
@@ -56,43 +82,6 @@ function onFieldBlur(key: string) {
     fieldKey: key,
     hasValue: values.value[key] !== undefined && values.value[key] !== '',
   });
-}
-
-async function onSubmit() {
-  const allErrors = form.engine.validate();
-  for (const [key, msg] of Object.entries(allErrors)) {
-    emit('analyticsEvent', { type: 'field_error', fieldKey: key, error: msg });
-  }
-  if (Object.keys(allErrors).length > 0) return;
-
-  const submitValues = form.engine.getSubmitValues();
-  emit('analyticsEvent', { type: 'form_submitted', fieldCount: Object.keys(submitValues).length });
-  emit('submit', submitValues);
-}
-
-async function onNext() {
-  const prevStep = currentStep.value;
-  const success = await form.engine.nextStepAsync();
-  if (success) {
-    if (prevStep) {
-      emit('analyticsEvent', { type: 'step_completed', stepId: prevStep.id });
-    }
-    if (currentStep.value) {
-      emit('stepChange', currentStep.value.id, 'next');
-      emit('analyticsEvent', {
-        type: 'step_viewed',
-        stepId: currentStep.value.id,
-        stepIndex: form.engine.currentStepIndex,
-      });
-    }
-  }
-}
-
-function onPrev() {
-  form.engine.prevStep();
-  if (currentStep.value) {
-    emit('stepChange', currentStep.value.id, 'back');
-  }
 }
 
 function onCancel() {
@@ -110,7 +99,7 @@ const effectiveIsLastStep = computed(() => isLastStep.value || !isMultiStep.valu
 
 const primaryLabel = computed(() => {
   if (isMultiStep.value && !effectiveIsLastStep.value) {
-    return currentStep.value?.next?.label ?? 'Continue';
+    return currentStep.value?.next && currentStep.value.next.label || 'Continue';
   }
   return props.definition.submit?.label ?? 'Submit';
 });
@@ -134,7 +123,7 @@ async function onPrimary() {
 </script>
 
 <template>
-  <form class="fh-form" @submit.prevent>
+  <form ref="formRef" class="fh-form" tabindex="-1" :aria-busy="props.loading || stepValidating || submitting" @submit.prevent="onPrimary">
     <component
       :is="props.progressComponent"
       v-if="isMultiStep && props.progressComponent"
@@ -152,9 +141,10 @@ async function onPrimary() {
         :value="values[field.key]"
         :error="errors[field.key]"
         :loading="fieldLoading[field.key]"
-        :disabled="props.loading"
+        :disabled="props.loading || stepValidating || submitting"
         :components="props.components"
         @update:value="(v) => onFieldUpdate(field.key, v)"
+        @commit="(v) => onFieldCommit(field.key, v)"
         @blur="() => onFieldBlur(field.key)"
         @focus="() => onFieldFocus(field.key)"
       />
@@ -175,9 +165,10 @@ async function onPrimary() {
       :is-first-step="isFirstStep"
       :is-last-step="effectiveIsLastStep"
       :is-multi-step="isMultiStep"
-      :loading="props.loading || stepValidating"
+      :loading="props.loading || stepValidating || submitting"
       :values="values"
       :primary-label="primaryLabel"
+      :show-primary="effectiveIsLastStep || currentStep?.next !== false"
       :show-back="showBack"
       :back-label="backLabel"
       @submit="onSubmit"

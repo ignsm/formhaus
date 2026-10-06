@@ -1,3 +1,4 @@
+import { afterCommit } from './lifecycle-error';
 import { validateStep } from '../validation';
 import { applyValidationErrors } from './validation-state';
 import type { EngineInternals } from './runtime-internals';
@@ -18,6 +19,7 @@ function publishStepErrors(engine: EngineInternals, errors: Record<string, strin
 
 function advance(engine: EngineInternals): boolean {
   if (engine.isLastStep) return false;
+  engine.validationEpoch++;
   engine.currentStepIndex++;
   engine.notify({ structureChanged: true });
   return true;
@@ -30,50 +32,62 @@ export function nextStep(engine: EngineInternals): boolean {
   return advance(engine);
 }
 
-export async function nextStepAsync(engine: EngineInternals): Promise<boolean> {
-  if (!engine.isMultiStep || engine.stepValidating) return false;
+export function nextStepAsync(engine: EngineInternals, reason: 'next' | 'autoAdvance' = 'next'): Promise<boolean> {
+  return changeStep(engine, 'next', reason);
+}
+
+export function prevStepAsync(engine: EngineInternals): Promise<boolean> {
+  return changeStep(engine, 'back');
+}
+
+async function changeStep(engine: EngineInternals, direction: 'next' | 'back', reason: 'next' | 'back' | 'autoAdvance' = direction): Promise<boolean> {
+  if (!engine.isMultiStep || engine.stepValidating || engine.submitting) return false;
+  if (direction === 'next' ? engine.isLastStep : engine.isFirstStep) return false;
   const step = engine.currentStep;
   if (!step) return false;
-  const errors = validateStep(step, engine.values, engine.validators);
-  if (publishStepErrors(engine, errors)) return false;
-  if (!engine.onStepValidate) return advance(engine);
-
-  const stepIndexBefore = engine.currentStepIndex;
-  const validationEpoch = engine.validationEpoch;
+  if (direction === 'next' && publishStepErrors(engine, validateStep(step, engine.values, engine.validators))) return false;
+  const fromIndex = engine.currentStepIndex;
+  const toIndex = fromIndex + (direction === 'next' ? 1 : -1);
+  const target = engine.visibleSteps[toIndex];
+  if (!target) return false;
+  const context = { fromStepId: step.id, toStepId: target.id, direction, reason, values: { ...engine.values } };
+  const epoch = engine.validationEpoch;
+  const operation = ++engine.operationEpoch;
+  const stale = () => epoch !== engine.validationEpoch || operation !== engine.operationEpoch
+    || engine.currentStep?.id !== step.id;
   engine.stepValidating = true;
   engine.notify();
   try {
-    const result = await engine.onStepValidate(step.id, engine.values);
-    if (engine.validationEpoch !== validationEpoch) return false;
-    if (engine.currentStepIndex !== stepIndexBefore) return finishValidation(engine, false);
-    if (result && Object.keys(result).length > 0) {
-      engine.stepValidating = false;
-      applyValidationErrors(engine, result);
-      return false;
+    if (stale()) return false;
+    if (direction === 'next' && engine.onStepValidate) {
+      const result = await engine.onStepValidate(step.id, context.values);
+      if (stale()) return false;
+      if (result && Object.keys(result).length > 0) {
+        applyValidationErrors(engine, result);
+        return false;
+      }
     }
-    return finishValidation(engine, advanceAfterValidation(engine));
-  } catch (error) {
-    if (engine.validationEpoch !== validationEpoch) return false;
-    engine.stepValidating = false;
-    engine.notify();
-    throw error;
+    if (engine.lifecycle.onBeforeStepChange) {
+      const allowed = await engine.lifecycle.onBeforeStepChange(context);
+      if (stale() || allowed === false) return false;
+    }
+    if (stale()) return false;
+    engine.currentStepIndex = toIndex;
+    engine.validationEpoch++;
+    engine.notify({ structureChanged: true });
+    await afterCommit('afterStepChange', () => engine.lifecycle.onAfterStepChange?.(context));
+    return true;
+  } finally {
+    if (operation === engine.operationEpoch) {
+      engine.stepValidating = false;
+      engine.notify();
+    }
   }
-}
-
-function advanceAfterValidation(engine: EngineInternals): boolean {
-  if (engine.isLastStep) return false;
-  engine.currentStepIndex++;
-  return true;
-}
-
-function finishValidation(engine: EngineInternals, advanced: boolean): boolean {
-  engine.stepValidating = false;
-  engine.notify({ structureChanged: advanced });
-  return advanced;
 }
 
 export function prevStep(engine: EngineInternals): void {
   if (!engine.isMultiStep || engine.isFirstStep) return;
+  engine.validationEpoch++;
   engine.currentStepIndex--;
   engine.notify({ structureChanged: true });
 }
@@ -87,6 +101,7 @@ export function goToStepWithField(engine: EngineInternals, fieldKey: string): vo
   );
   if (targetIndex === null) return;
   const structureChanged = targetIndex !== engine.currentStepIndex;
+  if (structureChanged) engine.validationEpoch++;
   engine.currentStepIndex = targetIndex;
   engine.notify({ structureChanged });
 }

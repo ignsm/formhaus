@@ -130,3 +130,57 @@ On submit, all visible fields across all visible steps are returned. Fields in h
 - [Error Handling](/guide/errors): handle errors from multi-step submissions
 - [Custom Actions & Progress](/guide/custom-components): replace buttons and step progress with your own components
 - [Examples](/guide/examples): multi-step patterns in practice
+
+## Advance when an answer is activated
+
+Set `autoAdvance: true` on a radio field. Clicking an option or pressing Space/Enter advances after validating the **whole current step**. Arrow keys select an answer without leaving the group. Initial values, `setValue()`, hydration and rerenders never advance. Selecting a radio on the final step never submits.
+
+```ts
+const definition = {
+  id: 'survey', title: 'Survey', submit: { label: 'Send' },
+  steps: [
+    {
+      id: 'choice', title: 'Choose a plan', next: false,
+      fields: [{
+        key: 'plan', type: 'radio', label: 'Plan', autoAdvance: true,
+        helperText: 'Click a plan or press Space/Enter to continue. Arrow keys only select.',
+        validation: { required: true },
+        options: [{ value: 'basic', label: 'Basic' }, { value: 'pro', label: 'Pro' }],
+      }],
+    },
+    { id: 'review', title: 'Review', fields: [] },
+  ],
+}
+```
+
+`next: false` hides the built-in Next button; it does not forbid navigation and never hides the final Submit button. After a validation error or a cancelled/failed guard, activate the same selected option again to retry. Only hide Next when every user has an accessible way to retry. Keep Next for steps with several inputs or custom fields that do not support activation. Custom action components receive `showPrimary` and must honor it.
+
+Custom React fields call `onChange(value)` for editing and `onCommit(value)` for intentional activation. Custom Vue fields emit `update:value` and `commit` respectively. `onCommit`/`commit` also saves the value; emit only one of them for an activation. The built-in radio supports this contract. Other built-in field types do not auto-advance.
+
+## Lifecycle hooks
+
+React `FormRenderer` and `HeadlessFormRenderer` accept the same hooks as `new FormEngine(definition, values, options)`:
+
+```tsx
+<FormRenderer
+  definition={definition}
+  onBeforeStepChange={async ({ fromStepId, toStepId, direction, values }) => {
+    return await mayLeaveStep(fromStepId, toStepId, values) // false cancels
+  }}
+  onAfterStepChange={({ toStepId }) => trackStep(toStepId)}
+  onBeforeSubmit={async (values) => await confirmSubmission(values)}
+  onSubmit={async (values) => await save(values)}
+  onAfterSubmit={() => showReceipt()}
+  onError={(error) => showError(error)}
+/>
+```
+
+Forward navigation runs field validation → `onStepValidate` → `onBeforeStepChange` → commit step → `onAfterStepChange`. Back runs the before/after hooks without field or server validation. Only an explicit `false` from a before-hook cancels; `void` allows the operation. Hooks may be synchronous or async. The step context includes `fromStepId`, `toStepId`, `direction` and `reason` (`next`, `back`, or `autoAdvance`). Before-hooks receive a shallow values snapshot. Errors reject core promises; renderers call `onError`, or display the error at the form level if it is omitted.
+
+Submission runs whole-form validation → `onBeforeSubmit` → the awaited submit handler → `onAfterSubmit`. Only successful handlers reach the after-hook. `FormLifecycleError` identifies an after-hook failure with `committed: true`, `phase` and `cause`: navigation or submission already happened. Do not automatically retry a submission because its receipt/analytics hook failed.
+
+`stepValidating` covers navigation hooks as well as server validation; `submitting` covers submission hooks and the handler. Repeated async actions are ignored until completion. Renderers disable input while waiting. Changing values or resetting the core engine invalidates a pending pre-transition/pre-submit result. Reset cannot undo a submission already sent.
+
+Use `nextStepAsync()`, `prevStepAsync()` and `submitAsync(handler)` for lifecycle-aware core actions. Existing synchronous `nextStep()`, `prevStep()`, `goToStepWithField()`, error redirection and `reset()` remain low-level operations and do not call async lifecycle hooks. They can invalidate pending navigation. `onStepChange`/Vue `stepChange` still report committed Next/Back transitions before the after-hook.
+
+Vue uses `:on-before-step-change`, `:on-after-step-change`, `:on-before-submit`, `:on-after-submit` and `:on-error` callback props. To await saving, pass `:submit-handler="save"`. The existing `@submit` event still fires after that handler succeeds; without `submitHandler`, after-submit means the event was dispatched. Vue event listeners cannot be awaited, so do not put the same network request in both places.

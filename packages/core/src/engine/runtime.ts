@@ -1,9 +1,9 @@
 import { validateDefinition } from '../definition-validation';
 import type { ValidatorFn } from '../validation';
 import type { FormDefinition, FormField, FormStep } from '../types';
-import type { FormEngineOptions, StepValidateFn } from './engine-options';
+import type { FormEngineOptions, StepValidateFn, SubmitFn } from './engine-options';
 import { createValues, getChangedKeys } from './engine-utils';
-import { goToStepWithField, nextStep, nextStepAsync, prevStep } from './navigation';
+import { goToStepWithField, nextStep, nextStepAsync, prevStep, prevStepAsync } from './navigation';
 import type { EngineInternals, RuntimeNotifyOptions } from './runtime-internals';
 import { FormSubscriptions, type NotifyOptions } from './subscriptions';
 import {
@@ -14,6 +14,7 @@ import {
   validateOne,
   assertDefinitionShape,
 } from './validation-state';
+import { submitAsync } from './submission';
 import { VisibilityState } from './visibility-state';
 
 export class FormEngine {
@@ -23,10 +24,13 @@ export class FormEngine {
   currentStepIndex = 0;
   fieldLoading: Record<string, boolean> = {};
   stepValidating = false;
+  submitting = false;
   private validationEpoch = 0;
+  private operationEpoch = 0;
+  private readonly lifecycle: FormEngineOptions;
 
   private readonly validators: Record<string, ValidatorFn>;
-  private readonly onStepValidate?: StepValidateFn;
+  private get onStepValidate(): StepValidateFn | undefined { return this.lifecycle.onStepValidate; }
   private readonly visibility: VisibilityState;
   private readonly subscriptions = new FormSubscriptions();
 
@@ -39,8 +43,8 @@ export class FormEngine {
     for (const warning of validateDefinition(definition)) {
       console.warn(`[FormEngine] ${warning}`);
     }
+    this.lifecycle = options ?? {};
     this.validators = options?.validators ?? {};
-    this.onStepValidate = options?.onStepValidate;
     this.visibility = new VisibilityState(definition);
     this.values = createValues(this.visibility.allFields, initialValues);
     this.visibility.reconcileHidden(this.values, this.errors);
@@ -105,6 +109,7 @@ export class FormEngine {
 
   setValue(key: string, value: unknown): void {
     const valueChanged = !Object.is(this.values[key], value);
+    if (valueChanged) this.validationEpoch++;
     const hadError = this.errors[key] !== undefined;
     this.values[key] = value;
     delete this.errors[key];
@@ -128,7 +133,9 @@ export class FormEngine {
   }
 
   nextStep(): boolean { return nextStep(this.internals); }
-  nextStepAsync(): Promise<boolean> { return nextStepAsync(this.internals); }
+  nextStepAsync(reason: 'next' | 'autoAdvance' = 'next'): Promise<boolean> { return nextStepAsync(this.internals, reason); }
+  prevStepAsync(): Promise<boolean> { return prevStepAsync(this.internals); }
+  submitAsync(submit: SubmitFn): Promise<boolean> { return submitAsync(this.internals, submit); }
   prevStep(): void { prevStep(this.internals); }
   validate(): Record<string, string> { return validateForm(this.internals); }
   validateField(key: string): string | null { return validateOne(this.internals, key); }

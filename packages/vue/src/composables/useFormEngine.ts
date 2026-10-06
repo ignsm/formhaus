@@ -22,6 +22,7 @@ export interface UseFormEngineReturn {
   progress: ComputedRef<{ current: number; total: number }>;
   isMultiStep: ComputedRef<boolean>;
   stepValidating: ComputedRef<boolean>;
+  submitting: ComputedRef<boolean>;
 }
 
 export function useFormEngine(
@@ -63,6 +64,7 @@ export function useFormEngine(
     canGoNext: computed(() => { version.value; return engineRef.value.canGoNext; }),
     progress: computed(() => { version.value; return engineRef.value.progress; }),
     isMultiStep: computed(() => { version.value; return engineRef.value.isMultiStep; }),
+    submitting: computed(() => { version.value; return engineRef.value.submitting; }),
     stepValidating: computed(() => { version.value; return engineRef.value.stepValidating; }),
   };
 }
