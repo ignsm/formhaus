@@ -109,7 +109,6 @@ export class FormEngine {
 
   setValue(key: string, value: unknown): void {
     const valueChanged = !Object.is(this.values[key], value);
-    if (valueChanged) this.validationEpoch++;
     const hadError = this.errors[key] !== undefined;
     this.values[key] = value;
     delete this.errors[key];
