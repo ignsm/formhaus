@@ -1,4 +1,4 @@
-import { routeWarnings } from '../engine/step-routes';
+import { routeFallthroughWarnings, routeWarnings } from '../engine/step-routes';
 import type { FormDefinition } from '../types';
 import { analyzeDefinition } from './definition-analysis';
 
@@ -54,5 +54,5 @@ export function validateDefinition(definition: FormDefinition): string[] {
   for (const cycle of detectCycles(graph)) {
     warnings.push(`Circular show condition detected: ${cycle.join(' -> ')}`);
   }
-  return [...warnings, ...routeWarnings(definition)];
+  return [...warnings, ...routeWarnings(definition), ...routeFallthroughWarnings(definition)];
 }

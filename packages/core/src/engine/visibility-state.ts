@@ -1,5 +1,5 @@
 import { indexConditions } from './visibility-index';
-import { activeSteps, activeValues } from './step-routes';
+import { ActivePath } from './step-routes';
 import type { ValidatorFn } from '../validation';
 import { validateStep } from '../validation';
 import type { FormDefinition, FormField, FormStep } from '../types';
@@ -16,6 +16,7 @@ export class VisibilityState {
   readonly allFields: FormField[];
   readonly fieldByKey: Map<string, FormField>;
   private routeFields = new Set<string>();
+  private readonly path: ActivePath;
   private fieldDependents = new Map<string, Set<FormField>>();
   private stepDependents = new Map<string, Set<FormStep>>();
   private stepByFieldKey = new Map<string, FormStep>();
@@ -33,6 +34,7 @@ export class VisibilityState {
       ? definition.steps.flatMap((step) => step.fields)
       : definition.fields ?? [];
     this.fieldByKey = new Map(this.allFields.map((field) => [field.key, field]));
+    this.path = new ActivePath(definition);
     for (const step of definition.steps ?? []) {
       for (const field of step.fields) this.stepByFieldKey.set(field.key, step);
     }
@@ -40,6 +42,7 @@ export class VisibilityState {
   }
 
   markChanged(structureChanged: boolean, valuesChanged: boolean): void {
+    if (structureChanged || valuesChanged) this.path.invalidate();
     if (structureChanged) {
       this.visibilityDirty = true;
       this.canGoNextDirty = true;
@@ -72,8 +75,7 @@ export class VisibilityState {
     if (!this.canGoNextDirty) return this.cache.canGoNext;
     this.canGoNextDirty = false;
     const step = this.cache.currentStep;
-    const validationValues = this.hasRoutes ? activeValues(this.definition, values) : values;
-    const errors = step ? validateStep(step, validationValues, validators) : {};
+    const errors = step ? validateStep(step, this.conditionValues(values), validators) : {};
     this.cache.canGoNext = this.isMultiStep && Object.keys(errors).length === 0;
     return this.cache.canGoNext;
   }
@@ -93,11 +95,13 @@ export class VisibilityState {
     values: Record<string, unknown>,
     errors: Record<string, string>,
   ): Set<string> {
+    this.path.invalidate();
     if (this.hasRoutes) return this.reconcileHidden(values, errors);
     return this.drainQueue(new Set([changedKey]), values, errors);
   }
 
   reconcileHidden(values: Record<string, unknown>, errors: Record<string, string>): Set<string> {
+    this.path.invalidate();
     const seed = new Set([...this.fieldDependents.keys(), ...this.stepDependents.keys()]);
     return this.drainQueue(seed, values, errors);
   }
@@ -128,11 +132,11 @@ export class VisibilityState {
     const field = this.fieldByKey.get(key);
     if (!field || !isVisible(field, this.conditionValues(values))) return false;
     const step = this.stepByFieldKey.get(key);
-    return !step || activeSteps(this.definition, values).some((active) => active.id === step.id);
+    return !step || this.path.steps(values).includes(step);
   }
 
   getVisibleFieldKeys(values: Record<string, unknown>, stepIndex: number): Set<string> {
-    if (this.hasRoutes) return new Set(Object.keys(activeValues(this.definition, values)));
+    if (this.hasRoutes) return new Set(Object.keys(this.path.values(values)));
     const keys = new Set<string>();
     const fields = this.isMultiStep
       ? this.getVisibleSteps(values, stepIndex).flatMap((step) => step.fields)
@@ -142,8 +146,8 @@ export class VisibilityState {
     }
     return keys;
   }
-  private conditionValues(values: Record<string, unknown>) { return this.hasRoutes ? activeValues(this.definition, values) : values; }
-  private get hasRoutes(): boolean { return !!this.definition.steps?.some((step) => step.routes?.length); }
+  private conditionValues(values: Record<string, unknown>) { return this.hasRoutes ? this.path.values(values) : values; }
+  private get hasRoutes(): boolean { return this.path.enabled; }
   private get isMultiStep(): boolean { return (this.definition.steps ?? []).length > 0; }
   private buildIndexes(): void {
     for (const field of this.allFields) {
@@ -165,12 +169,12 @@ export class VisibilityState {
       this.cache.visibleFields = (this.definition.fields ?? []).filter((field) => isVisible(field, this.conditionValues(values)));
       return;
     }
-    this.cache.visibleSteps = activeSteps(this.definition, values);
+    this.cache.visibleSteps = this.path.steps(values);
     const steps = this.cache.visibleSteps;
     this.cache.currentStep = steps[stepIndex] ?? steps[steps.length - 1] ?? null;
     const current = this.cache.currentStep;
     this.cache.visibleFields = current
-      ? current.fields.filter((field) => isVisible(field, this.hasRoutes ? activeValues(this.definition, values) : values))
+      ? current.fields.filter((field) => isVisible(field, this.conditionValues(values)))
       : [];
   }
   private clearHiddenFields(
@@ -182,10 +186,11 @@ export class VisibilityState {
   ): void {
     for (const field of fields ?? []) {
       const step = this.stepByFieldKey.get(field.key);
-      if (this.hasRoutes && step && !activeSteps(this.definition, values).includes(step)) continue;
+      if (this.hasRoutes && step && !this.path.steps(values).includes(step)) continue;
       if (isVisible(field, this.conditionValues(values)) || values[field.key] === undefined) continue;
       delete values[field.key];
       delete errors[field.key];
+      this.path.invalidate();
       cleared.add(field.key);
       enqueue(field.key);
     }
@@ -203,6 +208,7 @@ export class VisibilityState {
         if (values[field.key] === undefined) continue;
         delete values[field.key];
         delete errors[field.key];
+        this.path.invalidate();
         cleared.add(field.key);
         enqueue(field.key);
       }

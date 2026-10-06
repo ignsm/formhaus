@@ -113,4 +113,14 @@ describe('declarative step routes', () => {
     expect(engine.currentStep?.id).toBe('kind');
     expect(engine.visibleSteps.map((step) => step.id)).toEqual(['kind', 'personal', 'review']);
   });
+
+  it('warns when a branch falls through into its sibling branch', () => {
+    const definition = routedDefinition();
+    expect(validateDefinition(definition).filter((warning) => /sibling/.test(warning))).toEqual([]);
+    delete definition.steps![1].routes;
+    expect(validateDefinition(definition)).toContain(
+      'Route branch "business" from "kind" continues into sibling branch "personal". Add an unconditional route where it should continue.',
+    );
+    expect(() => new FormEngine(definition)).not.toThrow();
+  });
 });

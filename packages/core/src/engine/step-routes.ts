@@ -29,6 +29,23 @@ export function routeWarnings(definition: FormDefinition): string[] {
   return warnings;
 }
 
+export function routeFallthroughWarnings(definition: FormDefinition): string[] {
+  const steps = definition.steps ?? [];
+  const warnings: string[] = [];
+  for (const step of steps) {
+    const targets = new Set((step.routes ?? []).map((route) => route.to).filter((to) => to !== null));
+    for (const target of targets) {
+      const index = steps.findIndex((candidate) => candidate.id === target);
+      const sibling = steps[index + 1];
+      const exits = steps[index]?.routes?.some((route) => !route.show?.length && !route.showAny?.length);
+      if (sibling && targets.has(sibling.id) && !exits) {
+        warnings.push(`Route branch "${target}" from "${step.id}" continues into sibling branch "${sibling.id}". Add an unconditional route where it should continue.`);
+      }
+    }
+  }
+  return warnings;
+}
+
 export function activeSteps(definition: FormDefinition, values: Record<string, unknown>): FormStep[] {
   const steps = definition.steps ?? [];
   if (!steps.some((step) => step.routes?.length)) return steps.filter((step) => isStepVisible(step, values));
@@ -72,8 +89,34 @@ function stepValues(step: FormStep, values: Record<string, unknown>, previous: R
   return result;
 }
 
-export function activeValues(definition: FormDefinition, values: Record<string, unknown>): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const step of activeSteps(definition, values)) Object.assign(result, stepValues(step, values, result));
-  return result;
+export class ActivePath {
+  readonly enabled: boolean;
+  private source: Record<string, unknown> | null = null;
+  private activeStepList: FormStep[] = [];
+  private activeValueMap: Record<string, unknown> = {};
+
+  constructor(private definition: FormDefinition) {
+    this.enabled = !!definition.steps?.some((step) => step.routes?.length);
+  }
+
+  invalidate(): void { this.source = null; }
+
+  steps(values: Record<string, unknown>): FormStep[] {
+    this.refresh(values);
+    return this.activeStepList;
+  }
+
+  values(values: Record<string, unknown>): Record<string, unknown> {
+    this.refresh(values);
+    return this.activeValueMap;
+  }
+
+  private refresh(values: Record<string, unknown>): void {
+    if (this.source === values) return;
+    this.source = values;
+    this.activeStepList = activeSteps(this.definition, values);
+    const result: Record<string, unknown> = {};
+    for (const step of this.activeStepList) Object.assign(result, stepValues(step, values, result));
+    this.activeValueMap = result;
+  }
 }
