@@ -1,4 +1,5 @@
 import { afterCommit } from './lifecycle-error';
+import { watchCheckedInputs } from './pending-inputs';
 import type { SubmitFn } from './engine-options';
 import type { EngineInternals } from './runtime-internals';
 import { getSubmitValues, validateForm } from './validation-state';
@@ -10,7 +11,8 @@ export async function submitAsync(engine: EngineInternals, submit: SubmitFn): Pr
   const epoch = engine.validationEpoch;
   const operation = ++engine.operationEpoch;
   let values = getSubmitValues(engine);
-  const stale = () => epoch !== engine.validationEpoch || operation !== engine.operationEpoch;
+  const inputsChanged = watchCheckedInputs(engine, values);
+  const stale = () => epoch !== engine.validationEpoch || operation !== engine.operationEpoch || inputsChanged();
   engine.submitting = true;
   engine.notify();
   try {
@@ -22,7 +24,7 @@ export async function submitAsync(engine: EngineInternals, submit: SubmitFn): Pr
     }
     if (stale()) return false;
     if (lifecycle.onBeforeSubmit) {
-      if (Object.keys(validateForm(engine)).length > 0) return false;
+      if (Object.keys(validateForm(engine)).length > 0 || stale()) return false;
       values = getSubmitValues(engine);
     }
     dispatched = true;

@@ -1,4 +1,5 @@
 import { afterCommit } from './lifecycle-error';
+import { watchCheckedInputs } from './pending-inputs';
 import { validateStep } from '../validation';
 import { applyValidationErrors, getValidationValues } from './validation-state';
 import type { EngineInternals } from './runtime-internals';
@@ -56,8 +57,9 @@ async function changeStep(engine: EngineInternals, direction: 'next' | 'back', r
   const context = { fromStepId: step.id, toStepId: target.id, direction, reason, values: { ...getValidationValues(engine) } };
   const epoch = engine.validationEpoch;
   const operation = ++engine.operationEpoch;
+  const inputsChanged = watchCheckedInputs(engine, context.values);
   const stale = () => epoch !== engine.validationEpoch || operation !== engine.operationEpoch
-    || engine.currentStep?.id !== step.id;
+    || engine.currentStep?.id !== step.id || inputsChanged();
   engine.stepValidating = true;
   engine.notify();
   try {
@@ -75,7 +77,6 @@ async function changeStep(engine: EngineInternals, direction: 'next' | 'back', r
       if (stale() || allowed === false) return false;
     }
     if (stale()) return false;
-    if (engine.visibleSteps[toIndex]?.id !== target.id) return false;
     if (direction === 'next' && publishStepErrors(engine, validateStep(step, getValidationValues(engine), engine.validators))) return false;
     committed = true;
     engine.currentStepIndex = toIndex;

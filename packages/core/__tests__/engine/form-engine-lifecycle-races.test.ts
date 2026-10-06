@@ -54,12 +54,51 @@ it('keeps values written by before-hooks in the action', async () => {
   expect(submitted).toMatchObject({ name: 'Ada', method: 'bank' });
 });
 
-it('revalidates values changed during a before-submit hook', async () => {
+it('discards a submission when a checked value changes during its before-hook', async () => {
   const send = vi.fn();
   const engine: FormEngine = new FormEngine(multiStepDefinition, { name: 'Ada' }, {
-    onBeforeSubmit: () => { engine.setValue('name', ''); },
+    onBeforeSubmit: () => { engine.setValue('name', 'Grace'); },
   });
   expect(await engine.submitAsync(send)).toBe(false);
   expect(send).not.toHaveBeenCalled();
-  expect(engine.errors.name).toBeDefined();
+});
+
+it('does not dispatch when a listener resets the form during final validation', async () => {
+  const send = vi.fn();
+  let armed = false;
+  const engine: FormEngine = new FormEngine(multiStepDefinition, { name: 'Ada' }, {
+    onBeforeSubmit: () => { armed = true; },
+  });
+  engine.subscribe(() => {
+    if (!armed) return;
+    armed = false;
+    engine.reset({ name: 'Replacement' });
+  });
+  expect(await engine.submitAsync(send)).toBe(false);
+  expect(send).not.toHaveBeenCalled();
+});
+
+it('does not let a pending server check approve a different answer', async () => {
+  let approve!: () => void;
+  const engine = new FormEngine(multiStepDefinition, { name: 'allowed' }, {
+    onStepValidate: () => new Promise<void>((done) => { approve = done; }),
+  });
+  const pending = engine.nextStepAsync();
+  engine.setValue('name', 'blocked');
+  approve();
+  expect(await pending).toBe(false);
+  expect(engine.currentStep?.id).toBe('personal');
+});
+
+it('discards a pending submission when the active path changes', async () => {
+  let allow!: () => void;
+  const send = vi.fn();
+  const engine = new FormEngine(multiStepDefinition, { name: 'Ada' }, {
+    onBeforeSubmit: () => new Promise<void>((done) => { allow = done; }),
+  });
+  const pending = engine.submitAsync(send);
+  engine.setValue('accountType', 'business');
+  allow();
+  expect(await pending).toBe(false);
+  expect(send).not.toHaveBeenCalled();
 });
