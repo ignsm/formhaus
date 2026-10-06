@@ -37,7 +37,7 @@ export function useRendererActions(engine: FormEngine, props: FormRendererProps)
     });
     if (!result) {
       for (const [key, error] of Object.entries(engine.errors)) {
-        onAnalyticsEvent?.({ type: 'field_error', fieldKey: key, error });
+        if (key !== '_form') onAnalyticsEvent?.({ type: 'field_error', fieldKey: key, error });
       }
     }
     return result;

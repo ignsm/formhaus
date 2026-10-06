@@ -42,7 +42,7 @@ export function useRendererActions(form: UseFormEngineReturn, props: FormRendere
     });
     if (!result) {
       for (const [fieldKey, error] of Object.entries(engine.errors)) {
-        emit('analyticsEvent', { type: 'field_error', fieldKey, error });
+        if (fieldKey !== '_form') emit('analyticsEvent', { type: 'field_error', fieldKey, error });
       }
     }
     return result;
