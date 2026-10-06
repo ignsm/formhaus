@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { FormEngine } from '../../src/engine';
 import { validateDefinition } from '../../src';
 import { routedDefinition } from './form-engine-routes.fixtures';
@@ -122,5 +122,18 @@ describe('declarative step routes', () => {
       'Route branch "business" from "kind" continues into sibling branch "personal". Add an unconditional route where it should continue.',
     );
     expect(() => new FormEngine(definition)).not.toThrow();
+  });
+
+  it('discards a pending submission when a route answer switches branches', async () => {
+    let allow!: () => void;
+    const send = vi.fn();
+    const engine = new FormEngine(routedDefinition(), { kind: 'personal', name: 'Ada', company: 'Retained' }, {
+      onBeforeSubmit: () => new Promise<void>((done) => { allow = done; }),
+    });
+    const pending = engine.submitAsync(send);
+    engine.setValue('kind', 'business');
+    allow();
+    expect(await pending).toBe(false);
+    expect(send).not.toHaveBeenCalled();
   });
 });
