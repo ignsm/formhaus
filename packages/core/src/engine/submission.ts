@@ -9,7 +9,7 @@ export async function submitAsync(engine: EngineInternals, submit: SubmitFn): Pr
   let dispatched = false;
   const epoch = engine.validationEpoch;
   const operation = ++engine.operationEpoch;
-  const values = getSubmitValues(engine);
+  let values = getSubmitValues(engine);
   const stale = () => epoch !== engine.validationEpoch || operation !== engine.operationEpoch;
   engine.submitting = true;
   engine.notify();
@@ -21,6 +21,10 @@ export async function submitAsync(engine: EngineInternals, submit: SubmitFn): Pr
       if (stale() || allowed === false) return false;
     }
     if (stale()) return false;
+    if (lifecycle.onBeforeSubmit) {
+      if (Object.keys(validateForm(engine)).length > 0) return false;
+      values = getSubmitValues(engine);
+    }
     dispatched = true;
     await submit(values);
     if (operation !== engine.operationEpoch) return true;

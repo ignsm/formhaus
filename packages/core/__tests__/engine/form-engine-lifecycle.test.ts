@@ -47,13 +47,14 @@ describe('step lifecycle', () => {
     expect(engine.stepValidating).toBe(false);
   });
 
-  it.each(['edit', 'reset', 'jump'])('discards stale before-hook work after %s', async (action) => {
+  it.each(['invalid edit', 'path change', 'reset', 'jump'])('discards stale before-hook work after %s', async (action) => {
     const pending = deferred<void>();
     const engine = new FormEngine(multiStepDefinition, { name: 'Ada' }, {
       onBeforeStepChange: () => pending.promise,
     });
     const first = engine.nextStepAsync();
-    if (action === 'edit') engine.setValue('name', 'Grace');
+    if (action === 'invalid edit') engine.setValue('name', '');
+    if (action === 'path change') engine.setValue('accountType', 'business');
     if (action === 'reset') engine.reset({ name: 'Reset' });
     if (action === 'jump') engine.goToStepWithField('method');
     pending.resolve();

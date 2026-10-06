@@ -42,7 +42,7 @@ export const FormFieldsController = memo(function FormFieldsController({
           disabled={loading || engine.stepValidating || engine.submitting}
           components={components}
           onChange={onChange}
-      onCommit={onCommit}
+          onCommit={onCommit}
           onBlur={onBlur}
           onFocus={onFocus}
         />

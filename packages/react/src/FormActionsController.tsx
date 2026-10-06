@@ -27,7 +27,7 @@ export function FormActionsController({
   useFormSnapshot(engine);
   const isLastStep = engine.isLastStep || !engine.isMultiStep;
   const primaryLabel = engine.isMultiStep && !isLastStep
-    ? (engine.currentStep?.next && engine.currentStep.next.label || 'Continue')
+    ? (typeof engine.currentStep?.next === 'object' ? engine.currentStep.next.label ?? 'Continue' : 'Continue')
     : (definition.submit?.label ?? 'Submit');
   const showBack = engine.isMultiStep && !engine.isFirstStep && engine.currentStep?.back !== false;
   const backLabel = typeof engine.currentStep?.back === 'object'
