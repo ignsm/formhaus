@@ -110,3 +110,15 @@ it('prevents held Enter from implicitly submitting the final radio', () => {
   expect(allowed).toBe(false);
   expect(send).not.toHaveBeenCalled();
 });
+
+it('does not pull focus back into the form on unrelated updates', async () => {
+  const single: FormDefinition = { id: 'focus', title: '', submit: { label: 'Send' },
+    fields: [{ key: 'name', type: 'text', label: 'Name' }] };
+  const { rerender } = render(<FormRenderer definition={single} onSubmit={() => {}} />);
+  const input = screen.getByLabelText('Name');
+  input.focus();
+  input.blur();
+  rerender(<FormRenderer definition={single} onSubmit={() => {}} errors={{ name: 'Taken' }} />);
+  await screen.findByText('Taken');
+  expect(document.activeElement).toBe(document.body);
+});

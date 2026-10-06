@@ -15,6 +15,7 @@ export function HeadlessFormRenderer(props: FormRendererProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const focusPending = useRef(false);
   const focusReturn = useRef<HTMLElement | null>(null);
+  const wasBusy = useRef(false);
   const engineOptions: FormEngineOptions = {
     ...props,
     onAfterStepChange: async (context) => {
@@ -39,10 +40,15 @@ export function HeadlessFormRenderer(props: FormRendererProps) {
   useEffect(() => {
     if (previousStep.current !== engine.currentStep?.id) focusPending.current = true;
     previousStep.current = engine.currentStep?.id;
-    if (engine.stepValidating || engine.submitting) return;
+    if (engine.stepValidating || engine.submitting) {
+      wasBusy.current = true;
+      return;
+    }
+    const restore = wasBusy.current;
+    wasBusy.current = false;
     if (!focusPending.current) {
       const document = formRef.current?.ownerDocument;
-      if (document?.activeElement === document?.body && focusReturn.current?.isConnected) focusReturn.current.focus();
+      if (restore && document?.activeElement === document?.body && focusReturn.current?.isConnected) focusReturn.current.focus();
       return;
     }
     focusPending.current = false;

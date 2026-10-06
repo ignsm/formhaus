@@ -64,14 +64,20 @@ const { update: onFieldUpdate, commit: onFieldCommit, next: onNext, prev: onPrev
 let previousStep = currentStep.value?.id;
 let focusPending = false;
 let focusReturn: HTMLElement | null = null;
+let wasBusy = false;
 function rememberFocus(event: FocusEvent) { focusReturn = event.target as HTMLElement; }
 watch([currentStep, stepValidating, submitting], async () => {
   if (currentStep.value?.id !== previousStep) focusPending = true;
   previousStep = currentStep.value?.id;
-  if (stepValidating.value || submitting.value) return;
+  if (stepValidating.value || submitting.value) {
+    wasBusy = true;
+    return;
+  }
+  const restore = wasBusy;
+  wasBusy = false;
   if (!focusPending) {
     const document = formRef.value?.ownerDocument;
-    if (document?.activeElement === document?.body && focusReturn?.isConnected) focusReturn.focus();
+    if (restore && document?.activeElement === document?.body && focusReturn?.isConnected) focusReturn.focus();
     return;
   }
   focusPending = false;
@@ -109,7 +115,7 @@ const effectiveIsLastStep = computed(() => isLastStep.value || !isMultiStep.valu
 
 const primaryLabel = computed(() => {
   if (isMultiStep.value && !effectiveIsLastStep.value) {
-    return currentStep.value?.next && currentStep.value.next.label || 'Continue';
+    return typeof currentStep.value?.next === 'object' ? currentStep.value.next.label ?? 'Continue' : 'Continue';
   }
   return props.definition.submit?.label ?? 'Submit';
 });
