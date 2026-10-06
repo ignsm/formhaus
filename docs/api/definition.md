@@ -29,6 +29,7 @@ interface FormField {
   placeholder?: string;           // Placeholder text
   helperText?: string;            // Hint text below the field
   defaultValue?: unknown;         // Pre-filled value
+  autoAdvance?: boolean;          // Advance on explicit field activation
   show?: ShowCondition[];         // AND conditions for visibility
   showAny?: ShowCondition[];      // OR conditions for visibility
   validation?: FieldValidation;   // Validation rules
@@ -62,7 +63,7 @@ interface FormStep {
   fields: FormField[];
   show?: ShowCondition[];       // Step-level visibility
   showAny?: ShowCondition[];
-  next?: FormAction;            // Override "Continue" button
+  next?: FormAction | false;    // Override or hide "Continue" button
   back?: FormAction | false;    // Override or hide "Back" button
 }
 ```
