@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FormEngineOptions } from '@formhaus/core';
+import type { FormEngineOptions, StepChangeContext } from '@formhaus/core';
 import { computed, nextTick, ref, watch } from 'vue';
 import FieldResolver from './FieldResolver.vue';
 import { useFieldOptions } from './composables/useFieldOptions';
@@ -20,7 +20,7 @@ const engineOptions: FormEngineOptions = {
   get onAfterSubmit() { return props.onAfterSubmit; },
   get onAfterStepChange() {
     const after = props.onAfterStepChange;
-    return async (context) => {
+    return async (context: StepChangeContext) => {
       emit('stepChange', context.toStepId, context.direction);
       if (context.direction === 'next') {
         emit('analyticsEvent', { type: 'step_completed', stepId: context.fromStepId });
