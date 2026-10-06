@@ -189,3 +189,19 @@ A working single-step form with two fields:
 `FormField.autoAdvance?: boolean` enables forward navigation when a renderer field is intentionally committed. Built-in radio fields support click, Space and Enter; arrow keys only select. Custom React fields call `onCommit(value)` and Vue fields emit `commit`. Programmatic values and initial values never advance; the final step never auto-submits.
 
 `FormStep.next` also accepts `false` to hide Next. This changes the action UI, not navigation permission. Provide an accessible retry action whenever Next is hidden. See the [radio activation example](../guide/steps#advance-when-an-answer-is-activated).
+
+## Step routes
+
+`FormStep.routes?: StepRoute[]` selects a forward path in routed forms:
+
+```ts
+interface StepRoute {
+  to: string | null
+  show?: ShowCondition[]
+  showAny?: ShowCondition[]
+}
+```
+
+The first matching route with a visible target wins. An unconditional last route is a fallback; no match continues to the next visible declared step. `to: null` makes this step terminal without submitting. Targets must be later declared step ids. Route conditions may reference this or earlier steps. Invalid targets and forward-field references are reported by `validateDefinition()` and rejected by `FormEngine`.
+
+With routes enabled, progress, Back, validation, hooks and submission use the active path. Skipped values remain in `engine.values` but are excluded from the active projection. See [branch convergence, visibility, retained values and reconciliation](../guide/steps#route-between-branches) and [the complete JSON example](https://github.com/ignsm/formhaus/blob/main/examples/definitions/branching-form.json).
