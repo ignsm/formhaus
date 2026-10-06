@@ -40,6 +40,7 @@ export function useFormEngine(
   watch(
     () => getDefinition().id,
     () => {
+      engine.cancelPendingActions();
       unsubscribe();
       engine = new FormEngine(getDefinition(), initialValues, options);
       unsubscribe = engine.subscribe(() => { version.value++; });
@@ -48,7 +49,7 @@ export function useFormEngine(
     },
   );
 
-  onScopeDispose(() => unsubscribe());
+  onScopeDispose(() => { engine.cancelPendingActions(); unsubscribe(); });
 
   return {
     get engine() { return engineRef.value; },

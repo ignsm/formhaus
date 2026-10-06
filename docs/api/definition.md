@@ -183,3 +183,9 @@ A working single-step form with two fields:
   ]
 }
 ```
+
+## Explicit field activation
+
+`FormField.autoAdvance?: boolean` enables forward navigation when a renderer field is intentionally committed. Built-in radio fields support click, Space and Enter; arrow keys only select. Custom React fields call `onCommit(value)` and Vue fields emit `commit`. Programmatic values and initial values never advance; the final step never auto-submits.
+
+`FormStep.next` also accepts `false` to hide Next. This changes the action UI, not navigation permission. Provide an accessible retry action whenever Next is hidden. See the [radio activation example](../guide/steps#advance-when-an-answer-is-activated).

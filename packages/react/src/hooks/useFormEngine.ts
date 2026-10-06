@@ -1,5 +1,5 @@
 import { FormEngine, type FormEngineOptions, type FormDefinition } from '@formhaus/core';
-import { useCallback, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 
 export function useFormEngineStore(
   definition: FormDefinition,
@@ -23,7 +23,9 @@ export function useFormEngineStore(
     definitionIdRef.current = definition.id;
   }
 
-  return engineRef.current;
+  const engine = engineRef.current;
+  useEffect(() => () => engine.cancelPendingActions(), [engine]);
+  return engine;
 }
 
 export function useFormEngine(

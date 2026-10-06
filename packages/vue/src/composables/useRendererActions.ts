@@ -1,12 +1,16 @@
+import { evaluateCondition } from '@formhaus/core';
 import type { FormRendererEmits, FormRendererProps } from '../types';
 import type { UseFormEngineReturn } from './useFormEngine';
 
 export function useRendererActions(form: UseFormEngineReturn, props: FormRendererProps, emit: FormRendererEmits) {
   async function run(action: () => Promise<boolean>) {
     if (props.loading) return;
+    const owner = form.engine;
+    const onError = props.onError;
     try { await action(); }
     catch (error) {
-      if (props.onError) props.onError(error);
+      if (owner !== form.engine) return;
+      if (onError) onError(error);
       else form.engine.setErrors({ _form: error instanceof Error ? error.message : 'Form action failed' });
     }
   }
@@ -28,10 +32,13 @@ export function useRendererActions(form: UseFormEngineReturn, props: FormRendere
   }
   const submit = () => run(async () => {
     const engine = form.engine;
+    const handler = props.submitHandler;
+    if (engine.definition.submit.disabled?.every((condition) => evaluateCondition(condition, engine.values))
+      && engine.definition.submit.disabled.length > 0) return false;
     const result = await engine.submitAsync(async (values) => {
       emit('analyticsEvent', { type: 'form_submitted', fieldCount: Object.keys(values).length });
-      if (props.submitHandler) await props.submitHandler(values);
-      emit('submit', values);
+      if (handler) await handler(values);
+      if (engine === form.engine) emit('submit', values);
     });
     if (!result) {
       for (const [fieldKey, error] of Object.entries(engine.errors)) {

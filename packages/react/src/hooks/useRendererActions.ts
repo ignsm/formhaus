@@ -1,3 +1,4 @@
+import { evaluateCondition } from '@formhaus/core';
 import type { FormEngine } from '@formhaus/core';
 import { useCallback } from 'react';
 import type { FormRendererProps } from '../types';
@@ -28,6 +29,8 @@ export function useRendererActions(engine: FormEngine, props: FormRendererProps)
     if (field.autoAdvance && engine.currentStep?.id === step?.id && !engine.isLastStep) void run(() => engine.nextStepAsync('autoAdvance'));
   }, [engine, loading, run, update]);
   const submit = useCallback(() => run(async () => {
+    if (engine.definition.submit.disabled?.every((condition) => evaluateCondition(condition, engine.values))
+      && engine.definition.submit.disabled.length > 0) return false;
     const result = await engine.submitAsync(async (values) => {
       onAnalyticsEvent?.({ type: 'form_submitted', fieldCount: Object.keys(values).length });
       await onSubmit(values);

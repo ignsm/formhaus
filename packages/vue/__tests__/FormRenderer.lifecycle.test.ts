@@ -76,3 +76,32 @@ describe('auto advance lifecycle', () => {
     expect(emitted().submit).toEqual([[{}]]);
   });
 });
+
+it('commits an already selected radio on Space without relying on a native change event', async () => {
+  render(FormRenderer, { props: { definition, initialValues: { choice: 'a' } } });
+  const a = screen.getByLabelText('A');
+  await fireEvent.keyDown(a, { key: ' ' });
+  await fireEvent.keyUp(a, { key: ' ' });
+  expect(await screen.findByLabelText('Yes')).toBeDefined();
+});
+
+it('restores focus for retry after an async guard cancels', async () => {
+  let cancel!: (allowed: boolean) => void;
+  render(FormRenderer, { props: { definition,
+    onBeforeStepChange: () => new Promise<boolean>((done) => { cancel = done; }),
+  } });
+  const a = screen.getByLabelText('A');
+  a.focus();
+  await fireEvent.click(a);
+  a.blur();
+  cancel(false);
+  await waitFor(() => expect(document.activeElement).toBe(a));
+});
+
+it('prevents held Enter from implicitly submitting the final radio', async () => {
+  const { emitted } = render(FormRenderer, { props: { definition: { ...definition, steps: [definition.steps![1]] } } });
+  const event = new KeyboardEvent('keydown', { key: 'Enter', repeat: true, bubbles: true, cancelable: true });
+  screen.getByLabelText('Yes').dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(true);
+  expect(emitted().submit).toBeUndefined();
+});

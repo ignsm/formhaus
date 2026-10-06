@@ -82,3 +82,31 @@ describe('auto advance and lifecycle', () => {
     await waitFor(() => expect(after).toHaveBeenCalledTimes(1));
   });
 });
+
+it('commits an already selected radio on Space without relying on a native change event', async () => {
+  render(<FormRenderer definition={definition} initialValues={{ choice: 'a' }} onSubmit={() => {}} />);
+  const a = screen.getByLabelText('A');
+  fireEvent.keyDown(a, { key: ' ' });
+  fireEvent.keyUp(a, { key: ' ' });
+  expect(await screen.findByLabelText('Yes')).toBeDefined();
+});
+
+it('restores focus for retry after an async guard cancels', async () => {
+  let cancel!: (allowed: boolean) => void;
+  render(<FormRenderer definition={definition} onSubmit={() => {}}
+    onBeforeStepChange={() => new Promise<boolean>((done) => { cancel = done; })} />);
+  const a = screen.getByLabelText('A');
+  a.focus();
+  fireEvent.click(a);
+  a.blur();
+  cancel(false);
+  await waitFor(() => expect(document.activeElement).toBe(a));
+});
+
+it('prevents held Enter from implicitly submitting the final radio', () => {
+  const send = vi.fn();
+  render(<FormRenderer definition={{ ...definition, steps: [definition.steps![1]] }} onSubmit={send} />);
+  const allowed = fireEvent.keyDown(screen.getByLabelText('Yes'), { key: 'Enter', repeat: true });
+  expect(allowed).toBe(false);
+  expect(send).not.toHaveBeenCalled();
+});

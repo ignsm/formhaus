@@ -5,7 +5,8 @@ import { getSubmitValues, validateForm } from './validation-state';
 
 export async function submitAsync(engine: EngineInternals, submit: SubmitFn): Promise<boolean> {
   if (engine.submitting || engine.stepValidating) return false;
-  if (Object.keys(validateForm(engine)).length > 0) return false;
+  const lifecycle = { ...engine.lifecycle };
+  let dispatched = false;
   const epoch = engine.validationEpoch;
   const operation = ++engine.operationEpoch;
   const values = getSubmitValues(engine);
@@ -14,15 +15,20 @@ export async function submitAsync(engine: EngineInternals, submit: SubmitFn): Pr
   engine.notify();
   try {
     if (stale()) return false;
-    if (engine.lifecycle.onBeforeSubmit) {
-      const allowed = await engine.lifecycle.onBeforeSubmit(values);
+    if (Object.keys(validateForm(engine)).length > 0 || stale()) return false;
+    if (lifecycle.onBeforeSubmit) {
+      const allowed = await lifecycle.onBeforeSubmit(values);
       if (stale() || allowed === false) return false;
     }
     if (stale()) return false;
+    dispatched = true;
     await submit(values);
     if (operation !== engine.operationEpoch) return true;
-    await afterCommit('afterSubmit', () => engine.lifecycle.onAfterSubmit?.(values));
+    await afterCommit('afterSubmit', () => lifecycle.onAfterSubmit?.(values));
     return true;
+  } catch (error) {
+    if (!dispatched && stale()) return false;
+    throw error;
   } finally {
     if (operation === engine.operationEpoch) {
       engine.submitting = false;

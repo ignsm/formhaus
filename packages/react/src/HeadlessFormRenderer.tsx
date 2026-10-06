@@ -14,6 +14,7 @@ export function HeadlessFormRenderer(props: FormRendererProps) {
     ActionsComponent, ProgressComponent, onAnalyticsEvent } = props;
   const formRef = useRef<HTMLFormElement>(null);
   const focusPending = useRef(false);
+  const focusReturn = useRef<HTMLElement | null>(null);
   const engineOptions: FormEngineOptions = {
     ...props,
     onAfterStepChange: async (context) => {
@@ -28,6 +29,7 @@ export function HeadlessFormRenderer(props: FormRendererProps) {
   };
   const engine = useFormEngineStore(definition, initialValues, engineOptions);
   const version = useFormSnapshot(engine);
+  const previousStep = useRef(engine.currentStep?.id);
   const actions = useRendererActions(engine, props);
 
   useEffect(() => {
@@ -35,7 +37,14 @@ export function HeadlessFormRenderer(props: FormRendererProps) {
   }, [props.errors, engine]);
 
   useEffect(() => {
-    if (!focusPending.current || engine.stepValidating) return;
+    if (previousStep.current !== engine.currentStep?.id) focusPending.current = true;
+    previousStep.current = engine.currentStep?.id;
+    if (engine.stepValidating || engine.submitting) return;
+    if (!focusPending.current) {
+      const document = formRef.current?.ownerDocument;
+      if (document?.activeElement === document?.body && focusReturn.current?.isConnected) focusReturn.current.focus();
+      return;
+    }
     focusPending.current = false;
     const target = formRef.current?.querySelector<HTMLElement>(
       '.fh-form__fields input:not(:disabled), .fh-form__fields select:not(:disabled), .fh-form__fields textarea:not(:disabled), .fh-form__fields button:not(:disabled)',
@@ -53,7 +62,7 @@ export function HeadlessFormRenderer(props: FormRendererProps) {
   const handleCancel = useCallback(() => props.onCancel?.(), [props.onCancel]);
 
   return (
-    <form ref={formRef} className="fh-form" tabIndex={-1} aria-busy={engine.stepValidating || engine.submitting || loading}
+    <form ref={formRef} onFocusCapture={(event) => { focusReturn.current = event.target; }} className="fh-form" tabIndex={-1} aria-busy={engine.stepValidating || engine.submitting || loading}
       onSubmit={(event) => { event.preventDefault(); void (engine.isLastStep ? actions.submit() : actions.next()); }}>
       <FormProgressController engine={engine} ProgressComponent={ProgressComponent} />
       <FormFieldsController key={definition.id} engine={engine} loading={loading} components={components}

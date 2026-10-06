@@ -80,3 +80,17 @@ For renderers, the granular subscriptions avoid updating unrelated fields:
 | `getStructureSnapshot()` | Returns the structure revision number |
 
 Each `subscribe` method returns an unsubscribe function. Snapshot methods return stable numbers until the corresponding state changes, so they can be passed to external-store APIs such as React's `useSyncExternalStore`.
+
+## Navigation and submission lifecycle
+
+`FormEngineOptions` additionally accepts `onBeforeStepChange`, `onAfterStepChange`, `onBeforeSubmit` and `onAfterSubmit`. Before-hooks may return `false` to cancel, synchronously or asynchronously. Step hooks receive `StepChangeContext`; submit hooks receive submission values.
+
+| API | Result |
+| --- | --- |
+| `nextStepAsync(reason = 'next')` | `Promise<boolean>`; validates and runs hooks. Renderers use `reason: 'autoAdvance'` for field activation. |
+| `prevStepAsync()` | `Promise<boolean>`; runs hooks without forward validation. |
+| `submitAsync(handler)` | `Promise<boolean>`; validates, runs the before-hook, awaits the handler and then the after-hook. |
+| `cancelPendingActions()` | Invalidates pending guards without clearing answers. Cannot undo a dispatched submission. |
+| `submitting` | True while submission and its hooks are pending. |
+
+A cancelled, invalid or concurrent action resolves to `false`. Exceptions reject. `FormLifecycleError` has `committed: true`, `phase` and `cause` for an after-hook failure: the action already completed. `stepValidating` remains true throughout navigation hooks. Existing synchronous methods, error redirection and reset do not run async hooks. See [lifecycle ordering, recovery and adapter examples](../guide/steps#lifecycle-hooks).

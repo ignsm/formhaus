@@ -132,6 +132,14 @@ export class FormEngine {
     this.notify({ fieldKeys: previous === loading ? [] : [key] });
   }
 
+  cancelPendingActions(): void {
+    this.validationEpoch++;
+    this.operationEpoch++;
+    this.stepValidating = false;
+    this.submitting = false;
+    this.notify();
+  }
+
   nextStep(): boolean { return nextStep(this.internals); }
   nextStepAsync(reason: 'next' | 'autoAdvance' = 'next'): Promise<boolean> { return nextStepAsync(this.internals, reason); }
   prevStepAsync(): Promise<boolean> { return prevStepAsync(this.internals); }

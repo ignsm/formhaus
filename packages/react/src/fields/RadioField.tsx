@@ -44,12 +44,16 @@ export function RadioField({
                 onChange={() => { if (!commit || arrowSelection.current) onChange(opt.value); }}
                 onKeyDown={(event) => {
                   arrowSelection.current = event.key.startsWith('Arrow');
+                  if (commit && event.key === ' ') event.preventDefault();
                   if (commit && event.key === 'Enter') {
                     event.preventDefault();
-                    commit(opt.value);
+                    if (!event.repeat) commit(opt.value);
                   }
                 }}
-                onKeyUp={() => { arrowSelection.current = false; }}
+                onKeyUp={(event) => {
+                  arrowSelection.current = false;
+                  if (commit && event.key === ' ') { event.preventDefault(); commit(opt.value); }
+                }}
                 onPointerDown={() => { arrowSelection.current = false; }}
                 onClick={() => { if (commit && !arrowSelection.current) commit(opt.value); }}
                 onBlur={onBlur}

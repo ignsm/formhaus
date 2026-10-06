@@ -13,10 +13,15 @@ const emit = defineEmits<{
 let arrowSelection = false;
 function onKeyDown(event: KeyboardEvent, value: string) {
   arrowSelection = event.key.startsWith('Arrow');
+  if (props.field.autoAdvance && event.key === ' ') event.preventDefault();
   if (props.field.autoAdvance && event.key === 'Enter') {
     event.preventDefault();
-    emit('commit', value);
+    if (!event.repeat) emit('commit', value);
   }
+}
+function onKeyUp(event: KeyboardEvent, value: string) {
+  arrowSelection = false;
+  if (props.field.autoAdvance && event.key === ' ') { event.preventDefault(); emit('commit', value); }
 }
 const groupId = computed(() => `fh-field-${props.field.key}`);
 const helperId = computed(() => `fh-field-${props.field.key}-helper`);
@@ -48,7 +53,7 @@ const helperId = computed(() => `fh-field-${props.field.key}-helper`);
           @focus="emit('focus')"
           @blur="emit('blur')"
           @keydown="onKeyDown($event, option.value)"
-          @keyup="arrowSelection = false"
+          @keyup="onKeyUp($event, option.value)"
           @pointerdown="arrowSelection = false"
           @click="() => { if (props.field.autoAdvance && !arrowSelection) emit('commit', option.value); }"
           @change="() => { if (!props.field.autoAdvance || arrowSelection) emit('update:value', option.value); }"

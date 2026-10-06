@@ -18,13 +18,16 @@ const engineOptions: FormEngineOptions = {
   get onBeforeStepChange() { return props.onBeforeStepChange; },
   get onBeforeSubmit() { return props.onBeforeSubmit; },
   get onAfterSubmit() { return props.onAfterSubmit; },
-  onAfterStepChange: async (context) => {
-    emit('stepChange', context.toStepId, context.direction);
-    if (context.direction === 'next') {
-      emit('analyticsEvent', { type: 'step_completed', stepId: context.fromStepId });
-      emit('analyticsEvent', { type: 'step_viewed', stepId: context.toStepId, stepIndex: form.engine.currentStepIndex });
-    }
-    await props.onAfterStepChange?.(context);
+  get onAfterStepChange() {
+    const after = props.onAfterStepChange;
+    return async (context) => {
+      emit('stepChange', context.toStepId, context.direction);
+      if (context.direction === 'next') {
+        emit('analyticsEvent', { type: 'step_completed', stepId: context.fromStepId });
+        emit('analyticsEvent', { type: 'step_viewed', stepId: context.toStepId, stepIndex: form.engine.currentStepIndex });
+      }
+      await after?.(context);
+    };
   },
 };
 
@@ -60,10 +63,17 @@ const { update: onFieldUpdate, commit: onFieldCommit, next: onNext, prev: onPrev
 
 let previousStep = currentStep.value?.id;
 let focusPending = false;
+let focusReturn: HTMLElement | null = null;
+function rememberFocus(event: FocusEvent) { focusReturn = event.target as HTMLElement; }
 watch([currentStep, stepValidating, submitting], async () => {
   if (currentStep.value?.id !== previousStep) focusPending = true;
   previousStep = currentStep.value?.id;
-  if (!focusPending || stepValidating.value || submitting.value) return;
+  if (stepValidating.value || submitting.value) return;
+  if (!focusPending) {
+    const document = formRef.value?.ownerDocument;
+    if (document?.activeElement === document?.body && focusReturn?.isConnected) focusReturn.focus();
+    return;
+  }
   focusPending = false;
   await nextTick();
   const target = formRef.value?.querySelector<HTMLElement>(
@@ -123,7 +133,7 @@ async function onPrimary() {
 </script>
 
 <template>
-  <form ref="formRef" class="fh-form" tabindex="-1" :aria-busy="props.loading || stepValidating || submitting" @submit.prevent="onPrimary">
+  <form ref="formRef" @focusin="rememberFocus" class="fh-form" tabindex="-1" :aria-busy="props.loading || stepValidating || submitting" @submit.prevent="onPrimary">
     <component
       :is="props.progressComponent"
       v-if="isMultiStep && props.progressComponent"

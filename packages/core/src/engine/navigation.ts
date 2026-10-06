@@ -46,6 +46,9 @@ async function changeStep(engine: EngineInternals, direction: 'next' | 'back', r
   const step = engine.currentStep;
   if (!step) return false;
   if (direction === 'next' && publishStepErrors(engine, validateStep(step, engine.values, engine.validators))) return false;
+  const lifecycle = { ...engine.lifecycle };
+  const validate = engine.onStepValidate;
+  let committed = false;
   const fromIndex = engine.currentStepIndex;
   const toIndex = fromIndex + (direction === 'next' ? 1 : -1);
   const target = engine.visibleSteps[toIndex];
@@ -59,24 +62,28 @@ async function changeStep(engine: EngineInternals, direction: 'next' | 'back', r
   engine.notify();
   try {
     if (stale()) return false;
-    if (direction === 'next' && engine.onStepValidate) {
-      const result = await engine.onStepValidate(step.id, context.values);
+    if (direction === 'next' && validate) {
+      const result = await validate!(step.id, context.values);
       if (stale()) return false;
       if (result && Object.keys(result).length > 0) {
         applyValidationErrors(engine, result);
         return false;
       }
     }
-    if (engine.lifecycle.onBeforeStepChange) {
-      const allowed = await engine.lifecycle.onBeforeStepChange(context);
+    if (lifecycle.onBeforeStepChange) {
+      const allowed = await lifecycle.onBeforeStepChange(context);
       if (stale() || allowed === false) return false;
     }
     if (stale()) return false;
+    committed = true;
     engine.currentStepIndex = toIndex;
     engine.validationEpoch++;
     engine.notify({ structureChanged: true });
-    await afterCommit('afterStepChange', () => engine.lifecycle.onAfterStepChange?.(context));
+    await afterCommit('afterStepChange', () => lifecycle.onAfterStepChange?.(context));
     return true;
+  } catch (error) {
+    if (!committed && stale()) return false;
+    throw error;
   } finally {
     if (operation === engine.operationEpoch) {
       engine.stepValidating = false;
