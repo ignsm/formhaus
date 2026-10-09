@@ -1,4 +1,4 @@
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onScopeDispose, ref, watch } from 'vue';
 import type { BuilderForm } from './builder-model';
 
 const LIMIT = 200;
@@ -62,6 +62,8 @@ export function useHistory(form: BuilderForm, delay = 300) {
     future.value = [];
     apply(snapshot);
   }
+
+  onScopeDispose(() => clearTimeout(timer));
 
   function onKey(event: KeyboardEvent) {
     if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return;

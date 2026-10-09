@@ -7,7 +7,7 @@ import LucideIcon from './LucideIcon.vue';
 import './demo-form.css';
 import './demo-actions.css';
 
-const props = defineProps<{ definition: FormDefinition; initial?: Record<string, unknown>; path?: string[]; hint?: string }>();
+const props = defineProps<{ definition: FormDefinition; initial?: Record<string, unknown>; path?: string[] }>();
 const emit = defineEmits<{
   step: [id: string];
   values: [values: Record<string, unknown>];
@@ -63,7 +63,6 @@ async function onSubmit(values: Record<string, unknown>) {
     <div v-if="payload" ref="result" class="demo-form__result" tabindex="-1">
       <span class="demo-form__badge"><LucideIcon name="check" /></span>
       <p class="demo-form__heading">Submitted</p>
-      <p v-if="hint" class="demo-form__hint">{{ hint }}</p>
       <pre class="demo-form__payload"><code>{{ JSON.stringify(payload, null, 2) }}</code></pre>
     </div>
     <FormRenderer

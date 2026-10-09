@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-defineProps<{ placeholder: string; label: string; list?: string; selectOnFocus?: boolean }>();
+defineProps<{ placeholder: string; label: string; selectOnFocus?: boolean }>();
 const model = defineModel<string>({ required: true });
 const emit = defineEmits<{ keydown: [event: KeyboardEvent]; input: []; blur: [] }>();
 const input = ref<HTMLInputElement>();
 
-defineExpose({ focus: (options?: FocusOptions) => input.value?.focus(options), blur: () => input.value?.blur() });
 </script>
 
 <template>
@@ -19,7 +18,6 @@ defineExpose({ focus: (options?: FocusOptions) => input.value?.focus(options), b
       type="text"
       size="1"
       autocomplete="off"
-      :list="list"
       :placeholder="placeholder"
       :aria-label="label"
       @keydown="emit('keydown', $event)"
@@ -63,9 +61,5 @@ defineExpose({ focus: (options?: FocusOptions) => input.value?.focus(options), b
 
 .auto__input::placeholder {
   color: var(--vp-c-text-3);
-}
-
-.auto__input::-webkit-calendar-picker-indicator {
-  display: none !important;
 }
 </style>
