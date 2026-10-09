@@ -2,23 +2,20 @@
 import CopyLine from './CopyLine.vue';
 import LucideIcon from './LucideIcon.vue';
 
-const facts = ['MIT', 'Core 6.2 KB gzipped', 'Zero dependencies', 'React, Vue, headless'];
+const facts = ['MIT', 'Core 6.2 KB gzipped', 'Zero dependencies', 'Any framework'];
 </script>
 
 <template>
   <section class="hero" aria-labelledby="hero-title">
     <h1 id="hero-title" class="hero__title">
-      JSON forms for <span class="hero__accent">React, Vue, Figma and agents</span>
+      Write the form once. <span class="hero__accent">Ship it everywhere.</span>
     </h1>
     <p class="hero__lead">
-      Validation, conditions, steps and branches in one JSON file.
+      One JSON file runs your React and Vue forms, Figma mockups and AI agents.
     </p>
     <div class="hero__actions">
       <a class="hero__button hero__button--brand" href="/guide/">Get started <LucideIcon name="arrow-right" /></a>
       <a class="hero__button" href="/playground">Playground</a>
-      <a class="hero__button" href="https://github.com/ignsm/formhaus" target="_blank" rel="noreferrer">
-        <LucideIcon name="github" /> GitHub
-      </a>
     </div>
     <CopyLine class="hero__install" command="npm i @formhaus/core @formhaus/react" label="Copy install command" />
     <ul class="hero__facts" aria-label="Key facts">
@@ -39,10 +36,10 @@ const facts = ['MIT', 'Core 6.2 KB gzipped', 'Zero dependencies', 'React, Vue, h
 .hero::before {
   content: '';
   position: absolute;
-  inset: -40px 0 auto;
-  height: 420px;
+  inset: calc(-1 * var(--vp-nav-height) - 80px) 0 auto;
+  height: calc(var(--vp-nav-height) + 520px);
   z-index: -1;
-  background: radial-gradient(ellipse at 50% 30%, var(--vp-c-brand-soft), transparent 70%);
+  background: radial-gradient(ellipse at 50% 40%, var(--vp-c-brand-soft), transparent 70%);
   pointer-events: none;
 }
 

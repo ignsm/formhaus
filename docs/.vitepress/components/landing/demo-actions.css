@@ -3,13 +3,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 4px;
+  margin-top: auto;
 }
 
 .demo-form .fh-form-actions__button,
 .demo-form .demo-form__restart {
   height: 42px;
   padding: 0 20px;
+  white-space: nowrap;
   border: 1px solid var(--vp-c-border);
   border-radius: 10px;
   font-size: 15px;
@@ -40,6 +41,15 @@
 .demo-form .demo-form__restart:focus-visible {
   outline: 2px solid var(--vp-c-brand-1);
   outline-offset: 2px;
+}
+
+@media (max-width: 479px) {
+  .demo-form .fh-field__radio-label,
+  .demo-form .fh-field__multiselect-label {
+    gap: 8px;
+    padding: 12px 10px;
+    white-space: nowrap;
+  }
 }
 
 .demo-form .demo-form__result {
@@ -90,4 +100,14 @@
   font-size: inherit;
   color: var(--vp-c-text-1);
   background: none;
+}
+
+.demo-form .demo-form__title {
+  flex: none;
+  margin: 0 0 24px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--vp-c-text-1);
 }

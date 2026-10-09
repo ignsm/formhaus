@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import LucideIcon from './LucideIcon.vue';
 
-const points = ['Your own components', 'Flow map for every branch', 'Clickable prototype', 'AI drafts with your key'];
+const points = ['Your own components', 'Flow map for every branch', 'Clickable prototype', 'Drafts forms with your own API key'];
 </script>
 
 <template>
@@ -9,8 +9,8 @@ const points = ['Your own components', 'Flow map for every branch', 'Clickable p
     <div class="figma">
       <div class="figma__text">
         <p class="lp-eyebrow">Figma plugin</p>
-        <h2 id="figma-title" class="lp-title">The same form in Figma</h2>
-        <p class="lp-lead">Designers edit the JSON your app ships.</p>
+        <h2 id="figma-title" class="lp-title">Designers see the real form</h2>
+        <p class="lp-lead">Mockups, flow map and prototype from the same JSON.</p>
         <ul class="figma__points">
           <li v-for="point in points" :key="point">{{ point }}</li>
         </ul>
@@ -18,12 +18,12 @@ const points = ['Your own components', 'Flow map for every branch', 'Clickable p
       </div>
       <img
         class="figma__image"
-        src="/figma/prototype.gif"
-        width="768"
-        height="560"
+        src="/figma/flow-map.png"
+        width="1952"
+        height="964"
         loading="lazy"
         decoding="async"
-        alt="Clicking through a generated Figma prototype. Business opens Company details, Continue opens Review"
+        alt="A branching account form laid out in Figma as a flow map with labelled arrows"
       />
     </div>
   </section>

@@ -5,13 +5,20 @@ titleTemplate: false
 description: "Define fields, validation, conditional visibility and multi-step routes in one JSON form definition. Render it in React, Vue or Figma."
 ---
 
+<script setup>
+import LandingHero from './.vitepress/components/landing/LandingHero.vue';
+import LandingDemo from './.vitepress/components/landing/LandingDemo.vue';
+import LandingTabs from './.vitepress/components/landing/LandingTabs.vue';
+import LandingFigma from './.vitepress/components/landing/LandingFigma.vue';
+import LandingAgents from './.vitepress/components/landing/LandingAgents.vue';
+import LandingWhen from './.vitepress/components/landing/LandingWhen.vue';
+import LandingRecipes from './.vitepress/components/landing/LandingRecipes.vue';
+import './.vitepress/components/landing/landing.css';
+</script>
+
 <LandingHero />
 
-<LandingDemo>
-
-<<< @/recipes/definitions/home-onboarding.json
-
-</LandingDemo>
+<LandingDemo />
 
 <LandingTabs>
 <template #react>
@@ -19,7 +26,7 @@ description: "Define fields, validation, conditional visibility and multi-step r
 ```tsx
 import { FormRenderer } from '@formhaus/react';
 import '@formhaus/core/style.css';
-import definition from './home-onboarding.json';
+import definition from './onboarding.json';
 
 export function Onboarding() {
   return <FormRenderer definition={definition} onSubmit={(values) => save(values)} />;
@@ -33,7 +40,7 @@ export function Onboarding() {
 <script setup lang="ts">
 import { FormRenderer } from '@formhaus/vue';
 import '@formhaus/core/style.css';
-import definition from './home-onboarding.json';
+import definition from './onboarding.json';
 </script>
 
 <template>
@@ -46,24 +53,24 @@ import definition from './home-onboarding.json';
 
 ```ts
 import { FormEngine } from '@formhaus/core';
-import definition from './home-onboarding.json';
+import definition from './onboarding.json';
 
 const engine = new FormEngine(definition);
-engine.setValue('use', 'team');
+engine.setValue('workspaceType', 'my-team');
 await engine.nextStepAsync();
-console.log(engine.currentStep?.id);
 
 engine.setValue('company', 'Acme');
-engine.setValue('size', '11-50');
+engine.setValue('teamSize', '11-50');
 await engine.nextStepAsync();
-engine.setValue('email', 'team@acme.dev');
+
+engine.setValue('workEmail', 'team@acme.dev');
 await engine.submitAsync(save);
 ```
 
 </template>
 <template #figma>
 
-![The Formhaus Figma plugin editing a branching account form next to its flow map on the canvas](/figma/hero.png)
+<img src="/figma/hero.png" alt="The Formhaus Figma plugin editing a branching account form next to its flow map on the canvas" width="2400" height="1240" loading="lazy" decoding="async">
 
 Paste the same JSON into the plugin.
 

@@ -22,7 +22,7 @@ async function copy() {
     <button type="button" class="copy-line__button" :aria-label="props.label" @click="copy">
       <LucideIcon :name="copied ? 'check' : 'copy'" />
     </button>
-    <span class="copy-line__status" role="status">{{ copied ? 'Copied' : '' }}</span>
+    <span class="lp-sr-only" role="status">{{ copied ? 'Copied' : '' }}</span>
   </div>
 </template>
 
@@ -59,7 +59,7 @@ async function copy() {
 
 .copy-line__prompt {
   margin-right: 10px;
-  color: var(--vp-c-text-3);
+  color: var(--vp-c-text-2);
   user-select: none;
 }
 
@@ -77,13 +77,5 @@ async function copy() {
 .copy-line__button:hover {
   background: var(--vp-c-default-soft);
   color: var(--vp-c-text-1);
-}
-
-.copy-line__status {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 </style>

@@ -10,8 +10,8 @@ const tabs = [
 <template>
   <section class="lp-section" aria-labelledby="everywhere-title">
     <p class="lp-eyebrow">Renderers</p>
-    <h2 id="everywhere-title" class="lp-title">Same file, every renderer</h2>
-    <p class="lp-lead">Native inputs or your own components.</p>
+    <h2 id="everywhere-title" class="lp-title">Same file in every framework</h2>
+    <p class="lp-lead">React and Vue renderers, or the headless core for Svelte, Solid or vanilla JS.</p>
     <div class="tabs">
       <div class="tabs__bar" role="radiogroup" aria-label="Renderer">
         <template v-for="(tab, index) in tabs" :key="tab.id">

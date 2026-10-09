@@ -1,188 +1,138 @@
 <script setup lang="ts">
-import { defineAsyncComponent, ref } from 'vue';
-import type { FormDefinition } from '@formhaus/core';
-import definition from '../../../recipes/definitions/home-onboarding.json';
-import LandingPath from './LandingPath.vue';
+import { computed, defineAsyncComponent, reactive, ref, shallowRef, watch } from 'vue';
+import { validateDefinition, type FormDefinition } from '@formhaus/core';
+import seed from '../../../recipes/definitions/onboarding.json';
+import LandingBuilder from './LandingBuilder.vue';
+import LandingFlow from './LandingFlow.vue';
+import LandingJson from './LandingJson.vue';
+import LucideIcon from './LucideIcon.vue';
+import { fromDefinition, toDefinition } from './builder-model';
+import { buildGraph, nextStep } from './flow-graph';
+import { flowState } from './flow-state';
+import { formatJson, stepRanges } from './json-format';
 
 const LandingDemoForm = defineAsyncComponent(() => import('./LandingDemoForm.vue'));
 
-const current = ref('use');
-const choice = ref<string>();
+const tabs = [
+  { id: 'write', label: 'Write' },
+  { id: 'json', label: 'JSON' },
+  { id: 'preview', label: 'Preview' },
+] as const;
+type Tab = (typeof tabs)[number]['id'];
+
+const model = reactive(fromDefinition(seed as FormDefinition));
+const definition = computed(() => toDefinition(model));
+const source = computed(() => formatJson(definition.value));
+const issues = computed(() => validateDefinition(definition.value).length);
+const live = shallowRef(definition.value);
+const graph = computed(() => buildGraph(live.value));
+const tab = ref<Tab>('write');
+const group = ref(0);
+const run = ref(0);
+const first = () => live.value.steps?.[0]?.id ?? '';
+const history = ref<string[]>([first()]);
+const values = ref<Record<string, unknown>>({});
 const done = ref(false);
-const expanded = ref(false);
+
+let timer: ReturnType<typeof setTimeout> | undefined;
+watch(definition, (next) => {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    live.value = next;
+    history.value = [first()];
+    done.value = false;
+  }, 120);
+});
+
+const state = computed(() => flowState({ definition: live.value, graph: graph.value, history: history.value, values: values.value, done: done.value }));
+const range = computed(() => {
+  const id = definition.value.steps?.[group.value]?.id;
+  return id ? stepRanges(source.value, [id])[id] : undefined;
+});
+const progress = computed(() => {
+  const path: string[] = [];
+  for (let id: string | undefined = first(); id && !path.includes(id); id = nextStep(live.value, id, values.value)) path.push(id);
+  const at = path.indexOf(history.value[history.value.length - 1]);
+  return path.length > 1 ? `Step ${Math.max(1, at + 1)} of ${path.length}` : 'One page';
+});
+
+function onStep(id: string) {
+  const index = history.value.indexOf(id);
+  history.value = index >= 0 ? history.value.slice(0, index + 1) : [...history.value, id];
+}
+
+function restart() {
+  values.value = {};
+  history.value = [first()];
+  done.value = false;
+  run.value += 1;
+}
+
+function onTabKey(event: KeyboardEvent) {
+  if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+  const visible = tabs.filter((item) => getComputedStyle(document.getElementById(`sandbox-tab-${item.id}`)!).display !== 'none');
+  const index = visible.findIndex((item) => item.id === tab.value);
+  const next = visible[(index + (event.key === 'ArrowRight' ? 1 : -1) + visible.length) % visible.length];
+  tab.value = next.id;
+  document.getElementById(`sandbox-tab-${next.id}`)?.focus();
+}
 </script>
 
 <template>
   <section class="lp-section" aria-labelledby="demo-title">
     <p class="lp-eyebrow">Live demo</p>
-    <h2 id="demo-title" class="lp-title">One file, one live form</h2>
-    <p class="lp-lead">Change the answer. Watch the route change.</p>
-    <div class="demo">
-      <figure class="demo__code" :class="{ 'demo__code--open': expanded }">
-        <figcaption class="demo__caption">home-onboarding.json</figcaption>
-        <div id="demo-json" class="demo__json"><slot /></div>
-        <button type="button" class="demo__more" aria-controls="demo-json" :aria-expanded="expanded" @click="expanded = !expanded">
-          {{ expanded ? 'Show less' : 'Show the whole file' }}
-        </button>
-      </figure>
-      <div class="demo__live">
-        <div class="demo__head">
-          <span class="demo__caption">Rendered with <code>@formhaus/vue</code></span>
-          <LandingPath :current="current" :choice="choice" :done="done" />
+    <h2 id="demo-title" class="lp-title">Write it like a doc</h2>
+    <p class="lp-lead">Type the questions. The form, the flow and the JSON follow.</p>
+    <div class="sandbox" :data-tab="tab">
+      <div class="sandbox__bar sandbox__bar--left">
+        <span class="sandbox__dots" aria-hidden="true"><i /><i /><i /></span>
+        <div class="sandbox__tabs" role="tablist" aria-label="Demo view" @keydown="onTabKey">
+          <button
+            v-for="item in tabs"
+            :id="`sandbox-tab-${item.id}`"
+            :key="item.id"
+            type="button"
+            role="tab"
+            class="sandbox__tab"
+            :data-tab="item.id"
+            :aria-selected="tab === item.id"
+            :aria-controls="`sandbox-${item.id}`"
+            :tabindex="tab === item.id ? 0 : -1"
+            @click="tab = item.id"
+          >
+            {{ item.label }}
+          </button>
         </div>
-        <div class="demo__form">
+        <span v-if="issues" class="sandbox__issues" role="status">{{ issues }} {{ issues === 1 ? 'issue' : 'issues' }}</span>
+      </div>
+      <div class="sandbox__bar sandbox__bar--right">
+        <span class="sandbox__label">Flow</span>
+        <button type="button" class="sandbox__restart" @click="restart">Restart <LucideIcon name="restart" /></button>
+      </div>
+      <div id="sandbox-write" class="sandbox__pane sandbox__pane--write" role="tabpanel" aria-labelledby="sandbox-tab-write">
+        <LandingBuilder :form="model" @page="(index) => (group = index)" />
+      </div>
+      <div id="sandbox-json" class="sandbox__pane sandbox__pane--json" role="tabpanel" aria-labelledby="sandbox-tab-json">
+        <LandingJson :source="source" :range="range" />
+      </div>
+      <div class="sandbox__graph"><LandingFlow :graph="graph" :state="state" /></div>
+      <div id="sandbox-preview" class="sandbox__pane sandbox__pane--preview" role="tabpanel" aria-labelledby="sandbox-tab-preview">
+        <div class="sandbox__preview">
           <ClientOnly>
             <LandingDemoForm
-              :definition="definition as FormDefinition"
-              choice-key="use"
-              @step="(id) => (current = id)"
-              @choice="(value) => (choice = value)"
+              :key="`${run}-${formatJson(live)}`"
+              :definition="live"
+              :initial="values"
+              @step="onStep"
+              @values="(next) => (values = next)"
               @done="(value) => (done = value)"
             />
           </ClientOnly>
         </div>
+        <div class="sandbox__footer"><span>{{ progress }}</span><code>@formhaus/vue</code></div>
       </div>
     </div>
   </section>
 </template>
 
-<style scoped>
-.demo {
-  display: grid;
-  gap: 24px;
-  margin-top: 40px;
-}
-
-.demo__code {
-  min-width: 0;
-  margin: 0;
-}
-
-.demo__code :deep(div[class*='language-']) {
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 14px;
-}
-
-.demo__code :deep(div[class*='language-'] pre) {
-  padding: 16px 0;
-  overflow: visible;
-}
-
-.demo__code :deep(div[class*='language-'] code) {
-  display: block;
-  width: auto;
-  padding: 0 20px;
-  font-size: 12.5px;
-  line-height: 1.65;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.demo__code :deep(.lang) {
-  display: none;
-}
-
-.demo .demo__caption {
-  display: block;
-  margin: 0 0 12px;
-  font-family: var(--vp-font-family-mono);
-  font-size: 12px;
-  line-height: 20px;
-  color: var(--vp-c-text-2);
-}
-
-.demo__caption code {
-  font-size: inherit;
-}
-
-.demo__live {
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 16px;
-  background: var(--vp-c-bg);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 16px 48px -12px rgba(91, 63, 176, 0.18);
-}
-
-.demo__head {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg-soft);
-}
-
-.demo__head .demo__caption {
-  margin-bottom: 10px;
-}
-
-.demo__form {
-  min-height: 380px;
-  padding: 28px 24px;
-}
-
-.demo__json {
-  position: relative;
-}
-
-.demo__more {
-  display: none;
-}
-
-@media (max-width: 959px) {
-  .demo__live {
-    order: -1;
-  }
-
-  .demo__form {
-    min-height: 0;
-  }
-
-  .demo__code:not(.demo__code--open) .demo__json {
-    max-height: 340px;
-    overflow: hidden;
-  }
-
-  .demo__code:not(.demo__code--open) .demo__json::after {
-    content: '';
-    position: absolute;
-    inset: auto 0 0;
-    height: 120px;
-    border-radius: 0 0 14px 14px;
-    background: linear-gradient(transparent, var(--vp-c-bg));
-    pointer-events: none;
-  }
-
-  .demo__more {
-    display: block;
-    margin: 12px auto 0;
-    padding: 8px 16px;
-    border: 1px solid var(--vp-c-divider);
-    border-radius: 999px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--vp-c-text-1);
-    background: var(--vp-c-bg-soft);
-  }
-
-  .demo__more:focus-visible {
-    outline: 2px solid var(--vp-c-brand-1);
-    outline-offset: 2px;
-  }
-}
-
-@media (min-width: 960px) {
-  .demo {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 32px;
-    align-items: start;
-  }
-
-  .demo__live {
-    position: sticky;
-    top: calc(var(--vp-nav-height) + 24px);
-  }
-
-  .demo__form {
-    padding: 32px;
-  }
-}
-</style>
+<style scoped src="./sandbox.css"></style>

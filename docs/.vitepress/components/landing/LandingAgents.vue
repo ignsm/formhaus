@@ -11,8 +11,8 @@ const tools = [
 <template>
   <section class="lp-section" aria-labelledby="agents-title">
     <p class="lp-eyebrow">AI agents</p>
-    <h2 id="agents-title" class="lp-title">Agents write the JSON</h2>
-    <p class="lp-lead">The engine checks it before anyone opens the page.</p>
+    <h2 id="agents-title" class="lp-title">Agents write it, the engine checks it</h2>
+    <p class="lp-lead">Generated forms are validated and walked before review.</p>
     <div class="agents">
       <article class="agents__card lp-card">
         <h3 class="agents__title">MCP server</h3>
@@ -88,6 +88,10 @@ const tools = [
 
 .agents__card :deep(div[class*='language-']) {
   border-radius: 8px;
+}
+
+.agents__card :deep(.lang) {
+  display: none;
 }
 
 .agents__card :deep(div[class*='language-'] code) {

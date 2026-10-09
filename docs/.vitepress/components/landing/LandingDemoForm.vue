@@ -6,30 +6,21 @@ import LucideIcon from './LucideIcon.vue';
 import './demo-form.css';
 import './demo-actions.css';
 
-const props = defineProps<{ definition: FormDefinition; choiceKey: string }>();
-const emit = defineEmits<{ step: [id: string]; choice: [value: string | undefined]; done: [value: boolean] }>();
+const props = defineProps<{ definition: FormDefinition; initial?: Record<string, unknown>; hint?: string }>();
+const emit = defineEmits<{
+  step: [id: string];
+  values: [values: Record<string, unknown>];
+  done: [value: boolean];
+}>();
 
-const run = ref(0);
 const payload = ref<Record<string, unknown>>();
 const result = ref<HTMLElement>();
-
-function onField(key: string, value: unknown) {
-  if (key === props.choiceKey) emit('choice', typeof value === 'string' ? value : undefined);
-}
 
 async function onSubmit(values: Record<string, unknown>) {
   payload.value = values;
   emit('done', true);
   await nextTick();
   result.value?.focus();
-}
-
-function restart() {
-  payload.value = undefined;
-  run.value += 1;
-  emit('done', false);
-  emit('choice', undefined);
-  emit('step', props.definition.steps?.[0]?.id ?? '');
 }
 </script>
 
@@ -38,16 +29,15 @@ function restart() {
     <div v-if="payload" ref="result" class="demo-form__result" tabindex="-1">
       <span class="demo-form__badge"><LucideIcon name="check" /></span>
       <p class="demo-form__heading">Submitted</p>
-      <p class="demo-form__hint">Only the answered branch is sent.</p>
+      <p v-if="hint" class="demo-form__hint">{{ hint }}</p>
       <pre class="demo-form__payload"><code>{{ JSON.stringify(payload, null, 2) }}</code></pre>
-      <button type="button" class="demo-form__restart" @click="restart">Start over</button>
     </div>
     <FormRenderer
       v-else
-      :key="run"
       :definition="props.definition"
+      :initial-values="props.initial"
       @step-change="(id) => emit('step', id)"
-      @field-change="onField"
+      @field-change="(_key, _value, values) => emit('values', { ...values })"
       @submit="onSubmit"
     />
   </div>
