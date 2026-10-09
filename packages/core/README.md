@@ -47,9 +47,9 @@ Write the JSON by hand, or use the [`/formhaus-create-form`](https://formhaus.de
 
 ## Navigation and submission
 
-Use `nextStepAsync()`, `prevStepAsync()` and `submitAsync(handler)` for cancellable async before/after hooks. Synchronous navigation remains available without lifecycle hooks. See [step navigation and lifecycle](../../docs/guide/steps.md).
+Use `nextStepAsync()`, `prevStepAsync()` and `submitAsync(handler)` for cancellable async before/after hooks. Synchronous navigation remains available without lifecycle hooks. See [step navigation and lifecycle](https://formhaus.dev/guide/steps.html#lifecycle-hooks).
 
-Step `routes` choose an ordered forward path from answers. Back, progress, validation and submission follow that path. See [branching and retained answers](../../docs/guide/steps.md#route-between-branches).
+Step `routes` choose an ordered forward path from answers. Back, progress, validation and submission follow that path. See [branching and retained answers](https://formhaus.dev/guide/steps.html#route-between-branches).
 
 ## Optional baseline styles
 

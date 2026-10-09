@@ -36,9 +36,9 @@ Write the form JSON by hand, or use the [`/formhaus-create-form`](https://formha
 
 ## Navigation and submission
 
-`FormRenderer` and `HeadlessFormRenderer` support radio `autoAdvance`, `next: false`, and async before/after navigation and submission hooks. Use `:submit-handler="save"` to await saving and track loading. Legacy `@submit` is a notification whose listeners cannot be awaited; do not save in both places. Custom fields emit `commit`; custom actions honor `showPrimary`. See the [complete Vue example and lifecycle semantics](../../docs/guide/steps.md#vue-lifecycle-example).
+`FormRenderer` and `HeadlessFormRenderer` support radio `autoAdvance`, `next: false`, and async before/after navigation and submission hooks. Use `:submit-handler="save"` to await saving and track loading. Legacy `@submit` is a notification whose listeners cannot be awaited; do not save in both places. Custom fields emit `commit`; custom actions honor `showPrimary`. See the [complete Vue example and lifecycle semantics](https://formhaus.dev/guide/steps.html#vue-lifecycle-example).
 
-Step `routes` choose an ordered forward path from answers. Back, progress, validation and submission follow that path. See [branching and retained answers](../../docs/guide/steps.md#route-between-branches).
+Step `routes` choose an ordered forward path from answers. Back, progress, validation and submission follow that path. See [branching and retained answers](https://formhaus.dev/guide/steps.html#route-between-branches).
 
 ## Custom components
 

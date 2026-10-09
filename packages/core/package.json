@@ -66,9 +66,6 @@
     "survey",
     "quiz",
     "typescript",
-    "framework-agnostic",
-    "json-schema",
-    "svelte",
-    "solid"
+    "framework-agnostic"
   ]
 }

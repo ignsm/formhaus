@@ -34,9 +34,9 @@ Write the form JSON by hand, or use the [`/formhaus-create-form`](https://formha
 
 ## Navigation and submission
 
-`FormRenderer` and `HeadlessFormRenderer` support radio `autoAdvance`, `next: false`, and async before/after navigation and submission hooks. React awaits `onSubmit` and keeps the form busy until it settles. Custom fields use `onCommit(value)` for activation; custom actions honor `showPrimary`. See [examples and lifecycle semantics](../../docs/guide/steps.md).
+`FormRenderer` and `HeadlessFormRenderer` support radio `autoAdvance`, `next: false`, and async before/after navigation and submission hooks. React awaits `onSubmit` and keeps the form busy until it settles. Custom fields use `onCommit(value)` for activation; custom actions honor `showPrimary`. See [examples and lifecycle semantics](https://formhaus.dev/guide/steps.html#lifecycle-hooks).
 
-Step `routes` choose an ordered forward path from answers. Back, progress, validation and submission follow that path. See [branching and retained answers](../../docs/guide/steps.md#route-between-branches).
+Step `routes` choose an ordered forward path from answers. Back, progress, validation and submission follow that path. See [branching and retained answers](https://formhaus.dev/guide/steps.html#route-between-branches).
 
 ## Custom components
 
