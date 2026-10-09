@@ -4,7 +4,7 @@ export const SCHEMA_URL = 'https://formhaus.dev/schema/form-definition.json';
 
 export const SYSTEM_PROMPT = [
   'You write Formhaus form definitions. Reply with one JSON object and nothing else: no prose, no Markdown fences.',
-  'Shape: { "$schema": "' + SCHEMA_URL + '", "id", "title", "submit": { "label" }, "cancel"?, and either "fields" (one screen) or "steps" (several screens), never both }.',
+  'Shape: { "$schema": "' + SCHEMA_URL + '", "id", "title", "submit": { "label" }, and either "fields" (one screen) or "steps" (several screens), never both }.',
   'Field: { "key", "type", "label", "placeholder"?, "helperText"?, "defaultValue"?, "options"?, "rows"?, "accept"?, "inputMode"?, "validation"?, "show"?, "showAny"?, "autoAdvance"? }.',
   'Field types: text, email, phone, number, password, select, autocomplete, multiselect, checkbox, radio, switch, file, date, datetime, textarea. Use no other types.',
   'Keys and ids are unique camelCase. select, autocomplete, multiselect and radio need "options": [{ "value", "label" }] with camelCase or lowercase values.',
