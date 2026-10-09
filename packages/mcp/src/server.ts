@@ -18,14 +18,18 @@ export function createServer(): McpServer {
 
   server.registerTool('validate_definition', {
     title: 'Validate a Formhaus definition',
-    description: 'Checks a Formhaus form definition. Returns { valid, errors, warnings, schemaChecked }. Errors make the engine reject the definition; warnings point to likely mistakes such as conditions on unknown fields, invalid regex, circular conditions or branches that fall through.',
+    description: 'Checks a Formhaus form definition against the JSON Schema and the engine. Returns { valid, errors, warnings }. Errors make the engine reject the definition; warnings point to likely mistakes such as conditions on unknown fields, invalid regex, circular conditions, branches that fall through or next: false without an autoAdvance radio.',
     inputSchema: { definition: definitionInput },
+    outputSchema: { valid: z.boolean(), errors: z.array(z.string()), warnings: z.array(z.string()) },
     annotations: { readOnlyHint: true },
-  }, async (input) => json(await validateDefinitionTool(input)));
+  }, async (input) => {
+    const report = validateDefinitionTool(input);
+    return { ...json(report), structuredContent: { ...report } };
+  });
 
   server.registerTool('simulate_path', {
     title: 'Simulate a path through a form',
-    description: 'Runs a headless FormEngine with the given answers and navigation actions. Without actions it presses Next until the last step or a validation error. Returns the active step path with visible fields, the trace of each action, validation errors, whether the form would submit, and the submit payload. Use it to check branching, routes, skip and conditional fields.',
+    description: 'Runs a headless FormEngine. answers are applied as initial values, then actions are pressed in order like a user would: next is refused on next: false steps until an autoAdvance radio is answered, skip only works on steps with a skip action and submits on the last step. Without actions it presses Next until the last step or a blocking error. Custom validators, onStepValidate and lifecycle hooks are not run. Returns the active step path (visited, skipped, visible fields), a trace of each action with errors or a reason when it did not move, validation errors for visited steps only, wouldSubmit and the submit payload. Use it to check branching, routes, skip and conditional fields.',
     inputSchema: {
       definition: definitionInput,
       answers: z.record(z.string(), z.unknown()).optional().describe('Field values keyed by field key.'),

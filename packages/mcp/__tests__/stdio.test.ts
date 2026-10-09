@@ -23,6 +23,11 @@ describe('formhaus-mcp over stdio', () => {
     expect(resources.map(({ uri }) => uri)).toEqual(['formhaus://capabilities']);
   });
 
+  it('returns structured content from validate_definition', async () => {
+    const result = await client.callTool({ name: 'validate_definition', arguments: { definition: linear } });
+    expect(result.structuredContent).toEqual({ valid: true, errors: [], warnings: [] });
+  });
+
   it('calls simulate_path', async () => {
     const result = await client.callTool({ name: 'simulate_path', arguments: { definition: linear, answers: { name: 'Ada', email: 'a@b.co' } } });
     const [content] = result.content as { type: string; text: string }[];
