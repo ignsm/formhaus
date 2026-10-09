@@ -17,7 +17,7 @@ SurveyJS and Formhaus both render forms from JSON. SurveyJS is a full survey pla
 
 ## Choose Formhaus when
 
-- Forms should render with your own field components, without a survey theme to override.
+- Forms should render with your own field components through a `components` map, with no theme layer in between.
 - Bundle size matters: the Formhaus engine and React renderer together are about 11 KB gzipped.
 - Steps branch to different steps through explicit `routes`, and you want an MCP server to simulate every path.
 - Design works in Figma from the same definition the app renders.

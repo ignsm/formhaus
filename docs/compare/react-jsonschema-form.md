@@ -16,7 +16,7 @@ react-jsonschema-form (rjsf) builds a React form from a JSON Schema that describ
 
 ## Choose Formhaus when
 
-- The form has steps. rjsf has no step API; the maintainers suggest changing the schema per step yourself ([issue #464](https://github.com/rjsf-team/react-jsonschema-form/issues/464)).
+- The form has steps. The rjsf docs have no step API. A [closed 2017 issue](https://github.com/rjsf-team/react-jsonschema-form/issues/464) discussed swapping the schema per step in your own code.
 - Fields appear based on answers with simple rules (`eq`, `in`, `notEmpty`) rather than JSON Schema `dependencies` and `oneOf`.
 - The app uses Vue, or the form has to be drawn in Figma.
 - AI agents write forms, and you want an MCP server that validates them and simulates every step path.
@@ -26,15 +26,15 @@ react-jsonschema-form (rjsf) builds a React form from a JSON Schema that describ
 | | Formhaus | react-jsonschema-form |
 |---|---|---|
 | Definition format | Form definition JSON, checked by a [JSON Schema](/api/definition#json-schema) | JSON Schema for data plus `uiSchema` for presentation ([uiSchema](https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema)) |
-| Multi-step | Built in: `steps`, per-step validation, progress ([guide](/guide/steps)) | Not built in; swap the schema per step in your code ([issue #464](https://github.com/rjsf-team/react-jsonschema-form/issues/464)) |
-| Branching routes | `routes` on a step ([guide](/guide/steps#route-between-branches)) | Not built in ([issue #464](https://github.com/rjsf-team/react-jsonschema-form/issues/464)) |
+| Multi-step | Built in: `steps`, per-step validation, progress ([guide](/guide/steps)) | No step API in the [docs](https://rjsf-team.github.io/react-jsonschema-form/docs/) |
+| Branching routes | `routes` on a step ([guide](/guide/steps#route-between-branches)) | No routing API in the [docs](https://rjsf-team.github.io/react-jsonschema-form/docs/) |
 | Conditional fields | `show` / `showAny`; hidden values cleared ([guide](/guide/conditions)) | Schema `dependencies`, including `oneOf` for dynamic fields ([dependencies](https://rjsf-team.github.io/react-jsonschema-form/docs/json-schema/dependencies)) |
 | Validation | Declarative rules, named validators, async step validation ([guide](/guide/validation)) | JSON Schema via a validator package, `customValidate`, `transformErrors`, `extraErrors` for server errors ([validation](https://rjsf-team.github.io/react-jsonschema-form/docs/usage/validation)) |
 | Custom components | `components` map per field type ([guide](/guide/custom-components)) | Custom widgets, fields and templates ([custom widgets and fields](https://rjsf-team.github.io/react-jsonschema-form/docs/advanced-customization/custom-widgets-fields)) |
-| Figma | Plugin draws the definition ([guide](/guide/figma)) | None in the docs |
-| AI tooling | JSON Schema, [MCP server](/guide/mcp), Claude Code plugin | The input is standard JSON Schema, so generic JSON Schema tooling applies |
+| Figma | Plugin draws the definition ([guide](/guide/figma)) | Not documented |
+| AI tooling | JSON Schema, [MCP server](/guide/mcp), Claude Code plugin | Input is standard JSON Schema ([docs](https://rjsf-team.github.io/react-jsonschema-form/docs/)); no AI tooling documented |
 | Frameworks | React 18+, Vue 3.3+, headless engine | React 18+ ([npm](https://www.npmjs.com/package/@rjsf/core)) |
-| Bundle size (gzipped) | 6.2 KB core + 4.8 KB React | 50.6 KB `@rjsf/core` 6.11.0 ([bundlephobia](https://bundlephobia.com/package/@rjsf/core@6.11.0)) + 38.2 KB `@rjsf/validator-ajv8` 6.11.0 ([bundlephobia](https://bundlephobia.com/package/@rjsf/validator-ajv8@6.11.0)), plus the `@rjsf/utils` peer and a theme |
+| Bundle size (gzipped) | 6.2 KB core + 4.8 KB React | 50.6 KB `@rjsf/core` 6.11.0 ([bundlephobia](https://bundlephobia.com/package/@rjsf/core@6.11.0)) + 38.2 KB `@rjsf/validator-ajv8` 6.11.0 ([bundlephobia](https://bundlephobia.com/package/@rjsf/validator-ajv8@6.11.0)), plus the `@rjsf/utils` peer; other themes are separate packages |
 | License | MIT | Apache-2.0 ([docs](https://rjsf-team.github.io/react-jsonschema-form/docs/)) |
 
 Sizes measured on 2026-10-09. See [how Formhaus sizes are measured](/compare/#formhaus-at-a-glance).
