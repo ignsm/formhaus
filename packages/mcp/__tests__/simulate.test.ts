@@ -17,6 +17,8 @@ describe('simulate_path', () => {
     const result = await simulatePathTool({ definition: linear, answers: {} });
     expect(result.currentStep?.id).toBe('name');
     expect(result.trace).toEqual([{ action: 'next', from: 'name', to: 'name', moved: false, errors: { name: 'This field is required' } }]);
+    expect(result.errors).toEqual({ name: 'This field is required' });
+    expect(result.path?.map(({ visited }) => visited)).toEqual([true, false]);
     expect(result.wouldSubmit).toBe(false);
   });
 
@@ -49,10 +51,31 @@ describe('simulate_path', () => {
 
   it('skips a step and leaves its answers out', async () => {
     const result = await simulatePathTool({ definition: skippable, answers: { bio: 'Hi', phone: '1' }, actions: ['skip'] });
-    expect(result.trace?.[0]).toMatchObject({ action: 'skip', from: 'about', to: 'contact', moved: true });
+    expect(result.trace?.[0]).toEqual({ action: 'skip', from: 'about', to: 'contact', moved: true });
     expect(result.path?.[0].skipped).toBe(true);
     expect(result.errors).toEqual({});
     expect(result.submitValues).toEqual({ phone: '1' });
+  });
+
+  it('submits when the last step is skipped', async () => {
+    const result = await simulatePathTool({ definition: branching, answers: { kind: 'personal', name: 'Ada', notes: 'x' }, actions: ['next', 'next', 'skip'] });
+    expect(result.trace?.[2]).toEqual({ action: 'skip', from: 'review', to: 'review', moved: false, submitted: true });
+    expect(result.wouldSubmit).toBe(true);
+    expect(result.submitValues).toEqual({ kind: 'personal', name: 'Ada' });
+  });
+
+  it('refuses skip on a step without a skip action', async () => {
+    const result = await simulatePathTool({ definition: linear, answers: {}, actions: ['skip'] });
+    expect(result.trace).toEqual([{ action: 'skip', from: 'name', to: 'name', moved: false, reason: 'Step has no skip action.' }]);
+  });
+
+  it('refuses next on a next: false step until its autoAdvance radio is answered', async () => {
+    const blocked = await simulatePathTool({ definition: branching, answers: {}, actions: ['next'] });
+    expect(blocked.trace?.[0]).toMatchObject({ moved: false, reason: expect.stringMatching(/next: false/) });
+    const hidden = { ...linear, steps: [{ ...linear.steps[0], next: false }, linear.steps[1]] };
+    const refused = await simulatePathTool({ definition: hidden, answers: { name: 'Ada' } });
+    expect(refused.currentStep?.id).toBe('name');
+    expect(refused.trace?.[0].reason).toMatch(/next: false/);
   });
 
   it('applies back after next', async () => {

@@ -1,8 +1,9 @@
 import { isVisible, type FormEngine, type FormField, type FormStep } from '@formhaus/core';
 import { createEngine } from './engine';
+import { perform, type SimulationAction, type TraceEntry } from './simulate-actions';
 import { inspectDefinition, type ValidationReport } from './validate';
 
-export type SimulationAction = 'next' | 'back' | 'skip';
+export type { SimulationAction, TraceEntry } from './simulate-actions';
 
 export interface SimulationInput {
   definition: unknown;
@@ -10,17 +11,10 @@ export interface SimulationInput {
   actions?: SimulationAction[];
 }
 
-export interface TraceEntry {
-  action: SimulationAction;
-  from: string | null;
-  to: string | null;
-  moved: boolean;
-  errors?: Record<string, string>;
-}
-
 export interface StepReport {
   id: string;
   title: string;
+  visited: boolean;
   skipped: boolean;
   visibleFields: string[];
 }
@@ -47,47 +41,46 @@ function visibleKeys(fields: FormField[], values: Record<string, unknown>): stri
   return fields.filter((field) => isVisible(field, values)).map(({ key }) => key);
 }
 
-function stepReport(engine: FormEngine, step: FormStep, values: Record<string, unknown>): StepReport {
-  return { id: step.id, title: step.title, skipped: engine.isStepSkipped(step.id), visibleFields: visibleKeys(step.fields, values) };
-}
-
-function perform(engine: FormEngine, action: SimulationAction): TraceEntry {
-  const from = engine.currentStep?.id ?? null;
-  const index = engine.currentStepIndex;
-  if (action === 'next') engine.nextStep();
-  else if (action === 'skip') engine.skipStep();
-  else engine.prevStep();
-  const to = engine.currentStep?.id ?? null;
-  const moved = engine.currentStepIndex !== index || to !== from;
-  const errors = !moved && action === 'next' && Object.keys(engine.errors).length > 0 ? { ...engine.errors } : undefined;
-  return { action, from, to, moved, ...(errors && { errors }) };
-}
-
-function run(engine: FormEngine, actions: SimulationAction[] | undefined): TraceEntry[] {
-  if (actions) return actions.map((action) => perform(engine, action));
+async function run(engine: FormEngine, actions: SimulationAction[] | undefined): Promise<TraceEntry[]> {
   const trace: TraceEntry[] = [];
+  if (actions) {
+    for (const action of actions) trace.push(await perform(engine, action));
+    return trace;
+  }
   while (engine.isMultiStep && !engine.isLastStep) {
-    const entry = perform(engine, 'next');
+    const entry = await perform(engine, 'next');
     trace.push(entry);
     if (!entry.moved) break;
   }
   return trace;
 }
 
+function visitedErrors(engine: FormEngine, visited: Set<string>, errors: Record<string, string>): Record<string, string> {
+  if (!engine.isMultiStep) return errors;
+  const keys = new Set(engine.visibleSteps.filter(({ id }) => visited.has(id)).flatMap(({ fields }) => fields.map(({ key }) => key)));
+  return Object.fromEntries(Object.entries(errors).filter(([key]) => keys.has(key)));
+}
+
 export async function simulatePathTool(input: SimulationInput): Promise<SimulationResult> {
-  const { report, definition } = await inspectDefinition(input.definition);
+  const { report, definition } = inspectDefinition(input.definition);
   if (!definition) return { ok: false, validation: report };
   const created = createEngine(definition, input.answers);
   if (!created.ok) return { ok: false, validation: { ...report, valid: false, errors: created.errors } };
   const { engine } = created;
-  const trace = run(engine, input.actions);
+  const first = engine.currentStep?.id;
+  const trace = await run(engine, input.actions);
+  const visited = new Set([first, ...trace.map(({ to }) => to)].filter((id): id is string => typeof id === 'string'));
   const values = engine.isMultiStep ? pathValues(engine) : engine.values;
+  const stepReport = (step: FormStep): StepReport => ({
+    id: step.id, title: step.title, visited: visited.has(step.id), skipped: engine.isStepSkipped(step.id), visibleFields: visibleKeys(step.fields, values),
+  });
   const path = engine.isMultiStep
-    ? engine.visibleSteps.map((step) => stepReport(engine, step, values))
-    : [{ id: definition.id, title: definition.title, skipped: false, visibleFields: visibleKeys(definition.fields ?? [], values) }];
+    ? engine.visibleSteps.map(stepReport)
+    : [{ id: definition.id, title: definition.title, visited: true, skipped: false, visibleFields: visibleKeys(definition.fields ?? [], values) }];
   const step = engine.currentStep;
-  const errors = engine.validate();
+  const allErrors = engine.validate();
   const atEnd = !engine.isMultiStep || engine.isLastStep;
+  const submitted = trace.some((entry) => entry.submitted);
   return {
     ok: true,
     validation: report,
@@ -96,8 +89,8 @@ export async function simulatePathTool(input: SimulationInput): Promise<Simulati
     currentStep: step ? { id: step.id, title: step.title, index: engine.currentStepIndex } : null,
     isLastStep: atEnd,
     trace,
-    errors,
-    wouldSubmit: atEnd && Object.keys(errors).length === 0,
+    errors: visitedErrors(engine, visited, allErrors),
+    wouldSubmit: submitted || (atEnd && Object.keys(allErrors).length === 0),
     submitValues: engine.getSubmitValues(),
   };
 }
