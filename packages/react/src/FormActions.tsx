@@ -41,15 +41,7 @@ export function FormActions({
     loading,
   );
 
-  function handlePrimary() {
-    if (onPrimaryProp) {
-      onPrimaryProp();
-    } else if (isMultiStep && !isLastStep) {
-      onNext();
-    } else {
-      onSubmit();
-    }
-  }
+  const handlePrimary = onPrimaryProp ?? (isMultiStep && !isLastStep ? onNext : onSubmit);
 
   return (
     <div className="fh-form-actions">
@@ -75,7 +67,7 @@ export function FormActions({
         className="fh-form-actions__button fh-form-actions__button--primary"
         disabled={primaryDisabled}
         aria-busy={loading}
-        onClick={handlePrimary}
+        onClick={() => handlePrimary()}
       >
         {primaryLabel}
       </button>}

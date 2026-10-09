@@ -34,20 +34,22 @@ export function useRendererActions(engine: FormEngine, props: FormRendererProps)
     onAnalyticsEvent?.({ type: 'form_submitted', fieldCount: Object.keys(values).length });
     await onSubmit(values);
   }, [onSubmit, onAnalyticsEvent]);
-  const submit = useCallback(() => run(async () => {
-    if (isActionDisabled(engine.definition.submit, engine.values)) return false;
-    const result = await engine.submitAsync(send);
+  const report = useCallback(async (action: Promise<boolean>) => {
+    const result = await action;
     if (!result) {
       for (const [key, error] of Object.entries(engine.errors)) {
         onAnalyticsEvent?.({ type: 'field_error', fieldKey: key, error });
       }
     }
     return result;
-  }), [engine, run, send, onAnalyticsEvent]);
-  const skip = useCallback(() => run(() => engine.skipStepAsync((values) => {
+  }, [engine, onAnalyticsEvent]);
+  const submit = useCallback(() => run(async () => (
+    !isActionDisabled(engine.definition.submit, engine.values) && report(engine.submitAsync(send))
+  )), [engine, run, send, report]);
+  const skip = useCallback(() => run(() => report(engine.skipStepAsync((values) => {
     onAnalyticsEvent?.({ type: 'step_skipped', stepId: engine.currentStep!.id });
     return send(values);
-  })), [run, engine, send, onAnalyticsEvent]);
+  }))), [run, engine, send, report, onAnalyticsEvent]);
   const actionError = failure?.engine === engine ? failure.message : null;
   return { next, prev, skip, update, commit, submit, actionError };
 }
