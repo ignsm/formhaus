@@ -1,11 +1,11 @@
 import type { KitFonts } from '../fonts';
 import type { IconName } from '../icons';
-import type { Role } from '../roles';
+import { BUTTON_ROLES, type ButtonRole, type Role } from '../roles';
 import { component, emptyAndFilled, type KitNode } from './primitives';
 
 type Build = (root: ComponentNode) => void;
 type ControlRole = 'field.checkbox' | 'field.switch' | 'option.radio' | 'option.checkbox';
-type ButtonRole = 'button.primary' | 'button.secondary';
+type InputRole = Exclude<Role, ControlRole | ButtonRole>;
 
 export interface KitParts {
   version: number;
@@ -15,7 +15,7 @@ export interface KitParts {
   button(fonts: KitFonts, primary: boolean): Build;
 }
 
-const INPUTS: Partial<Record<Role, { trailing?: IconName | 'select'; multiline?: boolean }>> = {
+const INPUTS: Record<InputRole, { trailing?: IconName | 'select'; multiline?: boolean }> = {
   'field.text': {},
   'field.select': { trailing: 'select' },
   'field.date': { trailing: 'calendar' },
@@ -24,15 +24,19 @@ const INPUTS: Partial<Record<Role, { trailing?: IconName | 'select'; multiline?:
 };
 
 function isButton(role: Role): role is ButtonRole {
-  return role === 'button.primary' || role === 'button.secondary';
+  return (BUTTON_ROLES as readonly Role[]).includes(role);
+}
+
+function isInput(role: Role): role is InputRole {
+  return role in INPUTS;
 }
 
 export function buildRole(parts: KitParts, role: Role, fonts: KitFonts): KitNode {
-  const input = INPUTS[role];
-  if (input) {
+  if (isInput(role)) {
+    const input = INPUTS[role];
     const trailing = input.trailing === 'select' ? parts.selectIcon : input.trailing;
     return emptyAndFilled(role, parts.version, (filled) => parts.input(fonts, trailing, Boolean(input.multiline), filled));
   }
-  const build = isButton(role) ? parts.button(fonts, role === 'button.primary') : parts.controls[role as ControlRole](fonts);
+  const build = isButton(role) ? parts.button(fonts, role === 'button.primary') : parts.controls[role](fonts);
   return component(role, role, parts.version, build);
 }
