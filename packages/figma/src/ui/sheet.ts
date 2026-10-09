@@ -5,6 +5,7 @@ import { byId, element, iconButton, previewStore } from './dom';
 
 const SLOT_NAMES: Record<TextSlot, string> = { label: 'Label', value: 'Value or placeholder', helper: 'Helper text' };
 const store = previewStore();
+let returnRole: string | null = null;
 
 export type SlotChange = (row: BindingRow, slot: TextSlot, name: string) => void;
 
@@ -26,10 +27,13 @@ function picker(row: BindingRow, slot: TextSlot, change: SlotChange): HTMLElemen
 export function closeSheet(): void {
   byId('sheet').classList.remove('is-open');
   store.release();
+  if (returnRole) document.querySelector<HTMLElement>(`.card[data-role="${returnRole}"]`)?.focus();
+  returnRole = null;
 }
 
 export function openSheet(row: BindingRow, change: SlotChange): void {
   store.release();
+  returnRole = row.role;
   const sheet = byId('sheet');
   const panel = element('div', 'sheet-panel');
   const header = element('header', 'sheet-header');

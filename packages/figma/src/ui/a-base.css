@@ -128,7 +128,6 @@ textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand);
 .badge { border-radius: 999px; display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; }
 .tone-brand.badge { background: var(--brand-soft); color: var(--brand-text); }
 .tone-neutral.badge { background: var(--bg-2); color: var(--text-2); }
-.tone-danger.badge { background: var(--danger-soft); color: var(--danger); }
 
 .output { border-radius: var(--radius); font-size: 11px; padding: 8px 10px; }
 .output:empty { display: none; }
