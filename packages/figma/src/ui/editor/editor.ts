@@ -2,7 +2,7 @@ import type { FormDefinition, FormField } from '@formhaus/core';
 import { element, iconButton } from '../dom';
 import { icon } from '../icons';
 import { DEFAULT_LAYOUT, type ActionsLayout, type FormLayout } from '../../render-actions';
-import { buttonsBlock } from './buttons';
+import { addLink, buttonsBlock } from './buttons';
 import { labelled, textInput } from './controls';
 import { fieldRow, typeSelect } from './field-row';
 import { addField, addStep, isMultiStep, moveField, removeField, removeStep, steps } from './model';
@@ -120,13 +120,12 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
 
   function layoutPicker(): HTMLElement {
     const group = element('div', 'segmented small');
-    group.setAttribute('role', 'radiogroup');
+    group.setAttribute('role', 'group');
     group.setAttribute('aria-label', 'Button layout');
     for (const [value, text] of [['stacked', 'Stacked'], ['inline', 'Side by side']] as [ActionsLayout, string][]) {
       const option = element('button', value === layout.actions ? 'mode active' : 'mode', text);
       option.type = 'button';
-      option.setAttribute('role', 'radio');
-      option.setAttribute('aria-checked', String(value === layout.actions));
+      option.setAttribute('aria-pressed', String(value === layout.actions));
       option.onclick = () => { layout = { actions: value }; update(); };
       group.appendChild(option);
     }
@@ -139,10 +138,7 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
       labelled('Form title', textInput(draft.title, 'Sign up', 'input title-input', (value) => { draft.title = value; onChange(); }, 'Form title'), 'head-field', 'section-label'),
       layoutPicker(),
     );
-    const addStepButton = element('button', 'link add-link');
-    addStepButton.type = 'button';
-    addStepButton.append(icon('add', 14), document.createTextNode(isMultiStep(draft) ? 'Add step' : 'Split into steps'));
-    addStepButton.onclick = () => { addStep(draft); update(); };
+    const addStepButton = addLink(isMultiStep(draft) ? 'Add step' : 'Split into steps', () => { addStep(draft); update(); });
     container.replaceChildren(head, ...steps(draft).map((_, index) => stepSection(index)), addStepButton);
   }
 

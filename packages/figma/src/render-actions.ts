@@ -45,7 +45,7 @@ export function stepButtons(definition: FormDefinition, step: StepActions, posit
 
 type Append = (parent: FrameNode, node: SceneNode | null) => void;
 
-async function renderRow(name: string, buttons: PlannedButton[], renderer: FormRenderer, append: Append): Promise<FrameNode> {
+async function renderRow(name: string, buttons: PlannedButton[], renderer: FormRenderer): Promise<FrameNode> {
   const row = stack('HORIZONTAL', name, { itemSpacing: renderer.theme.actionsGap });
   for (const button of buttons) {
     const node = await renderer.button(button.label, button.kind);
@@ -66,7 +66,7 @@ export async function appendActions(frame: FrameNode, buttons: PlannedButton[], 
   const links = buttons.filter((button) => button.kind === 'text');
   for (const [name, group] of [['Buttons', filled], ['Links', links]] as const) {
     if (group.length === 0) continue;
-    const row = await renderRow(name, group, renderer, append);
+    const row = await renderRow(name, group, renderer);
     append(actions, row);
     for (const child of row.children) if ('layoutSizingHorizontal' in child) child.layoutSizingHorizontal = 'FILL';
   }

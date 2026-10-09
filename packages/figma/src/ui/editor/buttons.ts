@@ -21,7 +21,7 @@ function row(title: string, input: HTMLInputElement, remove?: () => void): HTMLE
   return labelled(title, control, 'detail');
 }
 
-function addLink(text: string, onClick: () => void): HTMLElement {
+export function addLink(text: string, onClick: () => void): HTMLElement {
   const link = element('button', 'link add-link');
   link.type = 'button';
   link.append(icon('add', 14), document.createTextNode(text));

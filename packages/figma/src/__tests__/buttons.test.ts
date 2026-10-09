@@ -60,6 +60,8 @@ describe('editing step buttons', () => {
     setCancel(form, 'Cancel');
     setCancel(form, 'Close');
     expect(form.cancel).toEqual({ label: 'Close' });
+    setCancel(form, '');
+    expect(form.cancel).toEqual({ label: 'Cancel' });
     setCancel(form, null);
     expect(form.cancel).toBeUndefined();
   });

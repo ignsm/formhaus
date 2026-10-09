@@ -32,12 +32,12 @@ export function setNextVisible(step: FormStep, visible: boolean): void {
 
 export function setCancel(draft: FormDefinition, label: string | null): void {
   if (label === null) delete draft.cancel;
-  else draft.cancel = { ...draft.cancel, label };
+  else draft.cancel = { ...draft.cancel, label: label || 'Cancel' };
 }
 
 export type SkippableStep = FormStep & { skip?: FormAction };
 
 export function setSkip(step: SkippableStep, label: string | null): void {
   if (label === null) delete step.skip;
-  else step.skip = { ...step.skip, label };
+  else step.skip = { ...step.skip, label: label || 'Skip' };
 }
