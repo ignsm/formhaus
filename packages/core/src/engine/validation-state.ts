@@ -63,6 +63,7 @@ export function validateForm(engine: EngineInternals): Record<string, string> {
   const errors: Record<string, string> = {};
   if (engine.isMultiStep) {
     for (const step of engine.visibleSteps) {
+      if (engine.skippedSteps.has(step.id)) continue;
       Object.assign(errors, validateStep(step, getValidationValues(engine), engine.validators));
     }
   } else {
@@ -90,12 +91,15 @@ export function validateOne(engine: EngineInternals, key: string): string | null
 
 export function getSubmitValues(engine: EngineInternals): Record<string, unknown> {
   const result: Record<string, unknown> = {};
+  const skipped = new Set((engine.definition.steps ?? [])
+    .filter((step) => engine.skippedSteps.has(step.id))
+    .flatMap((step) => step.fields.map((field) => field.key)));
   const visibleKeys = engine.visibility.getVisibleFieldKeys(
     engine.values,
     engine.currentStepIndex,
   );
   for (const key of visibleKeys) {
-    if (engine.values[key] !== undefined) result[key] = engine.values[key];
+    if (engine.values[key] !== undefined && !skipped.has(key)) result[key] = engine.values[key];
   }
   return result;
 }
@@ -113,6 +117,7 @@ export function resetEngine(engine: EngineInternals, values?: Record<string, unk
   engine.fieldLoading = {};
   engine.stepValidating = false;
   engine.currentStepIndex = 0;
+  engine.skippedSteps.clear();
   engine.visibility.reconcileHidden(engine.values, engine.errors);
   const changedValues = getChangedKeys(previousValues, engine.values);
   const changedFields = new Set([
