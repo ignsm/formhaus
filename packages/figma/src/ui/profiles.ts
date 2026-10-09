@@ -56,6 +56,7 @@ export function createProfilesBar(post: Post, show: Show) {
     if (mode === 'save') {
       return inline(field('Design system name', drafts.name, (value) => { drafts.name = value; }), button('Save', 'btn btn-primary btn-small', () => {
         post({ type: 'saveProfile', name: drafts.name });
+        drafts.name = 'My design system';
         setMode('idle');
       }));
     }

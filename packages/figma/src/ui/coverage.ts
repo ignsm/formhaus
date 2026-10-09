@@ -9,7 +9,6 @@ export function coverageOf(row: BindingRow): Coverage {
   return row.name ? 'yours' : 'kit';
 }
 
-
 function legendItem(state: Coverage, text: string): HTMLElement {
   const item = element('span', 'legend-item');
   item.append(element('i', `dot cov-${state}`), document.createTextNode(text));
