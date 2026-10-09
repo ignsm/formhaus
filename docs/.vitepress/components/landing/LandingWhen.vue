@@ -96,4 +96,12 @@ const others = [
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+@media (max-width: 639px) {
+  .vp-doc .when__list--others a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
 </style>

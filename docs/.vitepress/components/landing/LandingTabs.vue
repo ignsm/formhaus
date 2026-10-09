@@ -145,4 +145,17 @@ const tabs = [
     display: block;
   }
 }
+
+@media (max-width: 639px) {
+  .tabs__bar {
+    width: 100%;
+  }
+
+  .tabs__label {
+    flex: 1;
+    min-height: 44px;
+    display: grid;
+    place-items: center;
+  }
+}
 </style>

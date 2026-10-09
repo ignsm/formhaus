@@ -124,4 +124,10 @@ const integrations = [
   border-color: var(--vp-c-brand-1);
   color: var(--vp-c-brand-1);
 }
+
+@media (max-width: 639px) {
+  .vp-doc .integrations__list a {
+    padding: 11px 16px;
+  }
+}
 </style>
