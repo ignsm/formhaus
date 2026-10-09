@@ -52,6 +52,13 @@ describe('FormRenderer skip and button roles', () => {
     expect(onAnalyticsEvent).toHaveBeenCalledWith({ type: 'step_skipped', stepId: 'phone' });
     fireEvent.click(button('Skip notes'));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ name: 'Ada' }));
+    expect(onAnalyticsEvent).toHaveBeenCalledWith({ type: 'step_skipped', stepId: 'notes' });
+  });
+
+  it('hides skip on steps with next: false', () => {
+    const steps = definition.steps!.map((step) => (step.id === 'name' ? { ...step, skip: { label: 'Later' }, next: false as const } : step));
+    render(<FormRenderer definition={{ ...definition, steps }} onSubmit={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'Later' })).toBeNull();
   });
 
   it('respects explicit variants and skip props', () => {

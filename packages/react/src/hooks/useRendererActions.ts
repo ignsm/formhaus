@@ -44,7 +44,10 @@ export function useRendererActions(engine: FormEngine, props: FormRendererProps)
     }
     return result;
   }), [engine, run, send, onAnalyticsEvent]);
-  const skip = useCallback(() => run(() => engine.skipStepAsync(send)), [run, engine, send]);
+  const skip = useCallback(() => run(() => engine.skipStepAsync((values) => {
+    onAnalyticsEvent?.({ type: 'step_skipped', stepId: engine.currentStep!.id });
+    return send(values);
+  })), [run, engine, send, onAnalyticsEvent]);
   const actionError = failure?.engine === engine ? failure.message : null;
   return { next, prev, skip, update, commit, submit, actionError };
 }
