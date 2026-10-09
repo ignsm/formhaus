@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-defineProps<{ placeholder: string; label: string; list?: string }>();
+defineProps<{ placeholder: string; label: string; list?: string; selectOnFocus?: boolean }>();
 const model = defineModel<string>({ required: true });
 const emit = defineEmits<{ keydown: [event: KeyboardEvent]; input: []; blur: [] }>();
 const input = ref<HTMLInputElement>();
@@ -25,6 +25,7 @@ defineExpose({ focus: (options?: FocusOptions) => input.value?.focus(options), b
       @keydown="emit('keydown', $event)"
       @input="emit('input')"
       @blur="emit('blur')"
+      @focus="selectOnFocus && input?.select()"
     />
   </span>
 </template>

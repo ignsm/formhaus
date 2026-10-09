@@ -28,7 +28,9 @@ export interface BuilderQuestion {
   options: BuilderOption[];
   extra: Partial<FormField>;
 }
-export interface BuilderPage { kind: 'page'; uid: string; title: string; next: string | null }
+export interface BuilderPage { kind: 'page'; uid: string; title: string; next: string | null; nextLabel: string; backLabel: string }
+export const DEFAULT_NEXT = 'Continue';
+export const DEFAULT_BACK = 'Back';
 export type BuilderBlock = BuilderQuestion | BuilderPage;
 export interface BuilderForm { id: string; title: string; submit: string; blocks: BuilderBlock[] }
 export interface Group { page?: BuilderPage; questions: BuilderQuestion[] }
@@ -39,7 +41,7 @@ export const hasOptions = (type: QuestionType) => type === 'radio' || type === '
 export const canBranch = (type: QuestionType) => type === 'radio' || type === 'select';
 export const placeholderFor = (type: QuestionType) => QUESTION_TYPES.find((item) => item.type === type)?.placeholder ?? 'Question';
 export const typeLabel = (type: QuestionType) => QUESTION_TYPES.find((item) => item.type === type)?.label ?? type;
-export const newPage = (title = ''): BuilderPage => ({ kind: 'page', uid: uid(), title, next: null });
+export const newPage = (title = ''): BuilderPage => ({ kind: 'page', uid: uid(), title, next: null, nextLabel: '', backLabel: '' });
 export const newOption = (label = ''): BuilderOption => ({ uid: uid(), label, jump: null });
 export const pageTitle = (page: BuilderPage | undefined, position: number) => page?.title.trim() || `Page ${position + 1}`;
 
@@ -116,7 +118,8 @@ export function fromDefinition(definition: FormDefinition): BuilderForm {
   const base = { id: definition.id, title: definition.title ?? '', submit: definition.submit?.label ?? 'Submit' };
   if (!definition.steps) return { ...base, blocks: (definition.fields ?? []).map((field) => question(field, [], new Map())) };
   const steps = definition.steps;
-  const pages = steps.map((step) => newPage(step.title ?? step.id));
+  const label = (action: FormStep['next']) => (typeof action === 'object' && action ? action.label : '');
+  const pages = steps.map((step) => ({ ...newPage(step.title ?? step.id), nextLabel: label(step.next), backLabel: label(step.back) }));
   const ids = new Map(steps.map((step, index) => [step.id, pages[index].uid]));
   const blocks = steps.flatMap((step, index): BuilderBlock[] => {
     const questions = step.fields.map((field) => question(field, step.routes ?? [], ids));
@@ -173,6 +176,10 @@ export function toDefinition(form: BuilderForm): FormDefinition {
   });
   const steps = parts.map((part, index): FormStep => {
     const step: FormStep = { id: ids[index], title: pageTitle(part.page, index), fields: fields[index] };
+    const next = part.page?.nextLabel.trim();
+    const back = part.page?.backLabel.trim();
+    if (next && next !== DEFAULT_NEXT) step.next = { label: next };
+    if (back && back !== DEFAULT_BACK) step.back = { label: back };
     if (routes[index].length) step.routes = routes[index];
     return step;
   });

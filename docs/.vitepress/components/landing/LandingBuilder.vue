@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { nextTick, ref } from 'vue';
 import AutoInput from './AutoInput.vue';
+import BuilderActions from './BuilderActions.vue';
 import BuilderBreak from './BuilderBreak.vue';
 import BuilderGap from './BuilderGap.vue';
 import BuilderGutter, { type GutterAction } from './BuilderGutter.vue';
 import BuilderQuestion from './BuilderQuestion.vue';
 import BuilderTooltip from './BuilderTooltip.vue';
 import { moveTo, usePointerDrag } from './builder-drag';
-import { laterPages, newOption, newPage, setType, type BuilderForm, type BuilderOption } from './builder-model';
+import { laterPages, newOption, newPage, setType, type BuilderForm, type BuilderOption, type BuilderPage } from './builder-model';
 import { convertToPage, insertPage, insertQuestion, moveBlock, outdent, pageSpan, removeBlock } from './builder-ops';
 import type { Shortcut } from './builder-smart';
 import './builder.css';
@@ -28,7 +29,8 @@ const drag = usePointerDrag({
 const blocks = () => props.form.blocks;
 const inputs = () => [...(root.value?.querySelectorAll<HTMLInputElement>('.nb-doc .auto__input') ?? [])];
 const pageNumber = (index: number) => blocks().slice(0, index + 1).filter((block) => block.kind === 'page').length - 1;
-const lastOfPage = (index: number) => blocks()[index].kind === 'question' && blocks()[index + 1]?.kind !== 'question';
+const lastOfPage = (index: number) => blocks()[index + 1]?.kind !== 'question' && (blocks()[index].kind === 'question' || blocks()[index].kind === 'page');
+const pageAt = (index: number) => blocks().slice(0, index + 1).reverse().find((block) => block.kind === 'page') as BuilderPage | undefined;
 
 function caretEnd(input: HTMLInputElement | null | undefined) {
   if (!input) return;
@@ -187,15 +189,15 @@ function onKey(event: KeyboardEvent) {
             @edit="touch"
           />
         </div>
-        <div v-if="lastOfPage(index) || (block.kind === 'page' && form.blocks[index + 1]?.kind !== 'question')" class="nb-line nb-add">
-          <button type="button" class="nb-ghost" @mousedown.prevent @click="addQuestion(index + 1)">+ Add question</button>
-          <button v-if="index === form.blocks.length - 1" type="button" class="nb-ghost" @mousedown.prevent @click="addPage(index + 1)">+ Add page</button>
-        </div>
+        <template v-if="lastOfPage(index)">
+          <div class="nb-line nb-add">
+            <button type="button" class="nb-ghost" @mousedown.prevent @click="addQuestion(index + 1)">+ Add question</button>
+            <button v-if="index === form.blocks.length - 1" type="button" class="nb-ghost" @mousedown.prevent @click="addPage(index + 1)">+ Add page</button>
+          </div>
+          <BuilderActions :form="form" :page="pageAt(index)" :first="pageNumber(index) < 1" :last="index === form.blocks.length - 1" @edit="touch" />
+        </template>
       </template>
       <BuilderGap :active="drag.over.value === form.blocks.length" @insert="addQuestion(form.blocks.length)" />
-      <div class="nb-line nb-submit">
-        <span class="nb-chip"><AutoInput v-model="form.submit" placeholder="Submit" label="Submit button label" @input="touch" /></span>
-      </div>
     </div>
     <div class="nb-tail" @click="onTail" />
     <BuilderTooltip :root="root" />
