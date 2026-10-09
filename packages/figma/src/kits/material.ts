@@ -1,8 +1,8 @@
 import type { KitFonts } from '../fonts';
 import type { IconName } from '../icons';
-import type { Role } from '../roles';
 import type { Kit } from './kit';
-import { bindHelperVisibility, bindText, component, emptyAndFilled, fill, fixed, fixedWidth, icon, solid, stack, text, type KitNode } from './primitives';
+import { buildRole, type KitParts } from './builders';
+import { bindHelperVisibility, bindText, buttonShell, fill, fixed, fixedWidth, icon, solid, stack, text } from './primitives';
 
 const VERSION = 2;
 const WIDTH = 320;
@@ -58,10 +58,6 @@ function inputContainer(fonts: KitFonts, trailing: IconName | undefined, multili
     fill(column);
     helperRow(root, fonts, 16);
   };
-}
-
-function inputField(role: Role, fonts: KitFonts, trailing?: IconName, multiline = false): KitNode {
-  return emptyAndFilled(role, VERSION, (filled) => inputContainer(fonts, trailing, multiline, filled));
 }
 
 function checkboxGlyph(): FrameNode {
@@ -124,9 +120,6 @@ function control(fonts: KitFonts, glyph: () => SceneNode, trailing: boolean, wit
 
 function button(fonts: KitFonts, primary: boolean) {
   return (root: ComponentNode) => {
-    root.layoutMode = 'HORIZONTAL';
-    root.primaryAxisAlignItems = 'CENTER';
-    root.counterAxisAlignItems = 'CENTER';
     root.paddingLeft = 24;
     root.paddingRight = 24;
     root.cornerRadius = 20;
@@ -136,26 +129,21 @@ function button(fonts: KitFonts, primary: boolean) {
       root.strokeWeight = 1;
     }
     const label = text('Button', { font: fonts.medium, size: 14, color: primary ? C.onPrimary : C.primary }, 'Label');
-    root.appendChild(label);
-    bindText(root, label, 'label');
-    root.resize(WIDTH, 40);
-    root.primaryAxisSizingMode = 'FIXED';
-    root.counterAxisSizingMode = 'FIXED';
+    buttonShell(root, label, WIDTH, 40);
   };
 }
 
-const BUILDERS: Record<Role, (role: Role, fonts: KitFonts) => KitNode> = {
-  'field.text': (role, fonts) => inputField(role, fonts),
-  'field.select': (role, fonts) => inputField(role, fonts, 'arrowDropDown'),
-  'field.date': (role, fonts) => inputField(role, fonts, 'calendar'),
-  'field.file': (role, fonts) => inputField(role, fonts, 'upload'),
-  'field.textarea': (role, fonts) => inputField(role, fonts, undefined, true),
-  'field.checkbox': (role, fonts) => component(role, role, VERSION, control(fonts, checkboxGlyph, false, true)),
-  'field.switch': (role, fonts) => component(role, role, VERSION, control(fonts, switchGlyph, true, true)),
-  'option.radio': (role, fonts) => component(role, role, VERSION, control(fonts, radioGlyph, false, false)),
-  'option.checkbox': (role, fonts) => component(role, role, VERSION, control(fonts, checkboxGlyph, false, false)),
-  'button.primary': (role, fonts) => component(role, role, VERSION, button(fonts, true)),
-  'button.secondary': (role, fonts) => component(role, role, VERSION, button(fonts, false)),
+const PARTS: KitParts = {
+  version: VERSION,
+  selectIcon: 'arrowDropDown',
+  input: inputContainer,
+  controls: {
+    'field.checkbox': (fonts) => control(fonts, checkboxGlyph, false, true),
+    'field.switch': (fonts) => control(fonts, switchGlyph, true, true),
+    'option.radio': (fonts) => control(fonts, radioGlyph, false, false),
+    'option.checkbox': (fonts) => control(fonts, checkboxGlyph, false, false),
+  },
+  button,
 };
 
 export const materialKit: Kit = {
@@ -174,5 +162,5 @@ export const materialKit: Kit = {
     bodySize: 16,
     captionSize: 12,
   }),
-  build: (role, fonts) => BUILDERS[role](role, fonts),
+  build: (role, fonts) => buildRole(PARTS, role, fonts),
 };

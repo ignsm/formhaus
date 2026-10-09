@@ -115,3 +115,14 @@ export function bindHelperVisibility(root: ComponentNode, node: SceneNode): void
   const key = root.addComponentProperty(HELPER_VISIBLE_PROPERTY, 'BOOLEAN', true);
   node.componentPropertyReferences = { visible: key };
 }
+
+export function buttonShell(root: ComponentNode, label: TextNode, width: number, height: number): void {
+  root.layoutMode = 'HORIZONTAL';
+  root.primaryAxisAlignItems = 'CENTER';
+  root.counterAxisAlignItems = 'CENTER';
+  root.appendChild(label);
+  bindText(root, label, 'label');
+  root.resize(width, height);
+  root.primaryAxisSizingMode = 'FIXED';
+  root.counterAxisSizingMode = 'FIXED';
+}

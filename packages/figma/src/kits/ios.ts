@@ -1,8 +1,8 @@
 import type { KitFonts } from '../fonts';
 import type { IconName } from '../icons';
-import type { Role } from '../roles';
 import type { Kit } from './kit';
-import { bindHelperVisibility, bindText, component, emptyAndFilled, fill, fixed, fixedWidth, icon, solid, stack, text, type KitNode } from './primitives';
+import { buildRole, type KitParts } from './builders';
+import { bindHelperVisibility, bindText, buttonShell, fill, fixed, fixedWidth, icon, solid, stack, text } from './primitives';
 
 const VERSION = 1;
 const WIDTH = 330;
@@ -62,10 +62,6 @@ function inputCell(fonts: KitFonts, trailing: IconName | undefined, multiline: b
     bindText(root, footer.node, 'helper');
     bindHelperVisibility(root, footer.row);
   };
-}
-
-function inputField(role: Role, fonts: KitFonts, trailing?: IconName, multiline = false): KitNode {
-  return emptyAndFilled(role, VERSION, (filled) => inputCell(fonts, trailing, multiline, filled));
 }
 
 function circle(): EllipseNode {
@@ -130,32 +126,24 @@ function controlCell(fonts: KitFonts, trailing: (() => SceneNode) | null, standa
 
 function button(fonts: KitFonts, primary: boolean) {
   return (root: ComponentNode) => {
-    root.layoutMode = 'HORIZONTAL';
-    root.primaryAxisAlignItems = 'CENTER';
-    root.counterAxisAlignItems = 'CENTER';
     root.cornerRadius = 26;
     root.fills = primary ? solid(C.blue) : solid(C.gray, 0.16);
     const label = text('Button', { font: fonts.semibold, size: 17, color: primary ? C.cell : C.blue }, 'Label');
-    root.appendChild(label);
-    bindText(root, label, 'label');
-    root.resize(WIDTH, 52);
-    root.primaryAxisSizingMode = 'FIXED';
-    root.counterAxisSizingMode = 'FIXED';
+    buttonShell(root, label, WIDTH, 52);
   };
 }
 
-const BUILDERS: Record<Role, (role: Role, fonts: KitFonts) => KitNode> = {
-  'field.text': (role, fonts) => inputField(role, fonts),
-  'field.select': (role, fonts) => inputField(role, fonts, 'unfoldMore'),
-  'field.date': (role, fonts) => inputField(role, fonts, 'calendar'),
-  'field.file': (role, fonts) => inputField(role, fonts, 'upload'),
-  'field.textarea': (role, fonts) => inputField(role, fonts, undefined, true),
-  'field.checkbox': (role, fonts) => component(role, role, VERSION, controlCell(fonts, circle, true)),
-  'field.switch': (role, fonts) => component(role, role, VERSION, controlCell(fonts, toggle, true)),
-  'option.radio': (role, fonts) => component(role, role, VERSION, controlCell(fonts, null, false)),
-  'option.checkbox': (role, fonts) => component(role, role, VERSION, controlCell(fonts, circle, false)),
-  'button.primary': (role, fonts) => component(role, role, VERSION, button(fonts, true)),
-  'button.secondary': (role, fonts) => component(role, role, VERSION, button(fonts, false)),
+const PARTS: KitParts = {
+  version: VERSION,
+  selectIcon: 'unfoldMore',
+  input: inputCell,
+  controls: {
+    'field.checkbox': (fonts) => controlCell(fonts, circle, true),
+    'field.switch': (fonts) => controlCell(fonts, toggle, true),
+    'option.radio': (fonts) => controlCell(fonts, null, false),
+    'option.checkbox': (fonts) => controlCell(fonts, circle, false),
+  },
+  button,
 };
 
 export const iosKit: Kit = {
@@ -174,5 +162,5 @@ export const iosKit: Kit = {
     bodySize: 17,
     captionSize: 13,
   }),
-  build: (role, fonts) => BUILDERS[role](role, fonts),
+  build: (role, fonts) => buildRole(PARTS, role, fonts),
 };
