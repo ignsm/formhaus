@@ -2,7 +2,7 @@ import type { KitFonts } from '../fonts';
 import type { IconName } from '../icons';
 import type { Role } from '../roles';
 import type { Kit } from './kit';
-import { bindHelperVisibility, bindText, component, fill, fixed, icon, solid, stack, text, variantSet, type KitNode } from './primitives';
+import { bindHelperVisibility, bindText, component, emptyAndFilled, fill, fixed, fixedWidth, icon, solid, stack, text, type KitNode } from './primitives';
 
 const VERSION = 1;
 const WIDTH = 330;
@@ -17,12 +17,6 @@ const C = {
   gray: '#787880',
   separator: '#C6C6C8',
 };
-
-function fixedWidth(root: ComponentNode): void {
-  root.resize(WIDTH, 44);
-  root.counterAxisSizingMode = 'FIXED';
-  root.primaryAxisSizingMode = 'AUTO';
-}
 
 function caption(root: ComponentNode, fonts: KitFonts, characters: string, name: string): { row: FrameNode; node: TextNode } {
   const row = stack('HORIZONTAL', name, { paddingLeft: 16, paddingRight: 16 });
@@ -44,7 +38,7 @@ function cell(name: string): FrameNode {
 
 function inputCell(fonts: KitFonts, trailing: IconName | undefined, multiline: boolean, filled: boolean) {
   return (root: ComponentNode) => {
-    fixedWidth(root);
+    fixedWidth(root, WIDTH, 44);
     root.itemSpacing = 6;
     const header = caption(root, fonts, 'Label', 'Header');
     const container = cell('Container');
@@ -71,10 +65,7 @@ function inputCell(fonts: KitFonts, trailing: IconName | undefined, multiline: b
 }
 
 function inputField(role: Role, fonts: KitFonts, trailing?: IconName, multiline = false): KitNode {
-  return variantSet(role, VERSION, {
-    Empty: inputCell(fonts, trailing, multiline, false),
-    Filled: inputCell(fonts, trailing, multiline, true),
-  });
+  return emptyAndFilled(role, VERSION, (filled) => inputCell(fonts, trailing, multiline, filled));
 }
 
 function circle(): EllipseNode {
@@ -108,7 +99,7 @@ function toggle(): FrameNode {
 
 function controlCell(fonts: KitFonts, trailing: (() => SceneNode) | null, standalone: boolean) {
   return (root: ComponentNode) => {
-    fixedWidth(root);
+    fixedWidth(root, WIDTH, 44);
     root.itemSpacing = 6;
     const row = standalone ? cell('Container') : stack('HORIZONTAL', 'Row', { paddingLeft: 16, paddingRight: 16, itemSpacing: 12, counterAxisAlignItems: 'CENTER' });
     const label = text('Label', { font: fonts.regular, size: 17, color: C.label }, 'Label');

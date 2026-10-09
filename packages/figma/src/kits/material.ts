@@ -2,7 +2,7 @@ import type { KitFonts } from '../fonts';
 import type { IconName } from '../icons';
 import type { Role } from '../roles';
 import type { Kit } from './kit';
-import { bindHelperVisibility, bindText, component, fill, fixed, icon, solid, stack, text, variantSet, type KitNode } from './primitives';
+import { bindHelperVisibility, bindText, component, emptyAndFilled, fill, fixed, fixedWidth, icon, solid, stack, text, type KitNode } from './primitives';
 
 const VERSION = 2;
 const WIDTH = 320;
@@ -16,12 +16,6 @@ const C = {
   outline: '#79747E',
 };
 
-function fixedWidth(root: ComponentNode): void {
-  root.resize(WIDTH, 40);
-  root.counterAxisSizingMode = 'FIXED';
-  root.primaryAxisSizingMode = 'AUTO';
-}
-
 function helperRow(root: ComponentNode, fonts: KitFonts, indent: number): void {
   const row = stack('HORIZONTAL', 'Supporting', { paddingLeft: indent });
   const helper = text('Supporting text', { font: fonts.regular, size: 12, color: C.onSurfaceVariant }, 'Helper');
@@ -33,7 +27,7 @@ function helperRow(root: ComponentNode, fonts: KitFonts, indent: number): void {
 
 function inputContainer(fonts: KitFonts, trailing: IconName | undefined, multiline: boolean, filled: boolean) {
   return (root: ComponentNode) => {
-    fixedWidth(root);
+    fixedWidth(root, WIDTH, 40);
     root.itemSpacing = 4;
     const container = stack('HORIZONTAL', 'Container', {
       paddingLeft: 16,
@@ -67,10 +61,7 @@ function inputContainer(fonts: KitFonts, trailing: IconName | undefined, multili
 }
 
 function inputField(role: Role, fonts: KitFonts, trailing?: IconName, multiline = false): KitNode {
-  return variantSet(role, VERSION, {
-    Empty: inputContainer(fonts, trailing, multiline, false),
-    Filled: inputContainer(fonts, trailing, multiline, true),
-  });
+  return emptyAndFilled(role, VERSION, (filled) => inputContainer(fonts, trailing, multiline, filled));
 }
 
 function checkboxGlyph(): FrameNode {
@@ -117,7 +108,7 @@ function switchGlyph(): FrameNode {
 
 function control(fonts: KitFonts, glyph: () => SceneNode, trailing: boolean, withHelper: boolean) {
   return (root: ComponentNode) => {
-    fixedWidth(root);
+    fixedWidth(root, WIDTH, 40);
     const row = stack('HORIZONTAL', 'Row', { itemSpacing: 12, counterAxisAlignItems: 'CENTER', paddingTop: 8, paddingBottom: 8 });
     const label = text('Label', { font: fonts.regular, size: 16, color: C.onSurface }, 'Label');
     if (!trailing) row.appendChild(glyph());

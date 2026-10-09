@@ -49,11 +49,16 @@ export function stack(direction: 'HORIZONTAL' | 'VERTICAL', name: string, props:
   return frame;
 }
 
-export function fixed(frame: FrameNode, width: number, height?: number): FrameNode {
-  frame.resize(width, height ?? frame.height);
+export function fixed(frame: FrameNode, width: number, height: number): FrameNode {
+  frame.resize(width, height);
   frame.counterAxisSizingMode = 'FIXED';
-  if (height !== undefined) frame.primaryAxisSizingMode = frame.layoutMode === 'VERTICAL' ? 'FIXED' : frame.primaryAxisSizingMode;
   return frame;
+}
+
+export function fixedWidth(root: ComponentNode, width: number, height: number): void {
+  root.resize(width, height);
+  root.counterAxisSizingMode = 'FIXED';
+  root.primaryAxisSizingMode = 'AUTO';
 }
 
 export function fill(child: SceneNode & LayoutMixin): void {
@@ -83,7 +88,7 @@ export const STATE_PROPERTY = 'State';
 
 export type KitNode = ComponentNode | ComponentSetNode;
 
-export function variantSet(role: Role, version: number, builds: Record<string, (root: ComponentNode) => void>): ComponentSetNode {
+function variantSet(role: Role, version: number, builds: Record<string, (root: ComponentNode) => void>): ComponentSetNode {
   const variants = Object.entries(builds).map(([state, build]) => component(role, `${STATE_PROPERTY}=${state}`, version, build));
   const set = figma.combineAsVariants(variants, figma.currentPage);
   set.name = role;
@@ -95,6 +100,10 @@ export function variantSet(role: Role, version: number, builds: Record<string, (
   set.setSharedPluginData(PLUGIN_NAMESPACE, 'role', role);
   set.setSharedPluginData(PLUGIN_NAMESPACE, 'kitVersion', String(version));
   return set;
+}
+
+export function emptyAndFilled(role: Role, version: number, build: (filled: boolean) => (root: ComponentNode) => void): ComponentSetNode {
+  return variantSet(role, version, { Empty: build(false), Filled: build(true) });
 }
 
 export function bindText(root: ComponentNode, node: TextNode, slot: TextSlot): void {
