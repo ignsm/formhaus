@@ -3,6 +3,12 @@ import type { KitFonts } from '../fonts';
 import type { Role } from '../roles';
 import type { KitNode } from './primitives';
 
+export interface TextStyle {
+  font: FontName;
+  size: number;
+  color: string;
+}
+
 export interface KitTheme {
   fonts: KitFonts;
   text: string;
@@ -13,6 +19,7 @@ export interface KitTheme {
   titleSize: number;
   bodySize: number;
   captionSize: number;
+  groupLabel?: TextStyle;
 }
 
 export interface Kit {
