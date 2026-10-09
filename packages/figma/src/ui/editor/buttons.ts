@@ -1,7 +1,7 @@
 import type { FormDefinition, FormStep } from '@formhaus/core';
 import { element, iconButton } from '../dom';
 import { icon } from '../icons';
-import { setBackLabel, setBackVisible, setCancel, setNextLabel, setNextVisible } from './actions';
+import { setBackLabel, setBackVisible, setCancel, setNextLabel, setNextVisible, setSkip, type SkippableStep } from './actions';
 import { labelled, textInput } from './controls';
 
 export interface ButtonsContext {
@@ -29,7 +29,7 @@ function addLink(text: string, onClick: () => void): HTMLElement {
   return link;
 }
 
-export function buttonsBlock(step: FormStep, index: number, count: number, multiStep: boolean, context: ButtonsContext): HTMLElement {
+export function buttonsBlock(step: SkippableStep, index: number, count: number, multiStep: boolean, context: ButtonsContext): HTMLElement {
   const { draft, changed, rerender } = context;
   const block = element('div', 'buttons-block');
   block.appendChild(element('div', 'section-label', 'Buttons'));
@@ -45,6 +45,11 @@ export function buttonsBlock(step: FormStep, index: number, count: number, multi
     block.appendChild(step.back === false
       ? addLink('Back button', () => { setBackVisible(step, true); rerender(); })
       : row('Back', textInput(label(step.back), 'Back', 'input', (value) => { setBackLabel(step, value); changed(); }, 'Back button'), () => { setBackVisible(step, false); rerender(); }));
+  }
+  if (multiStep) {
+    block.appendChild(step.skip
+      ? row('Skip', textInput(step.skip.label, 'Skip', 'input', (value) => { setSkip(step, value); changed(); }, 'Skip button'), () => { setSkip(step, null); rerender(); })
+      : addLink('Skip button', () => { setSkip(step, 'Skip'); rerender(); }));
   }
   if (index === 0) {
     block.appendChild(draft.cancel

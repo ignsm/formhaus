@@ -34,3 +34,10 @@ export function setCancel(draft: FormDefinition, label: string | null): void {
   if (label === null) delete draft.cancel;
   else draft.cancel = { ...draft.cancel, label };
 }
+
+export type SkippableStep = FormStep & { skip?: FormAction };
+
+export function setSkip(step: SkippableStep, label: string | null): void {
+  if (label === null) delete step.skip;
+  else step.skip = { ...step.skip, label };
+}

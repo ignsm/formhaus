@@ -1,6 +1,7 @@
 import type { FormDefinition, FormField } from '@formhaus/core';
 import { element, iconButton } from '../dom';
 import { icon } from '../icons';
+import { DEFAULT_LAYOUT, type ActionsLayout, type FormLayout } from '../../render-actions';
 import { buttonsBlock } from './buttons';
 import { labelled, textInput } from './controls';
 import { fieldRow, typeSelect } from './field-row';
@@ -8,7 +9,8 @@ import { addField, addStep, isMultiStep, moveField, removeField, removeStep, ste
 
 export interface FormEditor {
   get(): FormDefinition;
-  set(draft: FormDefinition): void;
+  layout(): FormLayout;
+  set(draft: FormDefinition, layout?: FormLayout): void;
 }
 
 type Position = [number, number];
@@ -17,6 +19,7 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
   let draft: FormDefinition = { id: 'form', title: '', submit: { label: 'Submit' }, fields: [] };
   const open = new WeakSet<FormField>();
   let dragging: Position | null = null;
+  let layout: FormLayout = DEFAULT_LAYOUT;
 
   function update(focusKey?: string, selector = '.label-input'): void {
     render();
@@ -115,10 +118,26 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
     return section;
   }
 
+  function layoutPicker(): HTMLElement {
+    const group = element('div', 'segmented small');
+    group.setAttribute('role', 'radiogroup');
+    group.setAttribute('aria-label', 'Button layout');
+    for (const [value, text] of [['stacked', 'Stacked'], ['inline', 'Side by side']] as [ActionsLayout, string][]) {
+      const option = element('button', value === layout.actions ? 'mode active' : 'mode', text);
+      option.type = 'button';
+      option.setAttribute('role', 'radio');
+      option.setAttribute('aria-checked', String(value === layout.actions));
+      option.onclick = () => { layout = { actions: value }; update(); };
+      group.appendChild(option);
+    }
+    return labelled('Buttons', group, 'head-row', 'section-label');
+  }
+
   function render(): void {
     const head = element('div', 'form-head');
     head.append(
       labelled('Form title', textInput(draft.title, 'Sign up', 'input title-input', (value) => { draft.title = value; onChange(); }, 'Form title'), 'head-field', 'section-label'),
+      layoutPicker(),
     );
     const addStepButton = element('button', 'link add-link');
     addStepButton.type = 'button';
@@ -129,8 +148,10 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
 
   return {
     get: () => draft,
-    set(next) {
+    layout: () => layout,
+    set(next, nextLayout = DEFAULT_LAYOUT) {
       draft = structuredClone(next);
+      layout = nextLayout;
       render();
     },
   };
