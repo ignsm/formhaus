@@ -1,4 +1,5 @@
 import type { Binding } from '../config';
+import { asComponent } from '../renderers/resolve';
 
 export interface SelectedComponent {
   component: ComponentNode;
@@ -14,8 +15,10 @@ export async function componentFromSelection(selection: readonly SceneNode[]): P
     if (!main) throw new Error('This instance has no main component.');
     return { component: main, binding: { ...reference(main), properties: instanceProperties(node) } };
   }
-  if (node?.type === 'COMPONENT') return { component: node, binding: reference(node) };
-  if (node?.type === 'COMPONENT_SET') return { component: node.defaultVariant, binding: reference(node.defaultVariant) };
+  if (node?.type === 'COMPONENT' || node?.type === 'COMPONENT_SET') {
+    const component = asComponent(node);
+    return { component, binding: reference(component) };
+  }
   throw new Error(SELECT_HINT);
 }
 
