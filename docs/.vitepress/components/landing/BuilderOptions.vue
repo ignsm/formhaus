@@ -23,11 +23,12 @@ const menuRef = ref<InstanceType<typeof BuilderMenu>[]>();
 const branchable = computed(() => canBranch(props.question.type) && props.pages.length > 0);
 const title = (uid: string) => props.pages.find((page) => page.uid === uid)?.title;
 
-const branchItems = computed<MenuItem[]>(() => [
+const branchItems = (option: BuilderOption): MenuItem[] => [
+  ...(option.jump ? [UNBRANCH_ITEM] : []),
   { id: 'next', label: 'Next page', hint: 'Continue in order', icon: 'arrow-down' },
   ...props.pages.map((page) => ({ id: page.uid, label: page.title, hint: 'Jump here when picked', icon: 'file' as const })),
   { id: 'new', label: 'New page', hint: 'Create a page and jump to it', icon: 'plus' },
-]);
+];
 
 const slashItems = (option: BuilderOption) => filterItems(option.jump ? [UNBRANCH_ITEM, BRANCH_ITEM] : [BRANCH_ITEM], slashQuery(option.label) ?? '');
 
@@ -74,12 +75,10 @@ function onKey(event: KeyboardEvent, index: number) {
   const options = props.question.options;
   const option = options[index];
   if (menu.value?.uid === option.uid && menu.value.kind === 'slash' && menuRef.value?.[0]?.onKey(event)) return;
-  if (event.key === 'Enter' || (event.key === 'Tab' && event.shiftKey)) {
+  if (event.key === 'Enter' || (event.key === 'Tab' && event.shiftKey && !option.label)) {
     event.preventDefault();
-    if (event.key === 'Tab' || !option.label) emit('outdent', index);
-    else add(index + 1);
-  } else if (event.key === 'Tab') {
-    event.preventDefault();
+    if (option.label) add(index + 1);
+    else emit('outdent', index);
   } else if (event.key === 'Backspace' && !option.label) {
     event.preventDefault();
     remove(index);
@@ -89,9 +88,16 @@ function onKey(event: KeyboardEvent, index: number) {
 function pickBranch(option: BuilderOption, id: string) {
   menu.value = null;
   if (id === 'new') return emit('newPage', option);
-  option.jump = id === 'next' ? null : id;
+  option.jump = id === 'next' || id === 'unbranch' ? null : id;
   emit('edit');
   focusOption(option.uid);
+}
+
+function onLeave(event: FocusEvent) {
+  if (root.value?.contains(event.relatedTarget as Node)) return;
+  const options = props.question.options;
+  if (!options.some((option) => option.label)) return;
+  while (options.length > 1 && !options[options.length - 1].label) options.pop();
 }
 
 function pickSlash(option: BuilderOption, id: string) {
@@ -104,7 +110,7 @@ function pickSlash(option: BuilderOption, id: string) {
 </script>
 
 <template>
-  <ul ref="root" class="nb-options" :aria-label="`Options for ${question.label || 'question'}`">
+  <ul ref="root" class="nb-options" :aria-label="`Options for ${question.label || 'question'}`" @focusout="onLeave">
     <li
       v-for="(option, index) in question.options"
       :key="option.uid"
@@ -152,7 +158,7 @@ function pickSlash(option: BuilderOption, id: string) {
         <BuilderMenu
           v-if="menu?.uid === option.uid && menu.kind === 'branch'"
           :id="`${option.uid}-branch`"
-          :items="branchItems"
+          :items="branchItems(option)"
           :anchor="() => root?.querySelector(`[data-option='${option.uid}'] .nb-branch`)"
           :current="option.jump ?? 'next'"
           label="Where this answer leads"

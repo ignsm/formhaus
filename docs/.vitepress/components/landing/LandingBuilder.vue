@@ -72,10 +72,19 @@ function toPage(index: number) {
 }
 
 function remove(index: number) {
-  const block = blocks()[index];
-  if ((block.kind === 'page' && pageSpan(props.form, index) > 1) || !removeBlock(props.form, index)) return focusBefore(index);
+  if (!removeBlock(props.form, index)) return focusBefore(index);
   touch();
   focusBefore(index);
+}
+
+function cancel(index: number) {
+  if (removeBlock(props.form, index)) touch();
+}
+
+function removeEmpty(index: number) {
+  const block = blocks()[index];
+  if (block.kind === 'page' && pageSpan(props.form, index) > 1) return focusBefore(index);
+  remove(index);
 }
 
 function onAction(index: number, action: GutterAction) {
@@ -173,7 +182,7 @@ function onKey(event: KeyboardEvent) {
         <BuilderGap v-if="index > 0 || block.kind !== 'page' || drag.from.value !== null" :active="drag.over.value === index" @insert="addQuestion(index)" />
         <div class="nb-row" :data-index="index" :data-uid="block.uid" :data-kind="block.kind" :data-dragged="drag.from.value === index">
           <BuilderGutter :form="form" :index="index" :guard="drag.wasDrag" @action="onAction(index, $event)" @grab="drag.down($event, index)" />
-          <BuilderBreak v-if="block.kind === 'page'" :page="block" :position="pageNumber(index)" :pages="laterPages(form, index)" @after="addQuestion(index + 1)" @remove="remove(index)" @edit="touch" />
+          <BuilderBreak v-if="block.kind === 'page'" :page="block" :position="pageNumber(index)" :pages="laterPages(form, index)" @after="addQuestion(index + 1)" @remove="removeEmpty(index)" @edit="touch" />
           <BuilderQuestion
             v-else
             :question="block"
@@ -182,6 +191,7 @@ function onKey(event: KeyboardEvent) {
             @settled="pending = null"
             @after="addQuestion(index + 1)"
             @remove="remove(index)"
+            @cancel="cancel(index)"
             @page="toPage(index)"
             @outdent="onOutdent(index, $event)"
             @shortcut="onShortcut(index, $event)"

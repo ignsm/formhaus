@@ -15,9 +15,10 @@ export function insertQuestion(form: BuilderForm, at: number): BuilderQuestion {
 }
 
 export function insertPage(form: BuilderForm, at: number): BuilderPage {
-  const page = newPage();
-  if (at > 0 && !isPage(form.blocks[0])) {
-    form.blocks.unshift(newPage());
+  const flat = !isPage(form.blocks[0]);
+  const page = newPage(flat ? 'Page 2' : '');
+  if (at > 0 && flat) {
+    form.blocks.unshift(newPage('Page 1'));
     at += 1;
   }
   form.blocks.splice(at, 0, page);
@@ -36,15 +37,14 @@ export function pageCount(form: BuilderForm): number {
 }
 
 export function canRemove(form: BuilderForm, index: number): boolean {
-  const block = form.blocks[index];
-  if (isPage(block)) return pageCount(form) > 1;
+  if (isPage(form.blocks[index])) return true;
   return form.blocks.filter((item) => item.kind === 'question').length > 1;
 }
 
 export function removeBlock(form: BuilderForm, index: number): boolean {
   if (!canRemove(form, index)) return false;
   const block = form.blocks[index];
-  const removed = form.blocks.splice(index, isPage(block) ? pageSpan(form, index) : 1);
+  const removed = form.blocks.splice(index, isPage(block) && pageCount(form) > 1 ? pageSpan(form, index) : 1);
   const gone = new Set(removed.map((item) => item.uid));
   for (const item of form.blocks) {
     if (item.kind === 'page') {
