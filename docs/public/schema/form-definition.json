@@ -1,0 +1,380 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://formhaus.dev/schema/form-definition.json",
+  "title": "Formhaus form definition",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "submit": {
+      "$ref": "#/definitions/FormAction"
+    },
+    "cancel": {
+      "$ref": "#/definitions/FormAction"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FormField"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FormStep"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "submit"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "FormAction": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "primary",
+            "secondary",
+            "text"
+          ]
+        },
+        "action": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShowCondition"
+          }
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "ShowCondition": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "eq": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "neq": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "in": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        },
+        "notIn": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        },
+        "notEmpty": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "field"
+      ],
+      "additionalProperties": false
+    },
+    "FormField": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/FieldType"
+        },
+        "label": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "helperText": {
+          "type": "string"
+        },
+        "autoAdvance": {
+          "type": "boolean"
+        },
+        "defaultValue": {},
+        "show": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShowCondition"
+          }
+        },
+        "showAny": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShowCondition"
+          }
+        },
+        "validation": {
+          "$ref": "#/definitions/FieldValidation"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldOption"
+          }
+        },
+        "optionsFrom": {
+          "type": "string"
+        },
+        "optionsDependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "accept": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "mask": {
+          "type": "string"
+        },
+        "inputMode": {
+          "type": "string",
+          "enum": [
+            "text",
+            "numeric",
+            "tel",
+            "email"
+          ]
+        }
+      },
+      "required": [
+        "key",
+        "type",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "FieldType": {
+      "$ref": "#/definitions/DefaultFieldType"
+    },
+    "DefaultFieldType": {
+      "type": "string",
+      "enum": [
+        "text",
+        "email",
+        "phone",
+        "number",
+        "password",
+        "select",
+        "autocomplete",
+        "multiselect",
+        "checkbox",
+        "radio",
+        "switch",
+        "file",
+        "date",
+        "datetime",
+        "textarea"
+      ]
+    },
+    "FieldValidation": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": [
+            "boolean",
+            "string"
+          ]
+        },
+        "minLength": {
+          "type": "number"
+        },
+        "minLengthMessage": {
+          "type": "string"
+        },
+        "maxLength": {
+          "type": "number"
+        },
+        "maxLengthMessage": {
+          "type": "string"
+        },
+        "min": {
+          "type": "number"
+        },
+        "minMessage": {
+          "type": "string"
+        },
+        "max": {
+          "type": "number"
+        },
+        "maxMessage": {
+          "type": "string"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "patternMessage": {
+          "type": "string"
+        },
+        "matchField": {
+          "type": "string"
+        },
+        "matchFieldMessage": {
+          "type": "string"
+        },
+        "validator": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "FieldOption": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "FormStep": {
+      "type": "object",
+      "properties": {
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StepRoute"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FormField"
+          }
+        },
+        "show": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShowCondition"
+          }
+        },
+        "showAny": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShowCondition"
+          }
+        },
+        "next": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FormAction"
+            },
+            {
+              "type": "boolean",
+              "const": false
+            }
+          ]
+        },
+        "back": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FormAction"
+            },
+            {
+              "type": "boolean",
+              "const": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "StepRoute": {
+      "type": "object",
+      "properties": {
+        "to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "show": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShowCondition"
+          }
+        },
+        "showAny": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShowCondition"
+          }
+        }
+      },
+      "required": [
+        "to"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
