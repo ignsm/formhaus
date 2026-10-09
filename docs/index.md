@@ -11,7 +11,6 @@ import LandingDemo from './.vitepress/components/landing/LandingDemo.vue';
 import LandingTabs from './.vitepress/components/landing/LandingTabs.vue';
 import LandingFigma from './.vitepress/components/landing/LandingFigma.vue';
 import LandingAgents from './.vitepress/components/landing/LandingAgents.vue';
-import LandingWhen from './.vitepress/components/landing/LandingWhen.vue';
 import LandingRecipes from './.vitepress/components/landing/LandingRecipes.vue';
 import './.vitepress/components/landing/landing.css';
 </script>
@@ -88,7 +87,5 @@ Paste the same JSON into the plugin.
 ```
 
 </LandingAgents>
-
-<LandingWhen />
 
 <LandingRecipes />
