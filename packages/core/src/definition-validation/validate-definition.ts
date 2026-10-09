@@ -4,44 +4,27 @@ import type { FormDefinition } from '../types';
 import { analyzeDefinition } from './definition-analysis';
 
 function detectCycles(graph: Map<string, string[]>): string[][] {
-  const state = new Map<string, 'visiting' | 'visited'>();
+  const visiting = new Map<string, boolean>();
   const cycles: string[][] = [];
-
   for (const start of graph.keys()) {
-    if (state.has(start)) continue;
-
-    const path: string[] = [];
-    const stack: { node: string; nextNeighbor: number }[] = [
-      { node: start, nextNeighbor: 0 },
-    ];
-
+    if (visiting.has(start)) continue;
+    visiting.set(start, true);
+    const stack: [string, number][] = [[start, 0]];
     while (stack.length > 0) {
       const frame = stack[stack.length - 1];
-      if (!state.has(frame.node)) {
-        state.set(frame.node, 'visiting');
-        path.push(frame.node);
+      const neighbor = graph.get(frame[0])?.[frame[1]++];
+      if (neighbor === undefined) {
+        visiting.set(frame[0], false);
+        stack.pop();
+      } else if (visiting.get(neighbor)) {
+        const nodes = stack.map(([node]) => node);
+        cycles.push([...nodes.slice(nodes.indexOf(neighbor)), neighbor]);
+      } else if (!visiting.has(neighbor)) {
+        visiting.set(neighbor, true);
+        stack.push([neighbor, 0]);
       }
-
-      const neighbors = graph.get(frame.node) ?? [];
-      if (frame.nextNeighbor < neighbors.length) {
-        const neighbor = neighbors[frame.nextNeighbor++];
-        const neighborState = state.get(neighbor);
-
-        if (neighborState === 'visiting') {
-          const cycleStart = path.indexOf(neighbor);
-          cycles.push([...path.slice(cycleStart), neighbor]);
-        } else if (neighborState !== 'visited') {
-          stack.push({ node: neighbor, nextNeighbor: 0 });
-        }
-        continue;
-      }
-
-      state.set(frame.node, 'visited');
-      path.pop();
-      stack.pop();
     }
   }
-
   return cycles;
 }
 
