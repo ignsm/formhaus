@@ -46,9 +46,13 @@
 
   <section class="panel" id="tab-components">
     <div class="tray is-empty" id="tray"></div>
-    <div class="toolbar">
-      <p class="hint" id="fallbackHint"></p>
-      <button class="btn btn-secondary btn-small" id="autoMatch" type="button">Auto-match</button>
+    <div class="coverage">
+      <div class="row-between">
+        <div class="coverage-title" id="coverageTitle"></div>
+        <button class="btn btn-secondary btn-small" id="autoMatch" type="button">Auto-match</button>
+      </div>
+      <div class="coverage-bar" id="coverageBar"></div>
+      <div class="coverage-legend" id="coverageLegend"></div>
     </div>
     <div class="output" id="bindingsOutput"></div>
     <div class="groups" id="bindings"></div>

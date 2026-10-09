@@ -1,5 +1,6 @@
 import type { BindingRow } from '../bindings/rows';
 import { ROLE_LABELS, type Role } from '../roles';
+import { coverageOf, isCovered } from './coverage';
 import { element, iconButton, previewStore } from './dom';
 import { icon } from './icons';
 
@@ -14,12 +15,7 @@ const GROUPS: Record<string, string> = { field: 'Fields', option: 'Options', but
 const DRAG_TYPE = 'application/x-formhaus-selection';
 const store = previewStore();
 
-function status(row: BindingRow, kitName: string): { label: string; tone: string } {
-  if (row.missing) return { label: 'Missing', tone: 'danger' };
-  if (row.via) return { label: 'Shared', tone: 'neutral' };
-  if (row.name) return { label: 'Yours', tone: 'brand' };
-  return { label: 'Kit', tone: 'neutral' };
-}
+const BADGES = { yours: 'Yours', reused: 'Reused', kit: 'Not set', missing: 'Missing' };
 
 function preview(row: BindingRow): HTMLElement {
   const frame = element('div', 'card-preview');
@@ -37,8 +33,8 @@ function preview(row: BindingRow): HTMLElement {
 
 function subtitle(row: BindingRow, kitName: string): string {
   if (row.missing) return 'Select it again or clear it';
-  if (row.via) return `Same as ${ROLE_LABELS[row.via]}`;
-  return row.name ?? kitName;
+  if (row.via) return `Uses your ${ROLE_LABELS[row.via]}`;
+  return row.name ?? `Renders with ${kitName}`;
 }
 
 function acceptSelection(card: HTMLElement, role: Role, handlers: CardHandlers): void {
@@ -66,13 +62,14 @@ function placeOnCanvas(card: HTMLElement, role: Role): void {
 }
 
 function card(row: BindingRow, kitName: string, handlers: CardHandlers): HTMLElement {
-  const tone = status(row, kitName);
-  const node = element('article', `card tone-${tone.tone}`);
+  const state = coverageOf(row);
+  const node = element('article', `card cov-${state}`);
   node.dataset.role = row.role;
   const head = element('div', 'card-head');
-  head.append(element('div', 'card-title', ROLE_LABELS[row.role]), element('span', `badge tone-${tone.tone}`, tone.label));
+  head.append(element('div', 'card-title', ROLE_LABELS[row.role]), element('span', `badge cov-${state}`, BADGES[state]));
   const body = element('div', 'card-body');
   body.append(head, element('div', 'card-sub', subtitle(row, kitName)));
+  if (state === 'kit') body.appendChild(element('div', 'card-hint', 'Select your component, then click this card'));
   if (row.staleProperties) {
     const warning = element('div', 'card-warning');
     warning.append(icon('warning', 12), document.createTextNode(`Missing ${row.staleProperties.join(', ')}. Bind again.`));
@@ -93,20 +90,38 @@ function card(row: BindingRow, kitName: string, handlers: CardHandlers): HTMLEle
   return node;
 }
 
+function grid(rows: BindingRow[], kitName: string, handlers: CardHandlers): HTMLElement {
+  const node = element('div', 'grid');
+  for (const row of rows) node.appendChild(card(row, kitName, handlers));
+  return node;
+}
+
+function section(title: string, note: string, children: HTMLElement[]): HTMLElement {
+  const node = element('section', 'group');
+  const header = element('header', 'group-header');
+  header.append(element('h3', '', title), element('span', 'group-count', note));
+  node.append(header, ...children);
+  return node;
+}
+
+function setupSection(rows: BindingRow[], kitName: string, handlers: CardHandlers): HTMLElement {
+  if (rows.length === 0) return element('div', 'all-covered', 'Every element uses your components.');
+  return section('Needs setup', `${rows.length} left`, [
+    element('p', 'hint', `These still render with ${kitName}. Select your component on the canvas and click a card, or drag the bar above onto it.`),
+    grid(rows, kitName, handlers),
+  ]);
+}
+
 export function renderCards(container: HTMLElement, rows: BindingRow[], kitName: string, handlers: CardHandlers): void {
   store.release();
-  const sections = Object.entries(GROUPS).map(([prefix, title]) => {
-    const items = rows.filter((row) => row.role.startsWith(`${prefix}.`));
-    const bound = items.filter((row) => row.name && !row.via && !row.missing).length;
-    const section = element('section', 'group');
-    const header = element('header', 'group-header');
-    header.append(element('h3', '', title), element('span', 'group-count', `${bound} of ${items.length} custom`));
-    const grid = element('div', 'grid');
-    for (const row of items) grid.appendChild(card(row, kitName, handlers));
-    section.append(header, grid);
-    return section;
-  });
-  container.replaceChildren(...sections);
+  const covered = rows.filter(isCovered);
+  const groups = Object.entries(GROUPS)
+    .map(([prefix, title]) => ({ title, items: covered.filter((row) => row.role.startsWith(`${prefix}.`)) }))
+    .filter((group) => group.items.length > 0)
+    .map((group) => section(group.title, '', [grid(group.items, kitName, handlers)]));
+  const coveredSection = element('div', 'covered');
+  if (groups.length > 0) coveredSection.append(element('h2', 'covered-title', 'Covered'), ...groups);
+  container.replaceChildren(setupSection(rows.filter((row) => !isCovered(row)), kitName, handlers), coveredSection);
 }
 
 export { DRAG_TYPE };

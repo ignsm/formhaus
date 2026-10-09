@@ -3,6 +3,7 @@ import type { SelectionPreview } from '../bindings/selection-preview';
 import type { TextSlot } from '../config';
 import type { Role } from '../roles';
 import { renderCards } from './cards';
+import { renderCoverage } from './coverage';
 import { byId } from './dom';
 import { closeSheet, openSheet } from './sheet';
 import { renderTray } from './tray';
@@ -14,7 +15,6 @@ const KIT_NAMES: Record<string, string> = { material: 'Material 3', ios: 'iOS-li
 export function createComponentsPanel(post: Post) {
   const list = byId('bindings');
   const tray = byId('tray');
-  const fallback = byId('fallbackHint');
   let rows: BindingRow[] = [];
   let selection: SelectionPreview | null = null;
   let kitName = KIT_NAMES.material;
@@ -33,7 +33,7 @@ export function createComponentsPanel(post: Post) {
   };
 
   function render(): void {
-    fallback.textContent = `Anything you leave unbound uses ${kitName}.`;
+    renderCoverage(rows, kitName);
     renderCards(list, rows, kitName, handlers);
     const open = openRole && document.getElementById('sheet')?.classList.contains('is-open') ? rows.find((row) => row.role === openRole) : null;
     if (open?.candidates?.length) openSheet(open, changeSlot);
