@@ -177,6 +177,7 @@ export const iosKit: Kit = {
     text: C.label,
     muted: '#8A8A8E',
     card: { fill: C.grouped, radius: 34, padding: 20, gap: 20, width: 370 },
+    actionsGap: 12,
     optionGroup: { gap: 0, fill: C.cell, radius: CELL_RADIUS },
     titleSize: 28,
     bodySize: 17,
