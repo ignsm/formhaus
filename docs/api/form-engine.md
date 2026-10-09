@@ -55,9 +55,9 @@ Both `initialValues` and the options object are optional. Values belonging to hi
 A custom renderer that receives external errors as a prop can skip redundant `setErrors()` calls:
 
 ```ts
-import { shouldApplyExternalErrors } from '@formhaus/core'
+import { shouldApplyExternalErrors } from '@formhaus/core';
 
-if (shouldApplyExternalErrors(engine, previousErrors, nextErrors)) engine.setErrors(nextErrors)
+if (shouldApplyExternalErrors(engine, previousErrors, nextErrors)) engine.setErrors(nextErrors);
 ```
 
 It returns `false` only when `nextErrors` equals `previousErrors` and the engine still shows every one of them. Pass `undefined` as `previousErrors` for a new engine.
