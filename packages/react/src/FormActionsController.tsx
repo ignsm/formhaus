@@ -27,16 +27,13 @@ export function FormActionsController({
   onCancel,
 }: FormActionsControllerProps) {
   useFormSnapshot(engine);
+  const step = engine.currentStep;
   const isLastStep = engine.isLastStep || !engine.isMultiStep;
   const primaryLabel = engine.isMultiStep && !isLastStep
-    ? (typeof engine.currentStep?.next === 'object' ? engine.currentStep.next.label ?? 'Continue' : 'Continue')
+    ? ((step?.next || undefined)?.label ?? 'Continue')
     : (definition.submit?.label ?? 'Submit');
-  const showBack = engine.isMultiStep && !engine.isFirstStep && engine.currentStep?.back !== false;
-  const backLabel = typeof engine.currentStep?.back === 'object'
-    ? (engine.currentStep.back.label ?? 'Back')
-    : 'Back';
-  const skipAction = engine.isMultiStep ? engine.currentStep?.skip : undefined;
-  const showSkip = !!skipAction && engine.currentStep?.next !== false;
+  const showBack = engine.isMultiStep && !engine.isFirstStep && step?.back !== false;
+  const backLabel = (step?.back || undefined)?.label ?? 'Back';
   const handlePrimary = useCallback(async () => {
     if (engine.isMultiStep && !isLastStep) await onNext();
     else onSubmit();
@@ -47,9 +44,9 @@ export function FormActionsController({
   return (
     <ActionsComponent
       submitAction={definition.submit}
-      backAction={engine.currentStep?.back}
+      backAction={step?.back}
       cancelAction={definition.cancel}
-      skipAction={skipAction}
+      skipAction={step?.skip}
       isFirstStep={engine.isFirstStep}
       isLastStep={isLastStep}
       isMultiStep={engine.isMultiStep}
@@ -61,11 +58,10 @@ export function FormActionsController({
       onCancel={onCancel}
       onSkip={onSkip}
       primaryLabel={primaryLabel}
-      showPrimary={isLastStep || engine.currentStep?.next !== false}
+      showPrimary={isLastStep || step?.next !== false}
       showBack={showBack}
       backLabel={backLabel}
-      showSkip={showSkip}
-      skipLabel={skipAction?.label ?? 'Skip'}
+      showSkip={!!step?.skip && step.next !== false}
       onPrimary={handlePrimary}
     />
   );
