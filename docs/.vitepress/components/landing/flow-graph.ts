@@ -73,6 +73,10 @@ function curve(from: FlowNode, to: FlowNode): string {
 
 export function buildGraph(definition: FormDefinition): FlowGraph {
   const steps = definition.steps ?? [];
+  if (!steps.length) {
+    const label = definition.title || 'Form';
+    return { nodes: [{ id: 'form', label, x: PAD, y: PAD }], edges: [], width: NODE.width + PAD * 2, height: NODE.height + PAD * 2 };
+  }
   const cols = columns(steps);
   const rows = Math.max(1, ...cols.map((col) => col.length));
   const width = cols.length * NODE.width + (cols.length - 1) * GAP_X + PAD * 2;

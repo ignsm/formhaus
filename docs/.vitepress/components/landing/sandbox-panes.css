@@ -34,10 +34,13 @@
   display: none;
 }
 
-.sandbox__note {
+.vp-doc .sandbox__caption {
   display: none;
-  margin: 0 0 16px;
+  max-width: 1120px;
+  margin: 10px auto 0;
   font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
   color: var(--vp-c-text-3);
 }
 
@@ -78,7 +81,7 @@
     display: none;
   }
 
-  .sandbox__note {
+  .vp-doc .sandbox__caption {
     display: block;
   }
 
@@ -107,7 +110,6 @@
   }
 
   .sandbox__graph {
-    overflow-x: auto;
     padding: 8px 16px;
   }
 

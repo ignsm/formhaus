@@ -1,12 +1,26 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { NODE, type FlowGraph } from './flow-graph';
 import type { FlowState } from './flow-state';
 
 defineProps<{ graph: FlowGraph; state: FlowState }>();
+
+const scroller = ref<HTMLElement>();
+const wide = ref(false);
+let observer: ResizeObserver | undefined;
+const measure = () => { wide.value = !!scroller.value && scroller.value.scrollWidth > scroller.value.clientWidth + 1; };
+const short = (label: string) => (label.length > 16 ? `${label.slice(0, 15)}…` : label);
+
+onMounted(() => {
+  observer = new ResizeObserver(measure);
+  if (scroller.value) observer.observe(scroller.value);
+  measure();
+});
+onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
-  <div class="flow" :style="{ '--flow-width': `${graph.width}px` }">
+  <div ref="scroller" class="flow" :data-wide="wide" :style="{ '--flow-width': `${graph.width}px` }">
     <svg
       class="flow__svg"
       :viewBox="`0 0 ${graph.width} ${graph.height}`"
@@ -29,7 +43,8 @@ defineProps<{ graph: FlowGraph; state: FlowState }>();
         :transform="`translate(${node.x} ${node.y})`"
       >
         <rect class="flow__box" :width="NODE.width" :height="NODE.height" rx="18" />
-          <text class="flow__label" :x="NODE.width / 2" :y="NODE.height / 2">{{ node.label.length > 12 ? `${node.label.slice(0, 11)}…` : node.label }}</text>
+          <title>{{ node.label }}</title>
+          <text class="flow__label" :x="NODE.width / 2" :y="NODE.height / 2">{{ short(node.label) }}</text>
         </g>
       </TransitionGroup>
     </svg>
@@ -40,12 +55,25 @@ defineProps<{ graph: FlowGraph; state: FlowState }>();
 <style scoped>
 .flow {
   height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.flow::-webkit-scrollbar {
+  display: none;
+}
+
+.flow[data-wide='true'] {
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
 }
 
 .flow__svg {
   display: block;
   width: 100%;
-  max-width: 480px;
+  min-width: calc(var(--flow-width) * 0.8);
+  max-width: max(min(480px, calc(var(--flow-width) * 1.15)), calc(var(--flow-width) * 0.8));
   height: 100%;
   margin: 0 auto;
   overflow: visible;
@@ -146,9 +174,7 @@ defineProps<{ graph: FlowGraph; state: FlowState }>();
 
 @media (max-width: 767px) {
   .flow__svg {
-    width: calc(var(--flow-width) * 0.85);
-    max-width: none;
-    height: auto;
+    min-width: calc(var(--flow-width) * 0.85);
     margin: 0;
   }
 }
