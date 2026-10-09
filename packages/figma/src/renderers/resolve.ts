@@ -10,7 +10,7 @@ export async function componentForBinding(binding: Binding): Promise<ComponentNo
 async function findNode(binding: Binding): Promise<BaseNode | null> {
   if (binding.source === 'local' && binding.id) {
     const local = await figma.getNodeByIdAsync(binding.id);
-    if (local) return local;
+    if (local && !local.removed && local.parent) return local;
   }
   if (!binding.key) return null;
   try {
@@ -35,9 +35,9 @@ export function setVariant(instance: InstanceNode, property: string, value: stri
 
 export function instantiate(component: ComponentNode, binding?: Binding): InstanceNode {
   const instance = component.createInstance();
-  if (binding?.variant && component.parent?.type === 'COMPONENT_SET') {
+  if (binding?.properties) {
     try {
-      instance.setProperties(binding.variant);
+      instance.setProperties(binding.properties);
     } catch {
       return instance;
     }

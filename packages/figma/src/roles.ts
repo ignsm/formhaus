@@ -20,6 +20,20 @@ export type Role = FieldRole | ButtonRole;
 
 export const ROLES: readonly Role[] = [...FIELD_ROLES, ...BUTTON_ROLES];
 
+export const ROLE_LABELS: Record<Role, string> = {
+  'field.text': 'Text input',
+  'field.select': 'Select',
+  'field.textarea': 'Text area',
+  'field.date': 'Date',
+  'field.file': 'File upload',
+  'field.checkbox': 'Checkbox',
+  'field.switch': 'Switch',
+  'option.radio': 'Radio option',
+  'option.checkbox': 'Checkbox option',
+  'button.primary': 'Primary button',
+  'button.secondary': 'Secondary button',
+};
+
 const ROLE_BY_TYPE: Record<string, FieldRole> = {
   select: 'field.select',
   autocomplete: 'field.select',
