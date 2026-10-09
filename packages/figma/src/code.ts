@@ -3,6 +3,7 @@ import { isBindingMessage, runBindingMessage, type BindingMessage } from './bind
 import { readConfig, writeConfig, type ComponentSource, type KitId, type PluginConfig } from './config';
 import { getComponentMap, resetComponentMap, setComponentMap, type ComponentMap } from './constants';
 import { droppedRole, placeRole } from './drop';
+import { selectedForm } from './forms';
 import { countFields, getSteps, parseAndValidate } from './parse';
 import { renderForm } from './render-form';
 import { createKitRenderer } from './renderers/kit-renderer';
@@ -22,7 +23,10 @@ interface UiMessage extends BindingMessage {
 let hasStoredMap = false;
 
 figma.showUI(__html__, { width: 480, height: 680, themeColors: true });
-loadStoredComponentMap().then(sendState);
+loadStoredComponentMap().then(() => {
+  sendState();
+  void sendSelection();
+});
 figma.on('selectionchange', () => void sendSelection());
 figma.on('drop', (event) => {
   const role = droppedRole(event);
@@ -67,7 +71,9 @@ let selectionTick = 0;
 
 async function sendSelection(): Promise<void> {
   const tick = ++selectionTick;
-  const item = await selectionPreview(figma.currentPage.selection);
+  const selection = figma.currentPage.selection;
+  figma.ui.postMessage({ type: 'form', definition: selectedForm(selection) });
+  const item = await selectionPreview(selection);
   if (tick === selectionTick) figma.ui.postMessage({ type: 'selection', item });
 }
 
@@ -113,6 +119,7 @@ async function generateForm(source: string): Promise<void> {
     const definition = parseAndValidate(source);
     const frames = await renderForm(definition, await createRenderer());
     figma.commitUndo();
+    figma.currentPage.selection = frames.slice(0, 1);
     figma.viewport.scrollAndZoomIntoView(frames);
     const stepCount = getSteps(definition).length;
     const stepInfo = stepCount > 1 ? ` across ${stepCount} frames` : '';

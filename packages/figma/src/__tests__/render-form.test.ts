@@ -55,11 +55,11 @@ describe('renderForm', () => {
   });
 
   it('replaces a previous render of the same definition in place', async () => {
-    const oldForm = { type: 'FRAME', x: 300, width: 300, getSharedPluginData: () => definition.id, remove: vi.fn() };
+    const oldForm = { type: 'FRAME', x: 300, y: 40, width: 300, getSharedPluginData: () => definition.id, remove: vi.fn() };
     const unrelated = { type: 'FRAME', x: 0, width: 100, getSharedPluginData: () => 'other-form', remove: vi.fn() };
     const created = stubFigma([unrelated, oldForm]);
     await renderForm(definition, renderer(async () => node() as unknown as SceneNode));
-    expect(created[0].x).toBe(200);
+    expect(created[0]).toMatchObject({ x: 300, y: 40 });
     expect(oldForm.remove).toHaveBeenCalled();
     expect(unrelated.remove).not.toHaveBeenCalled();
   });

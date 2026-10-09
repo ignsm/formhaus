@@ -7,6 +7,7 @@ import type { FormRenderer } from './renderers/types';
 
 const LEGACY_NAMESPACE = 'formGenerator';
 const FRAME_GAP = 40;
+export const DEFINITION_KEY = 'definition';
 
 interface RenderableStep {
   title: string;
@@ -19,10 +20,14 @@ export async function renderForm(definition: FormDefinition, renderer: FormRende
   const createdFrames: FrameNode[] = [];
   try {
     const steps = getSteps(definition) as RenderableStep[];
-    let cursorX = nextFrameX(figma.currentPage.children, existingFrames);
+    const origin = startPoint(existingFrames);
+    let cursorX = origin.x;
+    const stored = JSON.stringify(definition);
     for (let index = 0; index < steps.length; index++) {
       const frame = await renderStep(definition, steps[index], index, steps.length, renderer);
       frame.x = cursorX;
+      frame.y = origin.y;
+      frame.setSharedPluginData(PLUGIN_NAMESPACE, DEFINITION_KEY, stored);
       cursorX += frame.width + FRAME_GAP;
       createdFrames.push(frame);
     }
@@ -32,6 +37,12 @@ export async function renderForm(definition: FormDefinition, renderer: FormRende
     for (const frame of createdFrames) frame.remove();
     throw error;
   }
+}
+
+function startPoint(existingFrames: FrameNode[]): { x: number; y: number } {
+  if (existingFrames.length === 0) return { x: nextFrameX(figma.currentPage.children, []), y: 0 };
+  const first = existingFrames.reduce((left, frame) => (frame.x < left.x ? frame : left));
+  return { x: first.x, y: first.y };
 }
 
 function findExistingFrames(definitionId: string): FrameNode[] {
