@@ -8,11 +8,29 @@ description: "Check Formhaus definitions from Claude Code, Claude Desktop or Cur
 
 ## Setup
 
-Claude Code:
+### Claude Code plugin
+
+The Formhaus plugin bundles this server with the [`/formhaus:formhaus-create-form`](/guide/formhaus-create-form) and [`/formhaus:formhaus-figma-connect`](/guide/formhaus-figma-connect) skills:
+
+```
+/plugin marketplace add ignsm/formhaus
+/plugin install formhaus@formhaus
+```
+
+From a shell:
+
+```bash
+claude plugin marketplace add ignsm/formhaus
+claude plugin install formhaus@formhaus
+```
+
+### Claude Code, server only
 
 ```bash
 claude mcp add formhaus -- npx -y @formhaus/mcp
 ```
+
+### Claude Desktop and Cursor
 
 Claude Desktop (`claude_desktop_config.json`) and Cursor (`.cursor/mcp.json`):
 
@@ -25,6 +43,15 @@ Claude Desktop (`claude_desktop_config.json`) and Cursor (`.cursor/mcp.json`):
     }
   }
 }
+```
+
+### Cursor rule
+
+Copy [`.cursor/rules/formhaus.mdc`](https://github.com/ignsm/formhaus/blob/main/.cursor/rules/formhaus.mdc) into your project's `.cursor/rules/`. It describes Formhaus definitions and tells Cursor to validate them with this server.
+
+```bash
+mkdir -p .cursor/rules
+curl -o .cursor/rules/formhaus.mdc https://raw.githubusercontent.com/ignsm/formhaus/main/.cursor/rules/formhaus.mdc
 ```
 
 ## Tools

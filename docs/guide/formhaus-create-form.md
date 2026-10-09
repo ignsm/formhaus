@@ -10,13 +10,24 @@ Generate an `@formhaus/core` form definition from a description, CSV data, or a 
 ## Prerequisites
 
 - [Claude Code](https://claude.ai/code) installed
-- The formhaus repo cloned locally
+- The Formhaus Claude Code plugin
+
+Install the plugin in Claude Code:
+
+```
+/plugin marketplace add ignsm/formhaus
+/plugin install formhaus@formhaus
+```
+
+The plugin also starts the [MCP server](/guide/mcp). The skill uses it to validate the definition and simulate step paths before it shows the result.
 
 ## Usage
 
 ```
-/formhaus-create-form
+/formhaus:formhaus-create-form
 ```
+
+Plugin skills are namespaced with the plugin name. Claude also picks the skill on its own when the request matches.
 
 Then describe your form:
 

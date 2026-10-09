@@ -10,8 +10,15 @@ Find your form components in a Figma library and bind them to the [Figma plugin]
 ## Prerequisites
 
 - [Claude Code](https://claude.ai/code) installed
-- The formhaus repo cloned locally
+- The Formhaus Claude Code plugin
 - [Figma MCP server](https://developers.figma.com/docs/figma-mcp-server/) connected to Claude Code
+
+Install the plugin in Claude Code:
+
+```
+/plugin marketplace add ignsm/formhaus
+/plugin install formhaus@formhaus
+```
 
 ## Setting up Figma MCP
 
@@ -41,16 +48,18 @@ Once connected, the skill can:
 ## Usage
 
 ```
-/formhaus-figma-connect
+/formhaus:formhaus-figma-connect
 ```
+
+Plugin skills are namespaced with the plugin name. Claude also picks the skill on its own when the request matches.
 
 The skill checks the MCP connection and asks for the URL of the file where you design forms. It searches your libraries for inputs, selects, selection controls and buttons, and shows each match as a screenshot. After you confirm, it writes the bindings into that file. Open the plugin's **Components** tab to check them.
 
 ## Typical workflow
 
-1. Describe the form to Claude, or run [`/formhaus-create-form`](/guide/formhaus-create-form)
+1. Describe the form to Claude, or run [`/formhaus:formhaus-create-form`](/guide/formhaus-create-form)
 2. Claude generates the form definition
-3. Run `/formhaus-figma-connect` to map your design system (one-time setup)
+3. Run `/formhaus:formhaus-figma-connect` to map your design system (one-time setup)
 4. Paste the definition into the plugin's **JSON** mode, or build the form in **Fields**
 5. Click **Generate form** to create it with your components
 
