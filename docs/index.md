@@ -55,7 +55,7 @@ import { FormEngine } from '@formhaus/core';
 import definition from './onboarding.json';
 
 const engine = new FormEngine(definition);
-engine.setValue('workspaceType', 'my-team');
+engine.setValue('whoIsItFor', 'my-team');
 await engine.nextStepAsync();
 
 engine.setValue('company', 'Acme');
