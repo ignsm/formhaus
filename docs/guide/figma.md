@@ -54,7 +54,7 @@ Open the **Components** tab to render forms with your own design system. Every f
 
 Binding an instance keeps its variant and boolean property values, so configure the instance the way fields should look before binding it. Library components are bound by key and imported when you generate. **Auto-match** binds unbound roles to components on the current page by name, such as `Text field`, `Dropdown`, `Toggle` or `Button / Primary`.
 
-Roles you leave unbound reuse a related component when one is bound: a date or select field uses your dropdown or text field, a text area uses your text field. Without a text button, Skip and Cancel render as text in your primary button's font and colour. Anything else falls back to the selected built-in kit. With your own components the form card is neutral and takes its font and group label style from your text field.
+Roles you leave unbound reuse a related component when one is bound: a date or select field uses your dropdown or text field, a text area uses your text field, Back uses your text button. Without a text button, Skip and Cancel render as text in your primary button's font and colour. Anything else falls back to the selected built-in kit. With your own components the form card is neutral and takes its font and group label style from your text field.
 
 Drag any card onto the canvas to place that component. Bindings are stored in the document, so everyone who opens the file generates with the same components.
 

@@ -16,7 +16,7 @@ interface Candidate {
 
 const NOT_A_FIELD = /\b(icons?|avatar|badge|banner|card|chip|tag|menu|nav|tabs?|tooltip|colou?r)\b/i;
 const SECONDARY = /secondary|outlined?|tonal/i;
-const TEXT_BUTTON = /text button|link button|\blink\b|tertiary|ghost|plain/i;
+const TEXT_BUTTON = /\btext\b|\blink\b|tertiary|ghost|plain/i;
 
 const RULES: Record<Role, Rule> = {
   'field.textarea': { match: /text ?area|multi-?line/i },
@@ -28,8 +28,8 @@ const RULES: Record<Role, Rule> = {
   'field.switch': { match: /\bswitch\b|\btoggle\b/i },
   'option.radio': { match: /\bradio\b/i },
   'option.checkbox': { match: /check ?box/i },
-  'button.primary': { match: /\bbutton\b|\bbtn\b/i, exclude: /icon|radio|toggle|text button|fab|split|tertiary|ghost|plain/i, prefer: /primary|filled|main|default/i },
-  'button.secondary': { match: /\bbutton\b|\bbtn\b/i, exclude: /icon|radio|toggle|text button|fab|split|tertiary|ghost|plain/i, prefer: SECONDARY },
+  'button.primary': { match: /\bbutton\b|\bbtn\b/i, exclude: /icon|radio|toggle|fab|split|\btext\b|\blink\b|tertiary|ghost|plain/i, prefer: /primary|filled|main|default/i },
+  'button.secondary': { match: /\bbutton\b|\bbtn\b/i, exclude: /icon|radio|toggle|fab|split|\btext\b|\blink\b|tertiary|ghost|plain/i, prefer: SECONDARY },
   'button.text': { match: /\bbutton\b|\bbtn\b|\blink\b/i, exclude: /icon|radio|toggle|fab|split/i, prefer: TEXT_BUTTON },
 };
 

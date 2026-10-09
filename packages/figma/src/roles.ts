@@ -50,6 +50,7 @@ export const ROLE_FALLBACKS: Partial<Record<Role, Role[]>> = {
   'field.checkbox': ['option.checkbox'],
   'field.switch': ['field.checkbox', 'option.checkbox'],
   'option.checkbox': ['field.checkbox'],
+  'button.secondary': ['button.text'],
   'button.text': ['button.primary'],
 };
 
