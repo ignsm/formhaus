@@ -2,8 +2,5 @@ packages:
   - '.'
 allowBuilds:
   esbuild: true
-minimumReleaseAgeExclude:
-  - '@formhaus/core@0.7.2'
-  - '@formhaus/react@0.7.2'
 onlyBuiltDependencies:
   - esbuild
