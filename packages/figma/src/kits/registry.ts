@@ -33,13 +33,13 @@ export async function loadKit(id: KitId): Promise<LoadedKit> {
     else missing.push(role);
   }
   if (missing.length > 0) {
-    const section = createSection(kit);
+    const section = findSection(kit) ?? createSection(kit);
     for (const role of missing) {
       const node = kit.build(role, fonts);
       section.appendChild(node);
       components.set(role, node);
     }
-    arrange(section, missing.map((role) => components.get(role)!));
+    arrange(section, section.children.filter((node): node is KitNode => isCurrent(node, kit)));
     config.kitNodes[id] = Object.fromEntries([...components].map(([role, node]) => [role, node.id]));
     writeConfig(config);
   }
@@ -48,13 +48,23 @@ export async function loadKit(id: KitId): Promise<LoadedKit> {
 
 function isCurrent(node: BaseNode | null, kit: Kit): node is KitNode {
   if (node?.type !== 'COMPONENT' && node?.type !== 'COMPONENT_SET') return false;
+  if (node.removed || !node.parent) return false;
   return node.getSharedPluginData(PLUGIN_NAMESPACE, 'kitVersion') === String(kit.version);
+}
+
+function findSection(kit: Kit): SectionNode | undefined {
+  return figma.currentPage.children.find((node): node is SectionNode => (
+    node.type === 'SECTION' &&
+    node.getSharedPluginData(PLUGIN_NAMESPACE, 'kit') === kit.id &&
+    node.getSharedPluginData(PLUGIN_NAMESPACE, 'kitVersion') === String(kit.version)
+  ));
 }
 
 function createSection(kit: Kit): SectionNode {
   const section = figma.createSection();
   section.name = `Formhaus · ${kit.name} v${kit.version}`;
   section.setSharedPluginData(PLUGIN_NAMESPACE, 'kit', kit.id);
+  section.setSharedPluginData(PLUGIN_NAMESPACE, 'kitVersion', String(kit.version));
   const page = figma.currentPage;
   const bottom = page.children.reduce((edge, node) => (
     node === section ? edge : Math.max(edge, node.y + ('height' in node ? node.height : 0))
