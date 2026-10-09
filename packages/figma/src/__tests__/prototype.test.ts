@@ -53,7 +53,7 @@ describe('wirePrototype', () => {
       findChild: (match: (node: { name: string }) => boolean) => (index === 0 && match({ name: 'kind' }) ? group : null),
     })) as unknown as FrameNode[];
     await wirePrototype({ id: 'kind', title: 'Kind', submit: { label: 'Go' }, steps }, steps, frames);
-    const destination = (mock: ReturnType<typeof vi.fn>) => mock.mock.calls.at(-1)![0][0]?.actions[0];
+    const destination = (mock: ReturnType<typeof vi.fn>) => mock.mock.calls[mock.mock.calls.length - 1][0][0]?.actions[0];
     expect(destination(buttons[0].setReactionsAsync).destinationId).toBe('frame-personal');
     expect(destination(buttons[1].setReactionsAsync).type).toBe('BACK');
     expect(options.map((option) => destination(option.setReactionsAsync)?.destinationId)).toEqual(['frame-business', 'frame-personal', undefined]);
