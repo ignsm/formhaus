@@ -2,7 +2,7 @@ import { afterCommit } from './lifecycle-error';
 import { watchCheckedInputs } from './pending-inputs';
 import { validateStep } from '../validation';
 import { applyValidationErrors, getValidationValues } from './validation-state';
-import { includeCurrentStep, skipCurrentStep } from './step-skip';
+import { includeCurrentStep, skipCurrentStep, skipTarget } from './step-skip';
 import { submitAsync } from './submission';
 import type { StepChangeContext, SubmitFn } from './engine-options';
 import type { EngineInternals } from './runtime-internals';
@@ -10,7 +10,6 @@ import type { EngineInternals } from './runtime-internals';
 function hasStepErrors(engine: EngineInternals): boolean {
   const step = engine.currentStep;
   if (!step) return true;
-  includeCurrentStep(engine);
   const errors = validateStep(step, getValidationValues(engine), engine.validators);
   if (Object.keys(errors).length === 0) return false;
   const previousErrors = { ...engine.errors };
@@ -19,28 +18,42 @@ function hasStepErrors(engine: EngineInternals): boolean {
   return true;
 }
 
+function moveTo(engine: EngineInternals, index: number): void {
+  engine.validationEpoch++;
+  engine.currentStepIndex = index;
+  engine.notify({ structureChanged: true });
+}
+
 function advance(engine: EngineInternals): boolean {
   if (engine.isLastStep) return false;
-  engine.validationEpoch++;
-  engine.currentStepIndex++;
-  engine.notify({ structureChanged: true });
+  moveTo(engine, engine.currentStepIndex + 1);
   return true;
 }
 
 export function nextStep(engine: EngineInternals): boolean {
-  return engine.isMultiStep && !hasStepErrors(engine) && advance(engine);
+  if (!engine.isMultiStep) return false;
+  includeCurrentStep(engine);
+  return !hasStepErrors(engine) && advance(engine);
 }
 
 export function skipStep(engine: EngineInternals): boolean {
-  if (!engine.isMultiStep || engine.isLastStep) return false;
+  if (!engine.isMultiStep || !skipTarget(engine)) return false;
   skipCurrentStep(engine);
   return advance(engine);
 }
 
 export async function skipStepAsync(engine: EngineInternals, submit?: SubmitFn): Promise<boolean> {
   if (!engine.isMultiStep || engine.stepValidating || engine.submitting) return false;
-  skipCurrentStep(engine);
-  return engine.isLastStep ? !!submit && submitAsync(engine, submit, true) : changeStep(engine, 'next', 'skip');
+  if (skipTarget(engine)) return changeStep(engine, 'next', 'skip');
+  const step = engine.currentStep;
+  if (!submit || !step) return false;
+  let submitted = false;
+  engine.skipped.set(step.id, step.fields.map(({ key }) => key));
+  try {
+    return submitted = await submitAsync(engine, submit, true);
+  } finally {
+    if (!submitted) engine.skipped.delete(step.id);
+  }
 }
 
 export async function changeStep(engine: EngineInternals, direction: 'next' | 'back', reason: StepChangeContext['reason'] = direction): Promise<boolean> {
@@ -48,14 +61,16 @@ export async function changeStep(engine: EngineInternals, direction: 'next' | 'b
   if (direction === 'next' ? engine.isLastStep : engine.isFirstStep) return false;
   const step = engine.currentStep;
   if (!step) return false;
-  const validating = direction === 'next' && reason !== 'skip';
+  const skipping = reason === 'skip';
+  const validating = direction === 'next' && !skipping;
+  if (validating) includeCurrentStep(engine);
   if (validating && hasStepErrors(engine)) return false;
   const lifecycle = { ...engine.lifecycle };
   const validate = engine.onStepValidate;
   let committed = false;
   const fromIndex = engine.currentStepIndex;
   const toIndex = fromIndex + (direction === 'next' ? 1 : -1);
-  const target = engine.visibleSteps[toIndex];
+  const target = skipping ? skipTarget(engine) : engine.visibleSteps[toIndex];
   if (!target) return false;
   const context = { fromStepId: step.id, toStepId: target.id, direction, reason, values: { ...getValidationValues(engine) } };
   const epoch = engine.validationEpoch;
@@ -82,9 +97,8 @@ export async function changeStep(engine: EngineInternals, direction: 'next' | 'b
     if (stale()) return false;
     if (validating && hasStepErrors(engine)) return false;
     committed = true;
-    engine.currentStepIndex = toIndex;
-    engine.validationEpoch++;
-    engine.notify({ structureChanged: true });
+    if (skipping) skipCurrentStep(engine);
+    moveTo(engine, toIndex);
     await afterCommit('afterStepChange', () => lifecycle.onAfterStepChange?.(context));
     return true;
   } catch (error) {
@@ -99,10 +113,7 @@ export async function changeStep(engine: EngineInternals, direction: 'next' | 'b
 }
 
 export function prevStep(engine: EngineInternals): void {
-  if (!engine.isMultiStep || engine.isFirstStep) return;
-  engine.validationEpoch++;
-  engine.currentStepIndex--;
-  engine.notify({ structureChanged: true });
+  if (engine.isMultiStep && !engine.isFirstStep) moveTo(engine, engine.currentStepIndex - 1);
 }
 
 export function goToStepWithField(engine: EngineInternals, fieldKey: string): void {
@@ -112,9 +123,6 @@ export function goToStepWithField(engine: EngineInternals, fieldKey: string): vo
     engine.values,
     engine.currentStepIndex,
   );
-  if (targetIndex === null) return;
-  const structureChanged = targetIndex !== engine.currentStepIndex;
-  if (structureChanged) engine.validationEpoch++;
-  engine.currentStepIndex = targetIndex;
-  engine.notify({ structureChanged });
+  if (targetIndex === engine.currentStepIndex) engine.notify();
+  else if (targetIndex !== null) moveTo(engine, targetIndex);
 }
