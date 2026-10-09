@@ -1,3 +1,4 @@
+import { getAllFields } from '../engine/engine-utils';
 import type { FormDefinition, FormField, ShowCondition } from '../types';
 
 export interface DefinitionAnalysis {
@@ -14,15 +15,10 @@ export function analyzeDefinition(definition: FormDefinition): DefinitionAnalysi
   for (const step of definition.steps ?? []) {
     const dependencies = getDependencies(step.show, step.showAny);
     addMissingWarnings('Step', step.id, dependencies, fieldKeys, warnings);
+    if (step.skip && (step.next === false || !definition.steps![1])) warnings.push(`Step "${step.id}" has "skip" but no Next button or later step.`);
     for (const field of step.fields) addDependencies(graph, field.key, dependencies);
   }
   return { graph, warnings };
-}
-
-function getAllFields(definition: FormDefinition): FormField[] {
-  return (definition.steps?.length ?? 0) > 0
-    ? (definition.steps ?? []).flatMap((step) => step.fields)
-    : definition.fields ?? [];
 }
 
 function collectFieldKeys(fields: FormField[], warnings: string[]): Set<string> {

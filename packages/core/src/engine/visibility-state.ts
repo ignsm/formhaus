@@ -1,3 +1,4 @@
+import { getAllFields } from './engine-utils';
 import { indexConditions } from './visibility-index';
 import { ActivePath } from './step-routes';
 import type { ValidatorFn } from '../validation';
@@ -30,9 +31,7 @@ export class VisibilityState {
   };
 
   constructor(private definition: FormDefinition) {
-    this.allFields = definition.steps?.length
-      ? definition.steps.flatMap((step) => step.fields)
-      : definition.fields ?? [];
+    this.allFields = getAllFields(definition);
     this.fieldByKey = new Map(this.allFields.map((field) => [field.key, field]));
     this.path = new ActivePath(definition);
     for (const step of definition.steps ?? []) {

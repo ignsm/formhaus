@@ -1,4 +1,5 @@
 import { routeFallthroughWarnings, routeWarnings } from '../engine/step-routes';
+import { hasFieldsAndSteps } from '../engine/engine-utils';
 import type { FormDefinition } from '../types';
 import { analyzeDefinition } from './definition-analysis';
 
@@ -46,18 +47,11 @@ function detectCycles(graph: Map<string, string[]>): string[][] {
 
 export function validateDefinition(definition: FormDefinition): string[] {
   const { graph, warnings } = analyzeDefinition(definition);
-  const hasFields = (definition.fields?.length ?? 0) > 0;
-  const hasSteps = (definition.steps?.length ?? 0) > 0;
-  if (hasFields && hasSteps) {
+  if (hasFieldsAndSteps(definition)) {
     warnings.unshift('Definition has both "fields" and "steps". Only "steps" will be used.');
   }
   for (const cycle of detectCycles(graph)) {
     warnings.push(`Circular show condition detected: ${cycle.join(' -> ')}`);
-  }
-  const steps = definition.steps ?? [];
-  for (const step of steps.filter((step) => step.skip)) {
-    if (steps.length === 1) warnings.push(`Step "${step.id}" has "skip" on a single-step form. Skipping submits the form without its values.`);
-    if (step.next === false) warnings.push(`Step "${step.id}" has "skip" with "next: false". The Skip button is not rendered.`);
   }
   return [...warnings, ...routeWarnings(definition), ...routeFallthroughWarnings(definition)];
 }
