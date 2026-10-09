@@ -1,5 +1,4 @@
 ---
-title: "Formhaus form definition 1.0"
 description: "Specification of the Formhaus form definition format 1.0: structure, fields, conditions, validation, steps, routes, skip and the submit payload."
 ---
 
@@ -18,11 +17,11 @@ The key words MUST, MUST NOT, SHOULD and MAY are used as described in [RFC 2119]
 
 ## Versioning
 
-This document describes **Formhaus form definition 1.0**. The definition version follows the definition format of `@formhaus/core`, not the package version.
+This document describes **Formhaus form definition 1.0**. `@formhaus/core` 0.8.x implements it. A definition carries no version marker.
 
 - Additive changes, such as a new optional property or a new built-in field type, are minor versions.
 - Removing or renaming a property, or changing the meaning of an existing one, is a major version.
-- The JSON Schema `$id`, `https://formhaus.dev/schema/form-definition.json`, is the canonical identifier of the format.
+- The JSON Schema `$id`, `https://formhaus.dev/schema/form-definition.json`, is the canonical identifier of the format. It is unversioned and always describes the latest version. A major version publishes the previous schema under a versioned URL and states it in this section.
 
 ## Document structure
 
@@ -117,7 +116,9 @@ An empty `show` array always passes. An empty `showAny` array is treated as abse
 
 A field is visible when its own conditions pass and, in a multi-step form, its step is on the [active path](#active-path).
 
-Core clears the value of a field that becomes hidden. The key is removed from `engine.values` and its error is removed. Clearing runs when the engine is constructed, after `reset()`, and after every `setValue()`. It cascades: if a cleared value hides another field or step, that value is cleared too. Every field of a hidden step is cleared. A field that becomes visible again starts empty; its `defaultValue` is not restored.
+Core clears the value of a field that becomes hidden. The key is removed from `engine.values` and its error is removed. Clearing runs on transitions: when the engine is constructed, after `reset()`, after `setValue()` and after Skip. It cascades: if a cleared value hides another field or step, that value is cleared too. Every field of a hidden step is cleared. A field that becomes visible again starts empty; its `defaultValue` is not restored.
+
+Clearing reacts to a field becoming hidden, not to writes into a hidden field. Without routes, a value passed to `setValue()` for a field that is already hidden stays in `engine.values` until a field its conditions reference changes, or until `reset()`. With routes, every `setValue()` re-checks all conditions, so such a value is cleared at once. A hidden value is never validated or submitted.
 
 In a form with [routes](#routes), fields on steps that are off the active path keep their values. See [Routes](#routes).
 
@@ -157,8 +158,8 @@ Core evaluates one field as follows and returns the first error:
 1. If the value is empty, return the `required` error when `required` is `true` or a non-empty string, otherwise no error. No other rule runs. For validation, empty also includes `[]`, and `false` for `checkbox` and `switch`.
 2. For a string or array: `minLength`, then `maxLength`. For a number: `min`, then `max`. Other value types skip these rules. A numeric string is not converted.
 3. `pattern`, compiled with `new RegExp(pattern)` without flags and without implicit anchors. An invalid pattern is ignored at runtime and reported by `validateDefinition()`.
-4. `matchField`: the value is compared with `===` to the value of the named field. In a form with routes, a field off the active path has no value here.
-5. `validator`: the named function from the `validators` option is called with the value and all values. A string result is the error. An unregistered name is ignored.
+4. `matchField`: the value is compared with `===` to the value of the named field. In a form with routes, a field off the active path or on a skipped step has no value here.
+5. `validator`: the named function from the `validators` option is called with the value and all values. A non-empty string result is the error; `null` or `''` is no error. An unregistered name is ignored. The validator never receives an empty value, because step 1 returns first.
 
 Validation runs on Continue for the visible fields of the current step, and on Submit for the visible fields of every non-skipped step on the active path. Renderers do not validate on blur.
 
@@ -180,6 +181,8 @@ Step ids SHOULD be unique. When any step has routes, they MUST be unique and the
 
 A hidden step is left out of navigation, progress, validation and submission, and its field values are cleared.
 
+In a form with routes, step `show`/`showAny` SHOULD reference fields of earlier steps only, the same rule as route conditions. The constructor does not check this, but a step condition sees only the values of earlier steps on the path, so a field of the same or a later step has no value there.
+
 ## Actions
 
 An action is an object:
@@ -199,7 +202,7 @@ The five action slots are:
 - `skip` shows a Skip action on that step.
 - `cancel` shows a Cancel action that calls the renderer's cancel handler. Core has no cancel operation.
 
-Built-in renderers draw Continue and Submit as primary, Back as secondary, and Skip and Cancel as text buttons. `variant` changes the style of `back`, `skip` and `cancel`. Built-in renderers evaluate `disabled` only on `submit`, against all current values. An empty `disabled` array never disables. Default labels are `Continue`, `Back`, `Skip` and `Submit`.
+Built-in renderers draw Continue and Submit as primary, Back as secondary, and Skip and Cancel as text buttons. `variant` changes the style of `back`, `skip` and `cancel`. Built-in renderers evaluate `disabled` only on `submit`, against `engine.values`, not the active projection. Values of fields off the active path still count. An empty `disabled` array never disables. Default labels are `Continue`, `Back`, `Skip` and `Submit`.
 
 ## Routes
 
@@ -224,7 +227,7 @@ Branches converge only through routes. A branch step without an exit route falls
 With routes, core computes the active path from the first declared step:
 
 1. Start with an empty set of path values.
-2. A step whose `show`/`showAny` fails against the path values is passed over and the next declared step is tried.
+2. A step whose `show`/`showAny` fails against the path values of earlier steps is passed over and the next declared step is tried.
 3. A visible step joins the path. Its visible fields with defined values are added to the path values. Field conditions in that step see the earlier path values and every value of the same step.
 4. The next step comes from [route selection](#routes), evaluated against the path values.
 
@@ -237,10 +240,10 @@ When a value change removes the current step from the path, core moves to the ne
 Skip on a step with `skip`:
 
 1. Resets the step's fields to their `defaultValue`, or removes them when there is none, and removes their errors.
-2. Marks the step as skipped and moves to the next step of the path computed from the reset values. Skip does not run field validation or `onStepValidate`.
+2. Marks the step as skipped and moves to the next step of the path computed from the reset values. Skip does not run field validation or `onStepValidate`. `skipStepAsync()` runs `onBeforeStepChange` and `onAfterStepChange` with `reason: 'skip'`; `false` from the before-hook cancels the skip and changes nothing.
 3. A skipped step is excluded from submit validation, and its fields are excluded from the payload.
 
-Skip on the last step submits the form without that step. Continue or Submit on a skipped step, or a changed value of one of its fields, includes it again. `validateDefinition()` warns about `skip` on a step with `next: false` or in a form with one step.
+On the last step, `skipStepAsync(submit)` submits the form without that step and runs the submit hooks. Built-in renderers pass their submit handler, so their Skip submits. `skipStep()` and `skipStepAsync()` without a handler return `false` there. Continue or Submit on a skipped step, or a changed value of one of its fields, includes it again. `validateDefinition()` warns about `skip` on a step with `next: false` or in a form with one step.
 
 ## Auto-advance
 
@@ -387,7 +390,7 @@ This definition is normative. It uses conditions, defaults, validation, routes w
           "type": "multiselect",
           "label": "Topics",
           "showAny": [{ "field": "subscribe", "eq": true }],
-          "validation": { "minLength": 1, "minLengthMessage": "Pick at least one topic" },
+          "validation": { "required": "Pick at least one topic" },
           "options": [
             { "value": "product", "label": "Product updates" },
             { "value": "events", "label": "Events" }
