@@ -1,6 +1,6 @@
 # Figma Plugin
 
-The Formhaus Figma plugin renders form mockups from form definitions, with a built-in Material 3 kit or your own design system components.
+The Formhaus Figma plugin renders form mockups from form definitions, with a built-in Material 3 or iOS-like kit, or with your own design system components.
 
 ## Install
 
@@ -33,9 +33,9 @@ Click **Load example** in the plugin to load a basic contact form definition, th
 
 ## Built-in kit
 
-Pick **Built-in kit → Material 3** under **Components**. On first use the plugin adds a `Formhaus · Material 3` section to the current page with one component per field role: text, select, textarea, date, file, checkbox, switch, radio and checkbox option rows, primary and secondary buttons. Forms are built from instances of these components, so restyling a kit component updates every generated form. The kit stays in the file and is reused on the next run.
+Pick **Built-in kit** under **Components** and choose **Material 3** or **iOS-like**. On first use the plugin adds a `Formhaus · <kit>` section to the current page with one component per field role: text, select, textarea, date, file, checkbox, switch, radio and checkbox option rows, primary and secondary buttons. Forms are built from instances of these components, so restyling a kit component updates every generated form. The kit stays in the file and is reused on the next run.
 
-Each kit component exposes `Label`, `Value` and `Helper` text properties and a `Show helper` toggle. Icons come from [Material Symbols](https://fonts.google.com/icons) (Apache 2.0). The kit uses Roboto when it is available and falls back to Inter.
+Each kit component exposes `Label`, `Value` and `Helper` text properties and a `Show helper` toggle. Icons come from [Material Symbols](https://fonts.google.com/icons) (Apache 2.0). Material 3 uses Roboto; iOS-like uses SF Pro when it is installed. Both fall back to Inter. Text inputs have `Empty` and `Filled` variants: Material shows only the label in an empty field, iOS-like shows the placeholder inside the cell.
 
 ## Component Map
 

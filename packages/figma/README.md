@@ -1,6 +1,6 @@
 # @formhaus/figma
 
-Figma plugin that turns a [Formhaus](https://github.com/ignsm/formhaus) definition into component instances on the canvas. It ships a Material 3 kit that it generates into your file, or renders with your own library through a component map.
+Figma plugin that turns a [Formhaus](https://github.com/ignsm/formhaus) definition into component instances on the canvas. It ships Material 3 and iOS-like kits that it generates into your file, or renders with your own library through a component map.
 
 Not published to the Figma Community yet. Install as a local plugin.
 
@@ -15,10 +15,10 @@ Not published to the Figma Community yet. Install as a local plugin.
 
 1. Open a Figma file
 2. **Plugins → Development → Formhaus**
-3. Under **Components**, keep **Built-in kit → Material 3** or pick **My components**
+3. Under **Components**, pick a built-in kit (Material 3 or iOS-like) or **My components**
 4. Paste a Formhaus form definition JSON and click **Generate**
 
-The plugin creates one frame per step and lays the frames out horizontally. With the built-in kit it first adds a `Formhaus · Material 3` section with the kit components to the current page.
+The plugin creates one frame per step and lays the frames out horizontally. With a built-in kit it first adds a `Formhaus · <kit>` section with the kit components to the current page.
 
 `pnpm --filter @formhaus/figma build:harness` builds `dist/harness.js`, which exposes `formhaus.render(definition, kit)` for running the renderer in a file through the Figma MCP `use_figma` tool.
 
