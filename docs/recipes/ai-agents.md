@@ -1,11 +1,11 @@
 ---
 title: "Generate and check forms with AI agents"
-description: "Let AI agents write and check forms: Formhaus JSON Schema, the /formhaus-create-form skill and the MCP server with validate_definition and simulate_path."
+description: "Generate and check forms with AI agents: the Formhaus JSON Schema and a Claude Code plugin with a form skill, validate_definition and simulate_path."
 ---
 
 # How do I generate and check forms with AI agents?
 
-A Formhaus form is a JSON definition, so an agent writes data instead of component code. The JSON Schema at `https://formhaus.dev/schema/form-definition.json` tells the agent and the editor which keys are valid, the `/formhaus-create-form` Claude Code skill drafts definitions from a description, CSV or screenshot, and the `@formhaus/mcp` server checks the result against the real `FormEngine` with `validate_definition` and `simulate_path`.
+A Formhaus form is a JSON definition, so an agent writes data instead of component code. The JSON Schema at `https://formhaus.dev/schema/form-definition.json` tells the agent and the editor which keys are valid, the Formhaus Claude Code plugin adds the `/formhaus:formhaus-create-form` skill that drafts definitions from a description, CSV or screenshot, and the `@formhaus/mcp` server that checks the result against the real `FormEngine` with `validate_definition` and `simulate_path`.
 
 ## Definition
 
@@ -13,38 +13,23 @@ A support form an agent might produce. The `$schema` line enables completion and
 
 <<< @/recipes/definitions/support-request.json
 
-## 1. Connect the MCP server
-
-Claude Code:
+## 1. Install the Claude Code plugin
 
 ```bash
-claude mcp add formhaus -- npx -y @formhaus/mcp
+claude plugin marketplace add ignsm/formhaus && claude plugin install formhaus@formhaus
 ```
 
-Claude Desktop (`claude_desktop_config.json`) and Cursor (`.cursor/mcp.json`):
+Inside a Claude Code session, `/plugin marketplace add ignsm/formhaus` and `/plugin install formhaus@formhaus` do the same. The plugin bundles the `/formhaus:formhaus-create-form` skill and the `@formhaus/mcp` server, which exposes `validate_definition`, `simulate_path`, `capabilities` and `example_definitions`.
 
-```json
-{
-  "mcpServers": {
-    "formhaus": {
-      "command": "npx",
-      "args": ["-y", "@formhaus/mcp"]
-    }
-  }
-}
-```
-
-The server needs Node 20 or later and exposes `validate_definition`, `simulate_path`, `capabilities` and `example_definitions`.
+To add only the server, run `claude mcp add formhaus -- npx -y @formhaus/mcp`. For Claude Desktop and Cursor, see [MCP Server setup](/guide/mcp#claude-desktop-and-cursor).
 
 ## 2. Generate a definition
 
-In a clone of the [formhaus repository](https://github.com/ignsm/formhaus), or after copying `.claude/skills/formhaus-create-form` into your project's `.claude/skills`, run:
-
 ```
-/formhaus-create-form
+/formhaus:formhaus-create-form
 ```
 
-Then describe the form: "Support form: topic select, order number for billing, message, screenshot for bugs, email". The skill infers field types and validation and asks about steps and conditions when the input does not say.
+Then describe the form: "Support form: topic select, order number for billing, message, screenshot for bugs, email". The skill infers field types and validation, asks about steps and conditions when the input does not say, and checks the result with the MCP server.
 
 ## 3. Validate it
 
@@ -75,7 +60,7 @@ Errors come from the JSON Schema and from checks the engine enforces. A route fr
 }
 ```
 
-Output, without the `validation` report and with `path` shortened:
+Output, without the `validation` report and with `path` entries shown without `title`:
 
 ```json
 {
@@ -104,7 +89,7 @@ With `"topic": "billing"` the `screenshot` step leaves the path and `orderId` ap
 
 ## 5. Add instructions to your repository
 
-Paste this into `AGENTS.md` or `CLAUDE.md` so every agent session follows the same rules:
+Paste this into `AGENTS.md` or `CLAUDE.md` so every agent session follows the same rules. Cursor users can copy [`.cursor/rules/formhaus.mdc`](https://github.com/ignsm/formhaus/blob/main/.cursor/rules/formhaus.mdc) into their project's `.cursor/rules/` instead, as described in [Cursor rule](/guide/mcp#cursor-rule).
 
 ```markdown
 ## Forms
@@ -131,6 +116,6 @@ Forms are Formhaus JSON definitions rendered with `FormRenderer` from `@formhaus
 ## Related
 
 - [MCP Server](/guide/mcp): setup and tool reference
-- [/formhaus-create-form](/guide/formhaus-create-form): input formats and output
+- [/formhaus:formhaus-create-form](/guide/formhaus-create-form): input formats and output
 - [Definition Reference](/api/definition#json-schema): the JSON Schema
 - [Figma to React](/recipes/figma-to-react): draw the generated definition in Figma
