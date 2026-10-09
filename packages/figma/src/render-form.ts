@@ -1,4 +1,4 @@
-import type { FormDefinition, FormField } from '@formhaus/core';
+import type { FormAction, FormDefinition, FormField } from '@formhaus/core';
 import { PLUGIN_NAMESPACE } from './config';
 import type { KitTheme } from './kits/kit';
 import { solid, stack, text } from './kits/primitives';
@@ -14,6 +14,8 @@ interface RenderableStep {
   title: string;
   description?: string;
   fields: FormField[];
+  next?: FormAction | false;
+  back?: FormAction | false;
 }
 
 export async function renderForm(definition: FormDefinition, renderer: FormRenderer): Promise<FrameNode[]> {
@@ -91,7 +93,7 @@ async function renderStep(
   append(frame, text(isMultiStep ? step.title : definition.title, { font: theme.fonts.semibold, size: theme.titleSize, color: theme.text }, 'Title'));
   if (step.description) append(frame, text(step.description, { font: theme.fonts.regular, size: theme.bodySize, color: theme.muted }, 'Description'));
   for (const field of step.fields) append(frame, await renderer.field(field));
-  await appendButtons(frame, definition, renderer, index === 0, index === stepCount - 1, isMultiStep);
+  await appendButtons(frame, definition, step, renderer, { isFirst: index === 0, isLast: index === stepCount - 1, isMultiStep });
   return frame;
 }
 
@@ -116,17 +118,31 @@ function createCard(name: string, definitionId: string, theme: KitTheme): FrameN
   return frame;
 }
 
+function actionLabel(action: FormAction | false | undefined, fallback: string): string | null {
+  if (action === false) return null;
+  return action?.label || fallback;
+}
+
+export function stepButtons(definition: FormDefinition, step: RenderableStep, isFirst: boolean, isLast: boolean, isMultiStep: boolean) {
+  return {
+    primary: isLast ? definition.submit.label : actionLabel(step.next, 'Continue'),
+    back: isMultiStep && !isFirst ? actionLabel(step.back, 'Back') : null,
+    cancel: definition.cancel?.label ?? null,
+  };
+}
+
 async function appendButtons(
   frame: FrameNode,
   definition: FormDefinition,
+  step: RenderableStep,
   renderer: FormRenderer,
-  isFirst: boolean,
-  isLast: boolean,
-  isMultiStep: boolean,
+  position: { isFirst: boolean; isLast: boolean; isMultiStep: boolean },
 ): Promise<void> {
+  const labels = stepButtons(definition, step, position.isFirst, position.isLast, position.isMultiStep);
+  if (!labels.primary && !labels.back && !labels.cancel) return;
   const actions = stack('VERTICAL', 'Actions', { itemSpacing: renderer.theme.actionsGap });
   append(frame, actions);
-  append(actions, await renderer.button(isLast ? definition.submit.label : 'Continue', true));
-  if (isMultiStep && !isFirst) append(actions, await renderer.button('Back', false));
-  if (definition.cancel && isFirst) append(actions, await renderer.button(definition.cancel.label, false));
+  if (labels.primary) append(actions, await renderer.button(labels.primary, true));
+  if (labels.back) append(actions, await renderer.button(labels.back, false));
+  if (labels.cancel) append(actions, await renderer.button(labels.cancel, false));
 }
