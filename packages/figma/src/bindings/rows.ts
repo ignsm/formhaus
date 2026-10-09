@@ -14,10 +14,12 @@ export interface BindingRow {
   slots?: SlotMap;
 }
 
-export const THUMBNAIL: ExportSettingsImage = { format: 'PNG', constraint: { type: 'SCALE', value: 2 } };
+const MAX_WIDTH = 640;
+const MAX_HEIGHT = 240;
 
 export function thumbnail(node: SceneNode): Promise<Uint8Array | undefined> {
-  return node.exportAsync(THUMBNAIL).catch(() => undefined);
+  const scale = Math.min(2, MAX_WIDTH / Math.max(node.width, 1), MAX_HEIGHT / Math.max(node.height, 1));
+  return node.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: scale } }).catch(() => undefined);
 }
 
 async function kitThumbnail(config: PluginConfig, role: Role): Promise<Uint8Array | undefined> {

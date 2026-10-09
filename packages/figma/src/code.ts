@@ -63,8 +63,12 @@ function rendererConfig(): PluginConfig {
   return config.source === 'kit' ? { ...config, bindings: {} } : config;
 }
 
+let selectionTick = 0;
+
 async function sendSelection(): Promise<void> {
-  figma.ui.postMessage({ type: 'selection', item: await selectionPreview(figma.currentPage.selection) });
+  const tick = ++selectionTick;
+  const item = await selectionPreview(figma.currentPage.selection);
+  if (tick === selectionTick) figma.ui.postMessage({ type: 'selection', item });
 }
 
 async function placeDrop(event: DropEvent, role: Role): Promise<void> {

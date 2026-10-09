@@ -11,10 +11,10 @@ export async function placeRole(event: DropEvent, role: Role, config: PluginConf
   const renderer = await createKitRenderer(config);
   const node = await renderer.sample(role);
   const target = event.node;
-  if (target.type !== 'DOCUMENT' && 'appendChild' in target) target.appendChild(node);
-  else figma.currentPage.appendChild(node);
-  node.x = event.x;
-  node.y = event.y;
+  const nested = target.type !== 'DOCUMENT' && 'appendChild' in target;
+  (nested ? target : figma.currentPage).appendChild(node);
+  node.x = nested ? event.x : event.absoluteX;
+  node.y = nested ? event.y : event.absoluteY;
   figma.currentPage.selection = [node];
   return node;
 }
