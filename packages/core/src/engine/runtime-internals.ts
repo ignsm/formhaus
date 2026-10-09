@@ -19,6 +19,7 @@ export interface EngineInternals {
   validationEpoch: number;
   operationEpoch: number;
   submitting: boolean;
+  readonly skippedSteps: Set<string>;
   readonly lifecycle: FormEngineOptions;
   readonly validators: Record<string, ValidatorFn>;
   readonly onStepValidate?: StepValidateFn;
