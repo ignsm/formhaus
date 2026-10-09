@@ -1,7 +1,7 @@
 import type { FormDefinition } from '@formhaus/core';
 import type { FormLayout } from '../render-actions';
 import { ROLES } from '../roles';
-import { byId } from './dom';
+import { byId, selectSegment } from './dom';
 import { createEditor } from './editor/editor';
 import { emptyForm } from './editor/model';
 import { EXAMPLE } from './example';
@@ -71,10 +71,7 @@ export function createFormPanel(post: Post, show: Show, openComponents: () => vo
     else if (!syncFromJson()) return;
     mode = next;
     show(output, '');
-    for (const item of modes) {
-      item.classList.toggle('active', item.dataset.mode === mode);
-      item.setAttribute('aria-pressed', String(item.dataset.mode === mode));
-    }
+    selectSegment(modes, 'mode', mode);
     editorRoot.hidden = mode !== 'fields';
     jsonInput.hidden = mode !== 'json';
     refresh();

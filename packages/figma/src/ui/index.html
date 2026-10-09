@@ -56,7 +56,7 @@
         <span class="hint" id="aiHint"></span>
         <button class="link" id="aiForget" type="button" hidden>Forget key</button>
       </div>
-      <div class="output" id="aiOutput"></div>
+      <div class="output" id="aiOutput" role="status" aria-live="polite"></div>
       <div class="ai-actions">
         <button class="btn btn-secondary btn-small" id="aiCancel" type="button" hidden>Cancel</button>
         <button class="btn btn-primary btn-small" id="aiGenerate" type="button">Generate</button>
@@ -69,7 +69,7 @@
       <button class="link" id="loadExample" type="button">Load example</button>
     </div>
     <footer class="panel-footer">
-      <div class="output" id="output"></div>
+      <div class="output" id="output" role="status" aria-live="polite"></div>
       <button class="btn btn-primary btn-block" id="generate" type="button">Generate form</button>
     </footer>
   </section>

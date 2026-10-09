@@ -1,9 +1,9 @@
 import type { FormDefinition } from '@formhaus/core';
 import type { AiSettings } from '../../ai-keys';
 import { countFields } from '../../parse';
-import { byId, iconButton } from '../dom';
+import { byId, iconButton, selectSegment } from '../dom';
 import { icon } from '../icons';
-import { generateDefinition } from './generate';
+import { generateDefinition, messageOf } from './generate';
 import type { ProviderId } from './providers';
 
 type Post = (message: Record<string, unknown>) => void;
@@ -45,10 +45,7 @@ export function createAiPanel(post: Post, host: AiHost) {
 
   function setTarget(next: 'new' | 'edit'): void {
     target = next;
-    for (const item of targets) {
-      item.classList.toggle('active', item.dataset.target === next);
-      item.setAttribute('aria-pressed', String(item.dataset.target === next));
-    }
+    selectSegment(targets, 'target', next);
     prompt.placeholder = next === 'edit' ? 'Describe the change…' : 'Describe the form…';
   }
 
@@ -57,7 +54,7 @@ export function createAiPanel(post: Post, host: AiHost) {
     generate.disabled = Boolean(controller);
     generate.textContent = controller ? 'Generating…' : 'Generate';
     cancel.hidden = !controller;
-    prompt.disabled = Boolean(controller);
+    for (const control of [prompt, providerSelect, keyInput, forget, ...targets]) control.disabled = Boolean(controller);
   }
 
   function open(): void {
@@ -94,7 +91,7 @@ export function createAiPanel(post: Post, host: AiHost) {
       host.apply(definition, ['Review the form, then generate it.', ...warnings].join(' '));
     } catch (error) {
       if (controller.signal.aborted) say('Cancelled.', 'info');
-      else say(error instanceof Error ? error.message : String(error), 'error');
+      else say(messageOf(error), 'error');
     } finally {
       setRunning(null);
     }
@@ -108,6 +105,13 @@ export function createAiPanel(post: Post, host: AiHost) {
   forget.onclick = () => post({ type: 'forgetAiKey', provider: provider() });
   generate.onclick = () => void run();
   cancel.onclick = () => running?.abort();
+  panel.onkeydown = (event) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      close();
+      byId('aiOpen').focus();
+    }
+  };
   prompt.onkeydown = (event) => {
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) void run();
   };
