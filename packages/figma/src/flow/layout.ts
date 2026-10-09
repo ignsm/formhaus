@@ -7,6 +7,17 @@ export interface Point {
 
 const COLUMN_GAP = 200;
 const ROW_GAP = 120;
+const LABEL_CHAR = 6.5;
+const LABEL_ROOM = 112;
+
+export function labelWidth(label: string): number {
+  return Math.ceil(label.length * LABEL_CHAR) + 16;
+}
+
+function gapAfter(ids: string[], graph: FlowGraph): number {
+  const labels = graph.edges.filter((edge) => edge.to && ids.includes(edge.from)).map((edge) => labelWidth(edge.label));
+  return Math.max(COLUMN_GAP, ...labels.map((width) => width + LABEL_ROOM));
+}
 
 export function flowPositions(order: string[], graph: FlowGraph, sizes: Map<string, { width: number; height: number }>, origin: Point): Map<string, Point> {
   const columns = new Map<number, string[]>();
@@ -23,7 +34,7 @@ export function flowPositions(order: string[], graph: FlowGraph, sizes: Map<stri
       positions.set(id, { x, y });
       y += (sizes.get(id)?.height ?? 0) + ROW_GAP;
     }
-    x += Math.max(...ids.map((id) => sizes.get(id)?.width ?? 0)) + COLUMN_GAP;
+    x += Math.max(...ids.map((id) => sizes.get(id)?.width ?? 0)) + gapAfter(ids, graph);
   }
   return positions;
 }
