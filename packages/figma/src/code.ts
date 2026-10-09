@@ -1,11 +1,11 @@
 import { selectionPreview } from './bindings/selection-preview';
 import { isBindingMessage, runBindingMessage, type BindingMessage } from './bindings/messages';
-import { readConfig, writeConfig, type ComponentSource, type KitId, type PluginConfig } from './config';
+import { PLUGIN_NAMESPACE, readConfig, writeConfig, type ComponentSource, type KitId, type PluginConfig } from './config';
 import { getComponentMap, resetComponentMap, setComponentMap, type ComponentMap } from './constants';
 import { droppedRole, placeRole } from './drop';
 import { selectedForm } from './forms';
 import { countFields, getSteps, parseAndValidate } from './parse';
-import { renderForm } from './render-form';
+import { DEFINITION_KEY, renderForm } from './render-form';
 import { createKitRenderer } from './renderers/kit-renderer';
 import { createLegacyRenderer } from './renderers/legacy-renderer';
 import type { FormRenderer } from './renderers/types';
@@ -114,6 +114,10 @@ async function createRenderer(): Promise<FormRenderer> {
   return createLegacyRenderer();
 }
 
+function editable(frames: FrameNode[]): string {
+  return frames[0]?.getSharedPluginData(PLUGIN_NAMESPACE, DEFINITION_KEY) ? '' : '. The form is too large to edit from the canvas.';
+}
+
 async function generateForm(source: string): Promise<void> {
   try {
     const definition = parseAndValidate(source);
@@ -125,7 +129,7 @@ async function generateForm(source: string): Promise<void> {
     const stepInfo = stepCount > 1 ? ` across ${stepCount} frames` : '';
     figma.ui.postMessage({
       type: 'success',
-      message: `Generated "${definition.title}" with ${countFields(definition)} fields${stepInfo}`,
+      message: `Generated "${definition.title}" with ${countFields(definition)} fields${stepInfo}${editable(frames)}`,
     });
   } catch (error) {
     postError('error', error);

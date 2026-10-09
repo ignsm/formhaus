@@ -17,7 +17,7 @@ interface RenderableStep {
 }
 
 export async function renderForm(definition: FormDefinition, renderer: FormRenderer): Promise<FrameNode[]> {
-  const existingFrames = findExistingFrames(definition.id).sort((left, right) => left.x - right.x || left.y - right.y);
+  const existingFrames = findExistingFrames(definition.id).sort((left, right) => absolute(left, 0) - absolute(right, 0) || absolute(left, 1) - absolute(right, 1));
   const fallbackX = nextFrameX(figma.currentPage.children, existingFrames);
   const createdFrames: FrameNode[] = [];
   try {
@@ -26,7 +26,7 @@ export async function renderForm(definition: FormDefinition, renderer: FormRende
     for (let index = 0; index < steps.length; index++) {
       const frame = await renderStep(definition, steps[index], index, steps.length, renderer);
       place(frame, existingFrames[index] ?? createdFrames[index - 1], Boolean(existingFrames[index]), fallbackX);
-      if (stored.length <= MAX_STORED_DEFINITION) frame.setSharedPluginData(PLUGIN_NAMESPACE, DEFINITION_KEY, stored);
+      if (utf8Length(stored) <= MAX_STORED_DEFINITION) frame.setSharedPluginData(PLUGIN_NAMESPACE, DEFINITION_KEY, stored);
       createdFrames.push(frame);
     }
     for (const frame of existingFrames) frame.remove();
@@ -35,6 +35,14 @@ export async function renderForm(definition: FormDefinition, renderer: FormRende
     for (const frame of createdFrames) frame.remove();
     throw error;
   }
+}
+
+function absolute(frame: FrameNode, axis: 0 | 1): number {
+  return frame.absoluteTransform[axis][2];
+}
+
+function utf8Length(text: string): number {
+  return encodeURIComponent(text).replace(/%[0-9A-F]{2}/g, '_').length;
 }
 
 function place(frame: FrameNode, anchor: FrameNode | undefined, replaces: boolean, fallbackX: number): void {
