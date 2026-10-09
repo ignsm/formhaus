@@ -1,6 +1,7 @@
 import type { Notice } from '../bindings/messages';
 import type { BindingRow } from '../bindings/rows';
 import type { SelectionPreview } from '../bindings/selection-preview';
+import { ROLES } from '../roles';
 import { createComponentsPanel } from './components';
 import { byId } from './dom';
 import { EXAMPLE } from './example';
@@ -43,7 +44,9 @@ const components = createComponentsPanel(post);
 
 function selectTab(target: string): void {
   for (const item of document.querySelectorAll<HTMLElement>('.tab, .panel')) {
-    item.classList.toggle('active', item.dataset.tab === target || item.id === `tab-${target}`);
+    const active = item.dataset.tab === target || item.id === `tab-${target}`;
+    item.classList.toggle('active', active);
+    if (item.classList.contains('tab')) item.setAttribute('aria-selected', String(active));
   }
   if (target === 'components') post({ type: 'getBindings' });
 }
@@ -92,7 +95,7 @@ byId('saveMap').onclick = () => {
 };
 
 function customSummary(message: PluginMessage): string {
-  if (message.boundCount) return `${message.boundCount} of 11 bound`;
+  if (message.boundCount) return `${message.boundCount} of ${ROLES.length} bound`;
   return message.hasStoredMap ? 'Using the saved JSON map' : 'Bind them in Components';
 }
 

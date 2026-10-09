@@ -54,4 +54,6 @@ export function openSheet(row: BindingRow, change: SlotChange): void {
   sheet.replaceChildren(panel);
   sheet.classList.add('is-open');
   sheet.onclick = (event) => event.target === sheet && closeSheet();
+  sheet.onkeydown = (event) => event.key === 'Escape' && closeSheet();
+  done.focus();
 }

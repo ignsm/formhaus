@@ -12,7 +12,7 @@ export interface CardHandlers {
 }
 
 const GROUPS: Record<string, string> = { field: 'Fields', option: 'Options', button: 'Buttons' };
-const DRAG_TYPE = 'application/x-formhaus-selection';
+export const DRAG_TYPE = 'application/x-formhaus-selection';
 const store = previewStore();
 
 const BADGES = { yours: 'Yours', reused: 'Reused', kit: 'Not set', missing: 'Missing' };
@@ -75,7 +75,7 @@ function card(row: BindingRow, kitName: string, handlers: CardHandlers): HTMLEle
     warning.append(icon('warning', 12), document.createTextNode(`Missing ${row.staleProperties.join(', ')}. Bind again.`));
     body.appendChild(warning);
   }
-  const actions = element('div', 'card-actions');
+  const actions = element('div', row.candidates?.length || (row.name && !row.via) ? 'card-actions' : 'card-actions only-bind');
   actions.appendChild(iconButton('link', 'Bind the selected component', () => handlers.bind(row.role), 'icon-btn bind-btn'));
   if (row.candidates?.length) actions.appendChild(iconButton('tune', 'Text slots', () => handlers.editSlots(row)));
   if (row.name && !row.via) actions.appendChild(iconButton('close', 'Clear binding', () => handlers.unbind(row.role)));
@@ -84,7 +84,14 @@ function card(row: BindingRow, kitName: string, handlers: CardHandlers): HTMLEle
   pill.append(icon('link'), document.createTextNode('Bind selection'));
   overlay.appendChild(pill);
   node.append(preview(row), body, actions, overlay);
+  node.tabIndex = 0;
+  node.setAttribute('aria-label', `${ROLE_LABELS[row.role]}: ${BADGES[state]}`);
   node.onclick = () => handlers.canBind() && handlers.bind(row.role);
+  node.onkeydown = (event) => {
+    if (event.target !== node || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    if (handlers.canBind()) handlers.bind(row.role);
+  };
   acceptSelection(node, row.role, handlers);
   placeOnCanvas(node, row.role);
   return node;
@@ -124,4 +131,3 @@ export function renderCards(container: HTMLElement, rows: BindingRow[], kitName:
   container.replaceChildren(setupSection(rows.filter((row) => !isCovered(row)), kitName, handlers), coveredSection);
 }
 
-export { DRAG_TYPE };

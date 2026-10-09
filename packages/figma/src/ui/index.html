@@ -8,13 +8,13 @@
 <body>
   <header class="topbar">
     <nav class="segmented" role="tablist">
-      <button class="tab active" type="button" data-tab="generate">Generate</button>
-      <button class="tab" type="button" data-tab="components">Components</button>
-      <button class="tab" type="button" data-tab="settings">JSON map</button>
+      <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="generate">Generate</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-tab="components">Components</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-tab="settings">JSON map</button>
     </nav>
   </header>
 
-  <section class="panel active" id="tab-generate">
+  <section class="panel active" role="tabpanel" id="tab-generate">
     <div class="section-label">Render with</div>
     <div class="source-cards">
       <label class="source-card">
@@ -44,7 +44,7 @@
     </footer>
   </section>
 
-  <section class="panel" id="tab-components">
+  <section class="panel" role="tabpanel" id="tab-components">
     <div class="tray is-empty" id="tray"></div>
     <div class="coverage">
       <div class="row-between">
@@ -59,7 +59,7 @@
     <p class="hint footnote">Drag a card onto the canvas to place that component.</p>
   </section>
 
-  <section class="panel" id="tab-settings">
+  <section class="panel" role="tabpanel" id="tab-settings">
     <div class="row-between">
       <div class="section-label">Component map</div>
       <span class="badge tone-neutral" id="mapStatus">No custom map</span>
@@ -74,7 +74,7 @@
     </div>
   </section>
 
-  <div class="sheet" id="sheet"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Text slots"></div>
 
   <script>/* FORMHAUS_SCRIPT */</script>
 </body>
