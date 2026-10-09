@@ -42,6 +42,23 @@ describe('FormRenderer skip and button roles', () => {
     expect(emitted().analyticsEvent).toContainEqual([{ type: 'step_skipped', stepId: 'phone' }]);
     await fireEvent.click(button('Skip notes'));
     await waitFor(() => expect(submitHandler).toHaveBeenCalledWith({ name: 'Ada' }));
+    expect(emitted().analyticsEvent).toContainEqual([{ type: 'step_skipped', stepId: 'notes' }]);
+  });
+
+  it('hides skip on steps with next: false', () => {
+    const steps = definition.steps!.map((step) => (step.id === 'name' ? { ...step, skip: { label: 'Later' }, next: false as const } : step));
+    render(FormRenderer, { props: { definition: { ...definition, steps } } });
+    expect(screen.queryByRole('button', { name: 'Later' })).toBeNull();
+  });
+
+  it('uses role classes for Back and Cancel unless a variant is set', async () => {
+    const base = { isFirstStep: false, isLastStep: false, isMultiStep: true };
+    const { rerender } = render(FormActions, { props: { ...base, backAction: { label: 'Edit' }, cancelAction: { label: 'Cancel' } } });
+    expect(button('Edit').className).toContain('fh-form-actions__button--secondary');
+    expect(button('Cancel').className).toContain('fh-form-actions__button--text');
+    await rerender({ cancelAction: { label: 'Cancel', variant: 'secondary' } });
+    expect(button('Cancel').className).toContain('fh-form-actions__button--secondary');
+    expect(button('Continue')).toBeDefined();
   });
 
   it('respects explicit variants and skip props', async () => {

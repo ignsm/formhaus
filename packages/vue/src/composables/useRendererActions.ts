@@ -53,6 +53,13 @@ export function useRendererActions(form: UseFormEngineReturn, props: FormRendere
     }
     return result;
   });
-  const skip = () => run(() => form.engine.skipStepAsync(send(form.engine, props.submitHandler)));
+  const skip = () => run(() => {
+    const engine = form.engine;
+    const submit = send(engine, props.submitHandler);
+    return engine.skipStepAsync((values) => {
+      emit('analyticsEvent', { type: 'step_skipped', stepId: engine.currentStep!.id });
+      return submit(values);
+    });
+  });
   return { update, commit, next, prev, skip, submit, actionError };
 }

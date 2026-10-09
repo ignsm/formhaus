@@ -2,7 +2,11 @@
 import { type FormAction, evaluateCondition } from '@formhaus/core';
 import type { FormActionsProps } from './types';
 
-const props = withDefaults(defineProps<FormActionsProps>(), { showSkip: undefined });
+const props = withDefaults(defineProps<FormActionsProps>(), {
+  showPrimary: undefined,
+  showBack: undefined,
+  showSkip: undefined,
+});
 
 const emit = defineEmits<{
   (e: 'submit'): void;
