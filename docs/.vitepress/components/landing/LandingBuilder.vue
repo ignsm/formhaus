@@ -1,140 +1,203 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import AutoInput from './AutoInput.vue';
 import BuilderBreak from './BuilderBreak.vue';
-import BuilderGutter from './BuilderGutter.vue';
+import BuilderGap from './BuilderGap.vue';
+import BuilderGutter, { type GutterAction } from './BuilderGutter.vue';
 import BuilderQuestion from './BuilderQuestion.vue';
-import { laterPages, newPage, newQuestion, type BuilderForm } from './builder-model';
+import BuilderTooltip from './BuilderTooltip.vue';
+import { moveTo, usePointerDrag } from './builder-drag';
+import { laterPages, newOption, newPage, setType, type BuilderForm, type BuilderOption } from './builder-model';
+import { convertToPage, insertPage, insertQuestion, moveBlock, outdent, pageSpan, removeBlock } from './builder-ops';
+import type { Shortcut } from './builder-smart';
 import './builder.css';
+import './builder-tools.css';
+import './builder-menu.css';
 
-const props = defineProps<{ form: BuilderForm }>();
-const emit = defineEmits<{ page: [group: number] }>();
+const props = defineProps<{ form: BuilderForm; edited: boolean }>();
+const emit = defineEmits<{ edit: [] }>();
 
 const root = ref<HTMLElement>();
-const title = ref<InstanceType<typeof AutoInput>>();
-const edited = ref(false);
-const sweep = ref(false);
-const first = computed(() => props.form.blocks.find((block) => block.kind === 'question')?.uid);
-let observer: IntersectionObserver | undefined;
-
-onMounted(() => {
-  observer = new IntersectionObserver(([entry]) => {
-    if (!entry.isIntersecting || !root.value?.offsetParent) return;
-    observer?.disconnect();
-    if (window.matchMedia('(pointer: coarse)').matches) return;
-    title.value?.focus({ preventScroll: true });
-    sweep.value = true;
-    setTimeout(() => {
-      sweep.value = false;
-      if (!edited.value && root.value?.querySelector('.nb-title .auto__input') === document.activeElement) title.value?.blur();
-    }, 1200);
-  }, { threshold: 0.5 });
-  if (root.value) observer.observe(root.value);
+const pending = ref<string | null>(null);
+const drag = usePointerDrag({
+  root,
+  rows: '.nb-doc > .nb-row',
+  scroller: () => root.value,
+  drop: (from, at) => { if (moveTo(props.form, from, at)) touch(); },
 });
-
-onBeforeUnmount(() => observer?.disconnect());
-
+const blocks = () => props.form.blocks;
 const inputs = () => [...(root.value?.querySelectorAll<HTMLInputElement>('.nb-doc .auto__input') ?? [])];
+const pageNumber = (index: number) => blocks().slice(0, index + 1).filter((block) => block.kind === 'page').length - 1;
+const lastOfPage = (index: number) => blocks()[index].kind === 'question' && blocks()[index + 1]?.kind !== 'question';
 
-async function focusUid(uid: string) {
+function caretEnd(input: HTMLInputElement | null | undefined) {
+  if (!input) return;
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+}
+
+async function focusUid(uid: string, last = false) {
   await nextTick();
-  root.value?.querySelector<HTMLInputElement>(`[data-uid="${uid}"] .auto__input`)?.focus();
+  const list = root.value?.querySelectorAll<HTMLInputElement>(`[data-uid="${uid}"] .auto__input`);
+  caretEnd(last ? list?.[list.length - 1] : list?.[0]);
 }
 
 async function focusBefore(index: number) {
   await nextTick();
-  const before = index > 0 ? [...(root.value?.querySelectorAll(`[data-uid="${props.form.blocks[index - 1].uid}"] .auto__input`) ?? [])].pop() : undefined;
-  const input = (before ?? root.value?.querySelector('.nb-title .auto__input')) as HTMLInputElement | null;
-  input?.focus();
-  input?.setSelectionRange(input.value.length, input.value.length);
+  const prev = blocks()[index - 1];
+  if (prev) return focusUid(prev.uid, true);
+  caretEnd(root.value?.querySelector<HTMLInputElement>('.nb-title .auto__input'));
 }
 
-function touch() {
-  edited.value = true;
-}
+const touch = () => emit('edit');
 
-function insertQuestion(index: number) {
-  const question = newQuestion();
-  props.form.blocks.splice(index + 1, 0, question);
+function addQuestion(at: number) {
+  const question = insertQuestion(props.form, at);
   touch();
-  focusUid(question.uid);
+  pending.value = question.uid;
 }
 
-function toPage(index: number) {
-  const page = newPage('');
-  props.form.blocks.splice(index, 1, page);
+function addPage(at: number) {
+  const page = insertPage(props.form, at);
   touch();
   focusUid(page.uid);
 }
 
-function onlyQuestion(index: number) {
-  const prev = props.form.blocks[index - 1];
-  const next = props.form.blocks[index + 1];
-  return (!prev || prev.kind === 'page') && (!next || next.kind === 'page');
+function toPage(index: number) {
+  const page = convertToPage(props.form, index);
+  touch();
+  focusUid(page.uid);
 }
 
 function remove(index: number) {
-  const block = props.form.blocks[index];
-  if ((block.kind === 'question' && onlyQuestion(index)) || (block.kind === 'page' && index === 0)) return focusBefore(index);
-  props.form.blocks.splice(index, 1);
+  const block = blocks()[index];
+  if ((block.kind === 'page' && pageSpan(props.form, index) > 1) || !removeBlock(props.form, index)) return focusBefore(index);
   touch();
   focusBefore(index);
 }
 
-function move(index: number, delta: number) {
-  const target = index + delta;
-  const list = props.form.blocks;
-  if (target < 0 || target >= list.length) return;
-  list.splice(target, 0, ...list.splice(index, 1));
+function onAction(index: number, action: GutterAction) {
+  const block = blocks()[index];
+  if (action === 'insert') addQuestion(index + 1);
+  else if (action === 'page') addPage(index + 1);
+  else if (action === 'remove') remove(index);
+  else if (action === 'required' && block.kind === 'question') {
+    block.required = !block.required;
+    touch();
+  } else if (action === 'up' || action === 'down') {
+    if (moveBlock(props.form, index, action === 'up' ? -1 : 1)) touch();
+    focusUid(block.uid);
+  }
+}
+
+function onOutdent(index: number, position: number) {
+  const question = outdent(props.form, index, position);
+  if (!question) return;
   touch();
+  if (question.label) focusUid(question.uid);
+  else pending.value = question.uid;
 }
 
-function lastOfPage(index: number) {
-  const next = props.form.blocks[index + 1];
-  return props.form.blocks[index].kind === 'question' && (!next || next.kind === 'page');
+function onShortcut(index: number, found: Shortcut) {
+  const block = blocks()[index];
+  if (block.kind !== 'question') return;
+  if (found.kind === 'page') return toPage(index);
+  const prev = blocks()[index - 1];
+  if (prev?.kind === 'question') {
+    blocks().splice(index, 1);
+    if (prev.options.length) prev.options.push(newOption());
+    else prev.options = [newOption()];
+    prev.type = found.type;
+    touch();
+    return focusUid(prev.uid, true);
+  }
+  setType(block, found.type);
+  touch();
+  focusUid(block.uid, true);
 }
 
-function onFocusIn(index: number) {
-  const pagesUpTo = props.form.blocks.slice(0, index + 1).filter((block) => block.kind === 'page').length;
-  emit('page', Math.max(0, pagesUpTo - (props.form.blocks[0]?.kind === 'page' ? 1 : 0)));
+function onNewPage(option: BuilderOption) {
+  const page = newPage();
+  blocks().push(page);
+  option.jump = page.uid;
+  touch();
+  focusUid(page.uid);
+}
+
+function onMouseDown(event: MouseEvent) {
+  const target = event.target as HTMLElement;
+  if (target.closest('button, input, textarea, a, .nb-gap')) return;
+  const line = target.closest<HTMLElement>('.nb-line') ?? target.closest<HTMLElement>('.nb-row');
+  const input = line?.querySelector<HTMLInputElement>('.auto__input');
+  if (!input) return;
+  event.preventDefault();
+  caretEnd(input);
+}
+
+function onTail() {
+  const last = blocks()[blocks().length - 1];
+  if (last?.kind === 'question' && !last.label) return focusUid(last.uid);
+  addQuestion(blocks().length);
 }
 
 function onKey(event: KeyboardEvent) {
-  const target = event.target as HTMLElement;
-  if ((event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || !target.classList.contains('auto__input')) return;
+  const target = event.target as HTMLInputElement;
+  if (!target.classList.contains('auto__input')) return;
+  if (event.key === 'Escape' && !event.defaultPrevented) return target.blur();
+  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+  const delta = event.key === 'ArrowUp' ? -1 : 1;
+  const row = target.closest<HTMLElement>('[data-index]');
+  if (event.altKey && row) {
+    event.preventDefault();
+    if (moveBlock(props.form, Number(row.dataset.index), delta)) touch();
+    return focusUid(row.dataset.uid!);
+  }
   const list = inputs();
-  const next = list[list.indexOf(target as HTMLInputElement) + (event.key === 'ArrowUp' ? -1 : 1)];
+  const next = list[list.indexOf(target) + delta];
   if (!next) return;
   event.preventDefault();
-  next.focus();
+  caretEnd(next);
 }
 </script>
 
 <template>
-  <div ref="root" class="nb" :data-sweep="sweep">
+  <div ref="root" class="nb" :data-dragging="drag.from.value !== null" @mousedown="onMouseDown">
     <div class="nb-doc" @keydown="onKey">
-      <p v-if="!edited" class="nb-hint">Type a question. Add → Team on an option to branch.</p>
+      <p v-if="!edited" class="nb-hint">Click any line to edit · <kbd>Enter</kbd> adds a question · <kbd>⇧Tab</kbd> turns an answer into a question · hover an answer to branch</p>
       <div class="nb-line nb-title">
-        <AutoInput ref="title" v-model="form.title" placeholder="Untitled form" label="Form title" @input="touch" />
+        <AutoInput v-model="form.title" placeholder="Untitled form" label="Form title" @input="touch" />
       </div>
-      <div v-for="(block, index) in form.blocks" :key="block.uid" class="nb-row" :class="{ 'nb-first': block.uid === first }" @focusin="onFocusIn(index)">
-        <BuilderBreak v-if="block.kind === 'page'" :page="block" @after="insertQuestion(index)" @remove="remove(index)" @edit="touch" />
-        <template v-else>
-          <BuilderGutter @insert="insertQuestion(index)" @move="(delta) => move(index, delta)" @remove="remove(index)" />
+      <template v-for="(block, index) in form.blocks" :key="block.uid">
+        <BuilderGap v-if="index > 0 || block.kind !== 'page' || drag.from.value !== null" :active="drag.over.value === index" @insert="addQuestion(index)" />
+        <div class="nb-row" :data-index="index" :data-uid="block.uid" :data-kind="block.kind" :data-dragged="drag.from.value === index">
+          <BuilderGutter :form="form" :index="index" :guard="drag.wasDrag" @action="onAction(index, $event)" @grab="drag.down($event, index)" />
+          <BuilderBreak v-if="block.kind === 'page'" :page="block" :position="pageNumber(index)" :pages="laterPages(form, index)" @after="addQuestion(index + 1)" @remove="remove(index)" @edit="touch" />
           <BuilderQuestion
+            v-else
             :question="block"
-            :pages="laterPages(form, index).map((page) => page.title)"
-            @after="insertQuestion(index)"
+            :pages="laterPages(form, index)"
+            :picker="pending === block.uid"
+            @settled="pending = null"
+            @after="addQuestion(index + 1)"
             @remove="remove(index)"
             @page="toPage(index)"
+            @outdent="onOutdent(index, $event)"
+            @shortcut="onShortcut(index, $event)"
+            @new-page="onNewPage"
             @edit="touch"
           />
-          <button v-if="lastOfPage(index)" type="button" class="nb-plus" @click="insertQuestion(index)">+ question</button>
-        </template>
-      </div>
+        </div>
+        <div v-if="lastOfPage(index) || (block.kind === 'page' && form.blocks[index + 1]?.kind !== 'question')" class="nb-line nb-add">
+          <button type="button" class="nb-ghost" @mousedown.prevent @click="addQuestion(index + 1)">+ Add question</button>
+          <button v-if="index === form.blocks.length - 1" type="button" class="nb-ghost" @mousedown.prevent @click="addPage(index + 1)">+ Add page</button>
+        </div>
+      </template>
+      <BuilderGap :active="drag.over.value === form.blocks.length" @insert="addQuestion(form.blocks.length)" />
       <div class="nb-line nb-submit">
         <span class="nb-chip"><AutoInput v-model="form.submit" placeholder="Submit" label="Submit button label" @input="touch" /></span>
       </div>
     </div>
+    <div class="nb-tail" @click="onTail" />
+    <BuilderTooltip :root="root" />
   </div>
 </template>
