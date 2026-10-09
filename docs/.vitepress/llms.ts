@@ -7,7 +7,9 @@ const description =
 const details = [
   'Install: `npm i @formhaus/core @formhaus/react` (or `@formhaus/vue`).',
   '',
-  'Claude Code: `claude mcp add formhaus -- npx -y @formhaus/mcp`',
+  'Claude Code plugin (skills and MCP server): `/plugin marketplace add ignsm/formhaus`, then `/plugin install formhaus@formhaus`',
+  '',
+  'MCP server only: `claude mcp add formhaus -- npx -y @formhaus/mcp`',
   '',
   `JSON Schema: ${siteUrl}/schema/form-definition.json`,
   '',

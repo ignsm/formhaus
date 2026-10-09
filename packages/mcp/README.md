@@ -4,7 +4,14 @@ MCP server that lets AI agents check [Formhaus](https://github.com/ignsm/formhau
 
 ## Setup
 
-Claude Code:
+Claude Code plugin, with the Formhaus skills:
+
+```
+/plugin marketplace add ignsm/formhaus
+/plugin install formhaus@formhaus
+```
+
+Claude Code, server only:
 
 ```bash
 claude mcp add formhaus -- npx -y @formhaus/mcp

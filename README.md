@@ -15,7 +15,7 @@ Formhaus is a JSON form definition with a zero-dependency engine, React and Vue 
 - [Multi-step forms with branching](https://formhaus.dev/guide/steps.html#route-between-branches) in React or Vue.
 - [Rendering a form from JSON with your own components](https://formhaus.dev/guide/fields.html#override-default-components).
 - [Designing the form in Figma](https://formhaus.dev/guide/figma.html) from the same file.
-- Generating and checking definitions with AI agents: [Claude Code skills](https://formhaus.dev/guide/formhaus-create-form.html), the [MCP server](https://formhaus.dev/guide/mcp.html) (`claude mcp add formhaus -- npx -y @formhaus/mcp`) and the [JSON Schema](https://formhaus.dev/api/definition.html#json-schema).
+- Generating and checking definitions with AI agents: [Claude Code skills](https://formhaus.dev/guide/formhaus-create-form.html), the [MCP server](https://formhaus.dev/guide/mcp.html) (`/plugin marketplace add ignsm/formhaus`, then `/plugin install formhaus@formhaus` in Claude Code) and the [JSON Schema](https://formhaus.dev/api/definition.html#json-schema).
 - A [headless engine](https://formhaus.dev/api/form-engine.html) for Svelte or vanilla JS.
 
 ## Example
