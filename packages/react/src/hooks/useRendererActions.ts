@@ -1,6 +1,6 @@
-import { evaluateCondition } from '@formhaus/core';
 import type { FormEngine } from '@formhaus/core';
 import { useCallback, useState } from 'react';
+import { isActionDisabled } from '../isActionDisabled';
 import type { FormRendererProps } from '../types';
 
 export function useRendererActions(engine: FormEngine, props: FormRendererProps) {
@@ -35,8 +35,7 @@ export function useRendererActions(engine: FormEngine, props: FormRendererProps)
     await onSubmit(values);
   }, [onSubmit, onAnalyticsEvent]);
   const submit = useCallback(() => run(async () => {
-    if (engine.definition.submit.disabled?.every((condition) => evaluateCondition(condition, engine.values))
-      && engine.definition.submit.disabled.length > 0) return false;
+    if (isActionDisabled(engine.definition.submit, engine.values)) return false;
     const result = await engine.submitAsync(send);
     if (!result) {
       for (const [key, error] of Object.entries(engine.errors)) {

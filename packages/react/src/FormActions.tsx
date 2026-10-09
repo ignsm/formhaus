@@ -1,16 +1,6 @@
-import { evaluateCondition } from '@formhaus/core';
 import type { FormAction } from '@formhaus/core';
+import { isActionDisabled } from './isActionDisabled';
 import type { FormActionsProps } from './types';
-
-function isActionDisabled(
-  action: FormAction | undefined,
-  values: Record<string, unknown>,
-  loading?: boolean,
-): boolean {
-  if (loading) return true;
-  if (!action?.disabled || action.disabled.length === 0) return false;
-  return action.disabled.every((c) => evaluateCondition(c, values));
-}
 
 function buttonClass(action: FormAction | false | undefined, variant: NonNullable<FormAction['variant']>): string {
   return `fh-form-actions__button fh-form-actions__button--${(action && action.variant) || variant}`;
@@ -40,8 +30,8 @@ export function FormActions({
   onPrimary: onPrimaryProp,
 }: FormActionsProps) {
   const showBack = showBackProp ?? (isMultiStep && !isFirstStep && backAction !== false);
-  const backLabel = backLabelProp ?? (typeof backAction === 'object' ? (backAction?.label ?? 'Back') : 'Back');
-  const showSkip = !!onSkip && (showSkipProp ?? (isMultiStep && !!skipAction));
+  const backLabel = backLabelProp ?? (backAction || undefined)?.label ?? 'Back';
+  const showSkip = showSkipProp ?? (isMultiStep && !!skipAction);
   const skipLabel = skipLabelProp ?? skipAction?.label ?? 'Skip';
   const primaryLabel = primaryLabelProp ?? (isMultiStep && !isLastStep ? 'Continue' : (submitAction?.label ?? 'Submit'));
 

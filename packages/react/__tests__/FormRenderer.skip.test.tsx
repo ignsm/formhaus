@@ -66,11 +66,11 @@ describe('FormRenderer skip and button roles', () => {
     expect(button('Later').className).toContain('fh-form-actions__button--secondary');
   });
 
-  it('hides skip without a handler or when showSkip is false', () => {
+  it('hides skip when showSkip is false', () => {
     const props = { isFirstStep: true, isLastStep: false, isMultiStep: true, skipAction: { label: 'Later' },
       onSubmit: () => {}, onNext: () => {}, onPrev: () => {}, onCancel: () => {} };
     const { rerender } = render(<FormActions {...props} />);
-    expect(screen.queryByRole('button', { name: 'Later' })).toBeNull();
+    expect(button('Later')).toBeDefined();
     rerender(<FormActions {...props} onSkip={() => {}} showSkip={false} />);
     expect(screen.queryByRole('button', { name: 'Later' })).toBeNull();
     rerender(<FormActions {...props} onSkip={() => {}} skipLabel="Skip it" />);
