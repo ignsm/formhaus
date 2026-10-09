@@ -8,28 +8,34 @@
       "type": "string"
     },
     "id": {
-      "type": "string"
+      "type": "string",
+      "description": "Unique form identifier."
     },
     "title": {
-      "type": "string"
+      "type": "string",
+      "description": "Form title for host UI and Figma output. Renderers do not display it."
     },
     "submit": {
-      "$ref": "#/definitions/FormAction"
+      "$ref": "#/definitions/FormAction",
+      "description": "Submit button on the last step."
     },
     "cancel": {
-      "$ref": "#/definitions/FormAction"
+      "$ref": "#/definitions/FormAction",
+      "description": "Optional cancel button."
     },
     "fields": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/FormField"
-      }
+      },
+      "description": "Fields of a single-step form."
     },
     "steps": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/FormStep"
-      }
+      },
+      "description": "Steps of a multi-step form. When present, fields is ignored."
     }
   },
   "required": [
@@ -38,6 +44,7 @@
     "submit"
   ],
   "additionalProperties": false,
+  "description": "A Formhaus form. Use fields for a single-step form or steps for a multi-step form, not both.",
   "definitions": {
     "FormAction": {
       "type": "object",
@@ -72,21 +79,24 @@
       "type": "object",
       "properties": {
         "field": {
-          "type": "string"
+          "type": "string",
+          "description": "Key of the field to check."
         },
         "eq": {
           "type": [
             "string",
             "number",
             "boolean"
-          ]
+          ],
+          "description": "Matches when the value strictly equals this."
         },
         "neq": {
           "type": [
             "string",
             "number",
             "boolean"
-          ]
+          ],
+          "description": "Matches when the value does not strictly equal this."
         },
         "in": {
           "type": "array",
@@ -95,7 +105,8 @@
               "string",
               "number"
             ]
-          }
+          },
+          "description": "Matches when the value is one of these."
         },
         "notIn": {
           "type": "array",
@@ -104,62 +115,77 @@
               "string",
               "number"
             ]
-          }
+          },
+          "description": "Matches when the value is none of these."
         },
         "notEmpty": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Matches when the value is not undefined, null or an empty string."
         }
       },
       "required": [
         "field"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "A condition on another field value. Use one operator per condition; only the first of eq, neq, in, notIn, notEmpty applies."
     },
     "FormField": {
       "type": "object",
       "properties": {
         "key": {
-          "type": "string"
+          "type": "string",
+          "description": "Key of the field value in the submitted values. Unique within the form."
         },
         "type": {
-          "$ref": "#/definitions/FieldType"
+          "$ref": "#/definitions/FieldType",
+          "description": "Field type. A built-in type or a custom type rendered through the renderer components prop."
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "description": "Label text."
         },
         "placeholder": {
           "type": "string"
         },
         "helperText": {
-          "type": "string"
+          "type": "string",
+          "description": "Hint text below the field."
         },
         "autoAdvance": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Moves to the next step when the field is committed: a built-in radio on click, Space or Enter, or a custom field calling onCommit. The last step never auto-submits."
         },
-        "defaultValue": {},
+        "defaultValue": {
+          "description": "Initial value. Also the value restored on reset or skip."
+        },
         "show": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ShowCondition"
-          }
+          },
+          "description": "Field is visible only when all conditions match. Hidden fields are cleared, not validated and not submitted."
         },
         "showAny": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ShowCondition"
-          }
+          },
+          "description": "Field is visible when any condition matches."
         },
         "validation": {
-          "$ref": "#/definitions/FieldValidation"
+          "$ref": "#/definitions/FieldValidation",
+          "description": "Validation rules checked on Continue and on submit, not on blur."
         },
         "options": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/FieldOption"
-          }
+          },
+          "description": "Static options for select, autocomplete, multiselect and radio fields."
         },
         "optionsFrom": {
-          "type": "string"
+          "type": "string",
+          "description": "Key of an options provider passed to the renderer, used instead of static options."
         },
         "optionsDependsOn": {
           "type": "array",
@@ -194,7 +220,14 @@
       "additionalProperties": false
     },
     "FieldType": {
-      "$ref": "#/definitions/DefaultFieldType"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DefaultFieldType"
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "DefaultFieldType": {
       "type": "string",
@@ -256,7 +289,8 @@
           "type": "string"
         },
         "matchField": {
-          "type": "string"
+          "type": "string",
+          "description": "Key of another field whose value this field must equal."
         },
         "matchFieldMessage": {
           "type": "string"
@@ -290,10 +324,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/StepRoute"
-          }
+          },
+          "description": "Forward destinations checked in order. The first match with a visible target wins. With no match, navigation continues to the next visible step."
         },
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique step identifier, used as a route target."
         },
         "title": {
           "type": "string"
@@ -311,13 +347,15 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/ShowCondition"
-          }
+          },
+          "description": "Step is visible only when all conditions match. Hidden steps are skipped and not submitted."
         },
         "showAny": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ShowCondition"
-          }
+          },
+          "description": "Step is visible when any condition matches."
         },
         "next": {
           "anyOf": [
@@ -328,7 +366,8 @@
               "type": "boolean",
               "const": false
             }
-          ]
+          ],
+          "description": "Overrides the Continue button. false hides it."
         },
         "back": {
           "anyOf": [
@@ -339,7 +378,12 @@
               "type": "boolean",
               "const": false
             }
-          ]
+          ],
+          "description": "Overrides the Back button. false hides it."
+        },
+        "skip": {
+          "$ref": "#/definitions/FormAction",
+          "description": "Shows a Skip button that resets the step fields and moves forward without validation."
         }
       },
       "required": [
@@ -356,25 +400,29 @@
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "description": "Id of a later step. null makes the current step the last one on this path."
         },
         "show": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ShowCondition"
-          }
+          },
+          "description": "Route matches only when all conditions match. Without show or showAny the route always matches."
         },
         "showAny": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/ShowCondition"
-          }
+          },
+          "description": "Route matches when any condition matches."
         }
       },
       "required": [
         "to"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "A forward destination for a step."
     }
   }
 }

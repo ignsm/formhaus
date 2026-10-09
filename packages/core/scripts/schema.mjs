@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createGenerator } from 'ts-json-schema-generator';
+import { applyDescriptions } from './schema-descriptions.mjs';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -22,8 +23,8 @@ export function buildSchema() {
     jsDoc: 'none',
   }).createSchema('FormDefinition');
 
+  applyDescriptions(generated.definitions);
   const { FormDefinition, ...definitions } = generated.definitions;
-  definitions.FieldType = { $ref: '#/definitions/DefaultFieldType' };
 
   return {
     $schema: generated.$schema,
