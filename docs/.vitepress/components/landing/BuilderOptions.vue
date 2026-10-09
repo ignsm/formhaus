@@ -8,7 +8,7 @@ import { BRANCH_ITEM, UNBRANCH_ITEM, branchShortcut, filterItems, slashQuery } f
 import { moveItem, usePointerDrag } from './builder-drag';
 
 const props = defineProps<{ question: BuilderQuestion; pages: { uid: string; title: string }[] }>();
-const emit = defineEmits<{ outdent: [position: number]; edit: []; newPage: [option: BuilderOption] }>();
+const emit = defineEmits<{ outdent: [position: number]; edit: []; branch: []; newPage: [option: BuilderOption] }>();
 
 const root = ref<HTMLElement>();
 const drag = usePointerDrag({
@@ -87,6 +87,7 @@ function onKey(event: KeyboardEvent, index: number) {
 
 function pickBranch(option: BuilderOption, id: string) {
   menu.value = null;
+  emit('branch');
   if (id === 'new') return emit('newPage', option);
   option.jump = id === 'next' || id === 'unbranch' ? null : id;
   emit('edit');
@@ -102,7 +103,10 @@ function onLeave(event: FocusEvent) {
 
 function pickSlash(option: BuilderOption, id: string) {
   option.label = '';
-  if (id === 'unbranch') option.jump = null;
+  if (id === 'unbranch') {
+    option.jump = null;
+    emit('branch');
+  }
   menu.value = id === 'branch' ? { uid: option.uid, kind: 'branch' } : null;
   emit('edit');
   if (!menu.value) focusOption(option.uid);

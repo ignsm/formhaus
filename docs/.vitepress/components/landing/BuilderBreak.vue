@@ -26,6 +26,7 @@ async function focusText() {
 
 function pick(id: string) {
   open.value = false;
+  delete props.page.routes;
   props.page.next = id === 'next' ? null : id;
   emit('edit');
   focusText();

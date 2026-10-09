@@ -13,7 +13,7 @@ import { inferType, questionSlash, shortcut, slashQuery, type Shortcut } from '.
 const props = defineProps<{ question: BuilderQuestion; pages: { uid: string; title: string }[]; picker?: boolean }>();
 const emit = defineEmits<{
   after: []; remove: []; cancel: []; page: []; settled: []; outdent: [position: number];
-  shortcut: [shortcut: Shortcut]; newPage: [option: BuilderOption]; edit: [];
+  shortcut: [shortcut: Shortcut]; newPage: [option: BuilderOption]; branch: []; edit: [];
 }>();
 
 const root = ref<HTMLElement>();
@@ -171,6 +171,6 @@ function pickType(id: string) {
         </button>
       </template>
     </div>
-    <BuilderOptions v-if="hasOptions(question.type)" :question="question" :pages="pages" @outdent="emit('outdent', $event)" @edit="emit('edit')" @new-page="emit('newPage', $event)" />
+    <BuilderOptions v-if="hasOptions(question.type)" :question="question" :pages="pages" @outdent="emit('outdent', $event)" @edit="emit('edit')" @branch="emit('branch')" @new-page="emit('newPage', $event)" />
   </div>
 </template>

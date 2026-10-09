@@ -1,4 +1,4 @@
-import { newPage, newQuestion, type BuilderBlock, type BuilderForm, type BuilderPage, type BuilderQuestion } from './builder-model';
+import { newOption, newPage, newQuestion, setType, type BuilderBlock, type BuilderForm, type BuilderPage, type BuilderQuestion } from './builder-model';
 
 const isPage = (block: BuilderBlock | undefined): block is BuilderPage => block?.kind === 'page';
 
@@ -46,9 +46,11 @@ export function removeBlock(form: BuilderForm, index: number): boolean {
   const block = form.blocks[index];
   const removed = form.blocks.splice(index, isPage(block) && pageCount(form) > 1 ? pageSpan(form, index) : 1);
   const gone = new Set(removed.map((item) => item.uid));
+  const goneIds = new Set(removed.filter(isPage).map((item) => item.id ?? item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')));
   for (const item of form.blocks) {
     if (item.kind === 'page') {
       if (item.next && gone.has(item.next)) item.next = null;
+      if (item.routes?.some((route) => route.to && goneIds.has(route.to))) delete item.routes;
       continue;
     }
     for (const option of item.options) if (option.jump && gone.has(option.jump)) option.jump = null;
@@ -98,4 +100,19 @@ export function outdent(form: BuilderForm, index: number, position: number): Bui
   question.label = option.label;
   form.blocks.splice(index + 1, 0, question);
   return question;
+}
+
+export function startOptions(form: BuilderForm, index: number, type: 'radio' | 'multiselect'): BuilderQuestion | undefined {
+  const block = form.blocks[index];
+  const prev = form.blocks[index - 1];
+  if (block?.kind !== 'question') return undefined;
+  if (prev?.kind === 'question') {
+    form.blocks.splice(index, 1);
+    if (prev.options.length) prev.options.push(newOption());
+    else prev.options = [newOption()];
+    prev.type = type;
+    return prev;
+  }
+  setType(block, type);
+  return block;
 }

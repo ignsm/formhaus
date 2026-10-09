@@ -8,8 +8,8 @@ import BuilderGutter, { type GutterAction } from './BuilderGutter.vue';
 import BuilderQuestion from './BuilderQuestion.vue';
 import BuilderTooltip from './BuilderTooltip.vue';
 import { moveTo, usePointerDrag } from './builder-drag';
-import { newOption, newPage, pagesAfter, setType, type BuilderForm, type BuilderOption, type BuilderPage } from './builder-model';
-import { convertToPage, insertPage, insertQuestion, moveBlock, outdent, pageSpan, removeBlock } from './builder-ops';
+import { newPage, pagesAfter, type BuilderForm, type BuilderOption, type BuilderPage } from './builder-model';
+import { convertToPage, insertPage, insertQuestion, moveBlock, outdent, pageSpan, removeBlock, startOptions } from './builder-ops';
 import type { Shortcut } from './builder-smart';
 import './builder.css';
 import './builder-tools.css';
@@ -111,21 +111,16 @@ function onOutdent(index: number, position: number) {
 }
 
 function onShortcut(index: number, found: Shortcut) {
-  const block = blocks()[index];
-  if (block.kind !== 'question') return;
   if (found.kind === 'page') return toPage(index);
-  const prev = blocks()[index - 1];
-  if (prev?.kind === 'question') {
-    blocks().splice(index, 1);
-    if (prev.options.length) prev.options.push(newOption());
-    else prev.options = [newOption()];
-    prev.type = found.type;
-    touch();
-    return focusUid(prev.uid, true);
-  }
-  setType(block, found.type);
+  const target = startOptions(props.form, index, found.type);
+  if (!target) return;
   touch();
-  focusUid(block.uid, true);
+  focusUid(target.uid, true);
+}
+
+function onBranch(index: number) {
+  const page = pageAt(index);
+  if (page) delete page.routes;
 }
 
 function onNewPage(option: BuilderOption) {
@@ -196,6 +191,7 @@ function onKey(event: KeyboardEvent) {
             @page="toPage(index)"
             @outdent="onOutdent(index, $event)"
             @shortcut="onShortcut(index, $event)"
+            @branch="onBranch(index)"
             @new-page="onNewPage"
             @edit="touch"
           />
