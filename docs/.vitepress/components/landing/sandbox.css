@@ -139,6 +139,7 @@ html.dark .sandbox {
 }
 
 .sandbox__restart {
+  margin-left: auto;
   padding: 0 8px;
 }
 

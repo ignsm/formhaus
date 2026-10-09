@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, reactive, ref, shallowRef, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 import { validateDefinition, type FormDefinition } from '@formhaus/core';
 import seed from '../../../recipes/definitions/onboarding.json';
 import LandingBuilder from './LandingBuilder.vue';
@@ -29,6 +29,7 @@ const issues = computed(() => safeValidate(definition.value).length);
 const live = shallowRef(definition.value);
 const graph = computed(() => buildGraph(live.value));
 const tab = ref<Tab>('write');
+onMounted(() => { if (window.matchMedia('(max-width: 767px)').matches) tab.value = 'preview'; });
 const edited = ref(false);
 const run = ref(0);
 const first = () => live.value.steps?.[0]?.id ?? '';
@@ -154,8 +155,9 @@ function onTabKey(event: KeyboardEvent) {
         </div>
       </div>
       <div class="sandbox__bar sandbox__bar--right">
-        <span class="sandbox__label">Flow</span>
-        <span class="sandbox__muted">lights up as you answer</span>
+        <span class="sandbox__label">Preview</span>
+        <span class="sandbox__muted">{{ progress }}</span>
+        <button type="button" class="sandbox__restart" @click="restart"><LucideIcon name="restart" /> Restart</button>
       </div>
       <div id="sandbox-write" class="sandbox__pane sandbox__pane--write" role="tabpanel" aria-labelledby="sandbox-tab-write">
         <LandingBuilder :form="model" :edited="edited" @edit="edited = true" />
@@ -166,6 +168,7 @@ function onTabKey(event: KeyboardEvent) {
       <div class="sandbox__graph"><LandingFlow :graph="graph" :state="state" /></div>
       <div id="sandbox-preview" class="sandbox__pane sandbox__pane--preview" role="tabpanel" aria-labelledby="sandbox-tab-preview">
         <div class="sandbox__preview">
+          <p class="sandbox__note">The editor is available on desktop.</p>
           <ClientOnly>
             <LandingDemoForm
               :key="`${run}-${formatJson(live)}`"
@@ -176,11 +179,6 @@ function onTabKey(event: KeyboardEvent) {
               @done="(value) => (done = value)"
             />
           </ClientOnly>
-        </div>
-        <div class="sandbox__footer">
-          <span>{{ progress }}</span>
-          <button type="button" class="sandbox__restart" @click="restart"><LucideIcon name="restart" /> Restart</button>
-          <code>@formhaus/vue</code>
         </div>
       </div>
     </div>
