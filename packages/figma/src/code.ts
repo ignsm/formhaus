@@ -1,4 +1,4 @@
-import { readConfig, writeConfig, type ComponentSource, type KitId } from './config';
+import { readConfig, writeConfig, type ComponentSource, type KitId, type PluginConfig } from './config';
 import { getComponentMap, resetComponentMap, setComponentMap, type ComponentMap } from './constants';
 import { countFields, getSteps, parseAndValidate } from './parse';
 import { renderForm } from './render-form';
@@ -39,19 +39,23 @@ async function loadStoredComponentMap(): Promise<void> {
   }
 }
 
+function currentConfig(): PluginConfig {
+  return readConfig(hasStoredMap ? 'custom' : 'kit');
+}
+
 function sendState(): void {
-  const { source, kit } = readConfig();
+  const { source, kit } = currentConfig();
   figma.ui.postMessage({ type: 'state', source, kit, hasStoredMap });
 }
 
 function updateComponents(source?: ComponentSource, kit?: KitId): void {
-  const config = readConfig();
+  const config = currentConfig();
   writeConfig({ ...config, source: source ?? config.source, kit: kit ?? config.kit });
   sendState();
 }
 
 async function createRenderer(): Promise<FormRenderer> {
-  const config = readConfig();
+  const config = currentConfig();
   if (config.source === 'kit') return createKitRenderer(config);
   if (!hasStoredMap) throw new Error('Save a component map in the Component Map tab, or switch to a built-in kit.');
   return createLegacyRenderer();

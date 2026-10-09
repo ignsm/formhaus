@@ -23,17 +23,17 @@ export interface PluginConfig {
   kitNodes: Partial<Record<KitId, Partial<Record<Role, string>>>>;
 }
 
-export function defaultConfig(): PluginConfig {
-  return { version: 1, source: 'kit', kit: 'material', bindings: {}, kitNodes: {} };
+export function defaultConfig(source: ComponentSource = 'kit'): PluginConfig {
+  return { version: 1, source, kit: 'material', bindings: {}, kitNodes: {} };
 }
 
-export function readConfig(): PluginConfig {
+export function readConfig(fallbackSource: ComponentSource = 'kit'): PluginConfig {
   const raw = figma.root.getSharedPluginData(PLUGIN_NAMESPACE, CONFIG_KEY);
-  if (!raw) return defaultConfig();
+  if (!raw) return defaultConfig(fallbackSource);
   try {
-    return { ...defaultConfig(), ...(JSON.parse(raw) as Partial<PluginConfig>) };
+    return { ...defaultConfig(fallbackSource), ...(JSON.parse(raw) as Partial<PluginConfig>) };
   } catch {
-    return defaultConfig();
+    return defaultConfig(fallbackSource);
   }
 }
 
