@@ -13,8 +13,3 @@ export function pageUrl(relativePath: string): string {
   const path = relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '.html')
   return `${siteUrl}/${path}`
 }
-
-export function markdownUrl(relativePath: string): string | undefined {
-  if (relativePath === 'index.md') return undefined
-  return `${siteUrl}/${relativePath.replace(/\/index\.md$/, '.md')}`
-}
