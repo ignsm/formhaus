@@ -22,43 +22,71 @@ export function createFormPanel(post: Post, show: Show, openComponents: () => vo
   const output = byId('output');
   const button = byId<HTMLButtonElement>('generate');
   const modes = [...document.querySelectorAll<HTMLButtonElement>('.mode')];
+  const openPending = byId<HTMLButtonElement>('openCanvasForm');
   let mode: 'fields' | 'json' = 'fields';
   let canvasId: string | null = null;
+  let dirty = false;
+  let pending: FormDefinition | null = null;
 
-  const editor = createEditor(editorRoot, refresh);
+  const editor = createEditor(editorRoot, () => {
+    dirty = true;
+    refresh();
+  }, (text) => show(output, text, 'error'));
 
   function refresh(): void {
     const draft = editor.get();
     const editing = canvasId !== null && draft.id === canvasId;
-    status.textContent = editing ? `Editing “${draft.title || 'Untitled'}” from the canvas` : 'New form';
-    status.classList.toggle('is-editing', editing);
+    status.textContent = pending
+      ? `“${pending.title || 'Untitled'}” selected · unsaved edits here`
+      : editing ? `Editing “${draft.title || 'Untitled'}” from the canvas` : 'New form';
+    status.classList.toggle('is-editing', editing && !pending);
+    openPending.hidden = !pending;
     button.textContent = editing ? 'Update form' : 'Generate form';
   }
 
   function load(definition: FormDefinition): void {
     editor.set(definition);
     jsonInput.value = JSON.stringify(definition, null, 2);
+    dirty = false;
+    pending = null;
+    show(output, '');
     refresh();
+  }
+
+  function syncFromJson(): boolean {
+    if (mode !== 'json') return true;
+    try {
+      editor.set(JSON.parse(jsonInput.value) as FormDefinition);
+      return true;
+    } catch (error) {
+      show(output, `Fix the JSON first: ${error instanceof Error ? error.message : String(error)}`, 'error');
+      return false;
+    }
   }
 
   function setMode(next: 'fields' | 'json'): void {
     if (next === mode) return;
     if (next === 'json') jsonInput.value = JSON.stringify(editor.get(), null, 2);
-    else {
-      try {
-        editor.set(JSON.parse(jsonInput.value) as FormDefinition);
-      } catch (error) {
-        return show(output, `Fix the JSON first: ${error instanceof Error ? error.message : String(error)}`, 'error');
-      }
-    }
+    else if (!syncFromJson()) return;
     mode = next;
     show(output, '');
-    for (const item of modes) item.classList.toggle('active', item.dataset.mode === mode);
+    for (const item of modes) {
+      item.classList.toggle('active', item.dataset.mode === mode);
+      item.setAttribute('aria-pressed', String(item.dataset.mode === mode));
+    }
     editorRoot.hidden = mode !== 'fields';
     jsonInput.hidden = mode !== 'json';
     refresh();
   }
 
+  jsonInput.addEventListener('input', () => {
+    dirty = true;
+  });
+  openPending.onclick = () => {
+    if (!pending) return;
+    canvasId = pending.id;
+    load(pending);
+  };
   for (const item of modes) item.onclick = () => setMode(item.dataset.mode as 'fields' | 'json');
   sourceSelect.onchange = () => {
     const [source, kit] = sourceSelect.value.split(':');
@@ -68,8 +96,8 @@ export function createFormPanel(post: Post, show: Show, openComponents: () => vo
   byId('newForm').onclick = () => load(emptyForm());
   byId('loadExample').onclick = () => load(JSON.parse(EXAMPLE) as FormDefinition);
   button.onclick = () => {
-    const definition = mode === 'json' ? jsonInput.value.trim() : JSON.stringify(editor.get());
-    if (!definition) return show(output, 'Add some fields first.', 'error');
+    if (button.disabled || !syncFromJson()) return;
+    const definition = JSON.stringify(editor.get());
     button.disabled = true;
     button.textContent = 'Working…';
     show(output, '');
@@ -80,11 +108,17 @@ export function createFormPanel(post: Post, show: Show, openComponents: () => vo
 
   return {
     setCanvasForm(definition: FormDefinition | null) {
-      if (!definition) return;
+      if (!definition || definition.id === editor.get().id) {
+        if (definition) canvasId = definition.id;
+        pending = null;
+        return refresh();
+      }
+      if (dirty) {
+        pending = definition;
+        return refresh();
+      }
       canvasId = definition.id;
-      if (editor.get().id !== definition.id) load(definition);
-      else refresh();
-      if (mode === 'json') jsonInput.value = JSON.stringify(editor.get(), null, 2);
+      load(definition);
     },
     setSource(state: SourceState) {
       const custom = sourceSelect.querySelector<HTMLOptionElement>('option[value=custom]');
@@ -93,6 +127,10 @@ export function createFormPanel(post: Post, show: Show, openComponents: () => vo
     },
     finish(text: string, type: 'error' | 'success') {
       button.disabled = false;
+      if (type === 'success') {
+        dirty = false;
+        canvasId = editor.get().id;
+      }
       refresh();
       show(output, text, type);
     },

@@ -25,10 +25,13 @@
       <button class="link" id="openComponents" type="button">Set up</button>
     </div>
     <div class="form-bar">
-      <div class="form-status" id="formStatus">New form</div>
+      <div class="form-status-row">
+        <div class="form-status" id="formStatus">New form</div>
+        <button class="link" id="openCanvasForm" type="button" hidden>Open it</button>
+      </div>
       <div class="segmented small">
-        <button class="mode active" type="button" data-mode="fields">Fields</button>
-        <button class="mode" type="button" data-mode="json">JSON</button>
+        <button class="mode active" type="button" aria-pressed="true" data-mode="fields">Fields</button>
+        <button class="mode" type="button" aria-pressed="false" data-mode="json">JSON</button>
       </div>
     </div>
     <div class="editor" id="editor"></div>
