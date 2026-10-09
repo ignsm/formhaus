@@ -49,6 +49,7 @@ function rowElement(row: BindingRow, post: Post): HTMLElement {
   const node = element('div', row.name ? 'binding bound' : 'binding');
   const info = element('div', 'info');
   info.append(element('div', 'role', ROLE_LABELS[row.role]), element('div', 'name', row.name ?? 'Built-in kit'));
+  if (row.staleProperties) info.appendChild(element('div', 'warning', `Rebind: ${row.staleProperties.join(', ')} no longer exist`));
   const actions = element('div', 'actions');
   actions.appendChild(button('Use selection', 'btn-small', () => post({ type: 'bindSelection', role: row.role })));
   if (row.name) actions.appendChild(button('×', 'btn-small btn-clear', () => post({ type: 'unbind', role: row.role })));

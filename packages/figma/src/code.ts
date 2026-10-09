@@ -55,6 +55,8 @@ function sendState(): void {
 async function updateBindings(message: BindingMessage): Promise<void> {
   try {
     figma.ui.postMessage({ type: 'bindings', ...(await runBindingMessage(message, currentConfig().source)) });
+    const { source, bindings } = currentConfig();
+    if (source === 'custom' && Object.keys(bindings).length === 0 && !hasStoredMap) updateComponents('kit');
   } catch (error) {
     postError('bindingsError', error);
   }

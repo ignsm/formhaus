@@ -1,10 +1,9 @@
 import { readConfig, writeConfig, type ComponentSource, type PluginConfig, type TextSlot } from '../config';
-import { componentForBinding } from '../renderers/resolve';
 import type { Role } from '../roles';
 import { autoMatch } from './auto-match';
 import { bindingRows } from './rows';
 import { componentFromSelection } from './selection';
-import { assignSlot, describeSlots } from './slots';
+import { assignSlot } from './slots';
 
 export interface BindingMessage {
   type: string;
@@ -26,9 +25,7 @@ const HANDLERS: Record<string, (config: PluginConfig, message: BindingMessage) =
   },
   setSlot: async (config, { role, slot, name }) => {
     const binding = config.bindings[role!];
-    const component = binding ? await componentForBinding(binding) : null;
-    if (!binding || !component) return;
-    binding.text = assignSlot(describeSlots(component, binding).slots, slot!, name ?? '');
+    if (binding) binding.text = assignSlot(binding.text ?? {}, slot!, name ?? '');
   },
   autoMatch: async (config) => {
     const found = autoMatch(figma.currentPage, config.bindings);
@@ -40,7 +37,7 @@ const HANDLERS: Record<string, (config: PluginConfig, message: BindingMessage) =
 };
 
 export function isBindingMessage(type: string): boolean {
-  return type in HANDLERS;
+  return Object.prototype.hasOwnProperty.call(HANDLERS, type);
 }
 
 export async function runBindingMessage(message: BindingMessage, fallbackSource: ComponentSource = 'kit') {

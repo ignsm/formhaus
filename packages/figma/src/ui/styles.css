@@ -125,3 +125,4 @@ button:disabled { background: #ccc; cursor: not-allowed; }
 .slots { display: flex; gap: 8px; grid-column: 2 / 4; }
 .slot { align-items: center; display: flex; font-size: 10px; gap: 4px; text-transform: capitalize; }
 .slot select { border: 1px solid #ddd; border-radius: 4px; font-size: 11px; max-width: 96px; padding: 2px 4px; }
+.warning { color: #b26a00; font-size: 11px; }
