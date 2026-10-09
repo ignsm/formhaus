@@ -148,6 +148,7 @@
 }
 
 .nb-ghost {
+  min-height: 26px;
   padding: 2px 0;
   font-size: 13px;
   color: var(--vp-c-text-3);
