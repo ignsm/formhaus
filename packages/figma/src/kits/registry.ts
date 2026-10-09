@@ -2,10 +2,11 @@ import { PLUGIN_NAMESPACE, readConfig, writeConfig, type KitId } from '../config
 import { resolveFonts } from '../fonts';
 import { ROLES, type Role } from '../roles';
 import type { Kit, KitTheme } from './kit';
+import { iosKit } from './ios';
 import { materialKit } from './material';
 import type { KitNode } from './primitives';
 
-const KITS: Record<KitId, Kit> = { material: materialKit, ios: materialKit };
+const KITS: Record<KitId, Kit> = { material: materialKit, ios: iosKit };
 const SECTION_GAP = 48;
 const SECTION_PADDING = 40;
 

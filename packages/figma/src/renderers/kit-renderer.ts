@@ -79,5 +79,8 @@ async function optionGroup(
     list.appendChild(row);
     row.layoutSizingHorizontal = 'FILL';
   }
+  const last = list.children[list.children.length - 1];
+  const separator = last && 'findOne' in last ? last.findOne((node) => node.name === 'Separator') : null;
+  if (separator) separator.visible = false;
   return group;
 }
