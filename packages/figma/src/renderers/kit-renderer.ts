@@ -3,7 +3,7 @@ import type { Binding, PluginConfig } from '../config';
 import type { KitTheme } from '../kits/kit';
 import { STATE_PROPERTY, solid, stack, text } from '../kits/primitives';
 import { loadKit } from '../kits/registry';
-import { isOptionRole, ROLE_FALLBACKS, roleForField, type Role } from '../roles';
+import { isOptionRole, ROLE_FALLBACKS, ROLE_LABELS, roleForField, type Role } from '../roles';
 import { applySlots } from '../text-slots';
 import { customTheme } from './custom-theme';
 import { asComponent, componentForBinding, instantiate, setVariant } from './resolve';
@@ -14,7 +14,11 @@ interface Resolved {
   binding?: Binding;
 }
 
-export async function createKitRenderer(config: PluginConfig): Promise<FormRenderer> {
+export interface KitRenderer extends FormRenderer {
+  sample(role: Role): Promise<InstanceNode>;
+}
+
+export async function createKitRenderer(config: PluginConfig): Promise<KitRenderer> {
   const { theme: kitTheme, components } = await loadKit(config.kit);
   const cache = new Map<Role, Resolved | null>();
 
@@ -58,6 +62,11 @@ export async function createKitRenderer(config: PluginConfig): Promise<FormRende
         helper: field.helperText ?? '',
       }, filled ? 'Filled' : 'Empty');
       node.name = field.key;
+      return node;
+    },
+    async sample(role) {
+      const node = await instance(role, { label: ROLE_LABELS[role], value: ' ', helper: '' }, 'Empty');
+      node.name = ROLE_LABELS[role];
       return node;
     },
     async button(label, primary) {
