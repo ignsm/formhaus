@@ -228,5 +228,3 @@ Point editors at it with `$schema`:
   "fields": [{ "key": "name", "type": "text", "label": "Your name" }]
 }
 ```
-
-The schema accepts only built-in field types. Definitions with custom types fail validation.
