@@ -19,3 +19,19 @@ it('applies changed external errors', async () => {
   await rerender({ errors: { name: 'Taken' } });
   expect(await screen.findByText('Taken')).toBeDefined();
 });
+
+it('shows a repeated server error after the user edits the field', async () => {
+  const { rerender } = render(FormRenderer, { props: { definition, errors: { name: 'Taken' } } });
+  expect(await screen.findByText('Taken')).toBeDefined();
+  await fireEvent.update(screen.getByRole('textbox'), 'Ada');
+  expect(screen.queryByText('Taken')).toBeNull();
+  await rerender({ errors: { name: 'Taken' } });
+  expect(await screen.findByText('Taken')).toBeDefined();
+});
+
+it('applies external errors to an engine created for a new definition', async () => {
+  const { rerender } = render(FormRenderer, { props: { definition, errors: { name: 'Taken' } } });
+  expect(await screen.findByText('Taken')).toBeDefined();
+  await rerender({ definition: { ...definition, id: 'errors-2' } });
+  expect(await screen.findByText('Taken')).toBeDefined();
+});

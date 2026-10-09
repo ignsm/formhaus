@@ -11,15 +11,11 @@ function getStepErrors(engine: EngineInternals): Record<string, string> | null {
 }
 
 function publishStepErrors(engine: EngineInternals, errors: Record<string, string>): boolean {
-  const step = engine.currentStep;
+  if (Object.keys(errors).length === 0) return false;
   const previousErrors = { ...engine.errors };
-  for (const field of step?.fields ?? []) {
-    if (errors[field.key] === undefined) delete engine.errors[field.key];
-    else engine.errors[field.key] = errors[field.key];
-  }
-  const changed = engine.getChangedKeys(previousErrors, engine.errors);
-  if (changed.size > 0) engine.notify({ fieldKeys: changed });
-  return Object.keys(errors).length > 0;
+  Object.assign(engine.errors, errors);
+  engine.notify({ fieldKeys: engine.getChangedKeys(previousErrors, engine.errors) });
+  return true;
 }
 
 function advance(engine: EngineInternals): boolean {

@@ -19,3 +19,12 @@ it('applies changed external errors', async () => {
   rerender(<FormRenderer definition={definition} errors={{ name: 'Taken' }} onSubmit={() => {}} />);
   expect(await screen.findByText('Taken')).toBeDefined();
 });
+
+it('shows a repeated server error after the user edits the field', async () => {
+  const { rerender } = render(<FormRenderer definition={definition} errors={{ name: 'Taken' }} onSubmit={() => {}} />);
+  expect(await screen.findByText('Taken')).toBeDefined();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Ada' } });
+  expect(screen.queryByText('Taken')).toBeNull();
+  rerender(<FormRenderer definition={definition} errors={{ name: 'Taken' }} onSubmit={() => {}} />);
+  expect(await screen.findByText('Taken')).toBeDefined();
+});

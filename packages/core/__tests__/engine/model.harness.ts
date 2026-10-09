@@ -14,6 +14,8 @@ interface Pending {
   reject: (error: Error) => void;
 }
 
+const SERVER_ERROR = 'Rejected by server';
+
 const stepIds = (engine: FormEngine) => engine.visibleSteps.map((step) => step.id).join('>');
 
 async function flush(): Promise<void> {
@@ -27,19 +29,24 @@ export async function runModel(
   commands: ModelCommand[],
 ): Promise<void> {
   const pending: Pending[] = [];
+  const failures: string[] = [];
   let generation = 0;
-  const hook = (kind: 'validate' | 'guard') => () => new Promise<unknown>((resolve, reject) => {
-    pending.push({ resolve: (allowed) => resolve(kind === 'validate' ? null : allowed), reject });
+  const firstField = (stepId: string) => definition.steps?.find((step) => step.id === stepId)?.fields[0]?.key;
+  const validate = (stepId: string) => new Promise<unknown>((resolve, reject) => {
+    const key = firstField(stepId);
+    pending.push({ resolve: (allowed) => resolve(allowed || !key ? null : { [key]: SERVER_ERROR }), reject });
   });
+  const guard = () => new Promise<unknown>((resolve, reject) => { pending.push({ resolve, reject }); });
   const engine = new api.FormEngine(definition, initialValues, {
-    onStepValidate: hook('validate'),
-    onBeforeStepChange: hook('guard'),
-    onBeforeSubmit: hook('guard'),
+    onStepValidate: validate,
+    onBeforeStepChange: guard,
+    onBeforeSubmit: guard,
   });
   const fields = new Map<string, FormField>(
     (definition.steps ?? []).flatMap((step) => step.fields).map((field) => [field.key, field]),
   );
   const fail = (message: string): never => {
+    failures.push(message);
     throw new Error(`${message}\nvalues=${JSON.stringify(engine.values)} errors=${JSON.stringify(engine.errors)} step=${engine.currentStep?.id} path=${stepIds(engine)}`);
   };
 
@@ -52,7 +59,7 @@ export async function runModel(
     for (const [key, message] of Object.entries(engine.errors)) {
       if (!pathFields.has(key)) fail(`error on off-path field ${key}`);
       const field = fields.get(key)!;
-      if (!api.validateField(field, engine.values[key], active, {})) fail(`stale error on ${key}: ${message}`);
+      if (message !== SERVER_ERROR && !api.validateField(field, engine.values[key], active, {})) fail(`stale error on ${key}: ${message}`);
     }
   };
 
@@ -78,6 +85,7 @@ export async function runModel(
       const stillActive = engine.visibleSteps.some((step) => step.id === before);
       if (stillActive && engine.currentStep?.id !== before) fail(`setValue moved the user off active step ${before}`);
     }
+    if (command.type === 'server') engine.setErrors({ [command.key]: SERVER_ERROR });
     if (command.type === 'next') run(engine.nextStepAsync());
     if (command.type === 'back') run(engine.prevStepAsync());
     if (command.type === 'submit') run(submit());
@@ -91,6 +99,7 @@ export async function runModel(
       else entry.resolve(command.outcome === 'allow');
     }
     await flush();
+    if (failures.length > 0) fail(failures[0]);
     check();
   }
 
@@ -98,6 +107,7 @@ export async function runModel(
     pending.shift()!.resolve(true);
     await flush();
   }
+  if (failures.length > 0) fail(failures[0]);
   check();
   if (engine.stepValidating || engine.submitting) fail('engine still busy after every hook settled');
 }
