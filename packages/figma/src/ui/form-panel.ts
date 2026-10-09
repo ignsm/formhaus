@@ -45,10 +45,10 @@ export function createFormPanel(post: Post, show: Show, openComponents: () => vo
     button.textContent = editing ? 'Update form' : 'Generate form';
   }
 
-  function load(definition: FormDefinition, layout?: FormLayout): void {
+  function load(definition: FormDefinition, layout?: FormLayout, edited = false): void {
     editor.set(definition, layout);
     jsonInput.value = JSON.stringify(definition, null, 2);
-    dirty = false;
+    dirty = edited;
     pending = null;
     show(output, '');
     refresh();
@@ -108,6 +108,11 @@ export function createFormPanel(post: Post, show: Show, openComponents: () => vo
   load(emptyForm());
 
   return {
+    draft: () => (syncFromJson() ? editor.get() : null),
+    apply(definition: FormDefinition, note: string) {
+      load(definition, editor.layout(), true);
+      show(output, note, 'info');
+    },
     setCanvasForm(definition: FormDefinition | null, layout?: FormLayout) {
       if (!definition || definition.id === editor.get().id) {
         if (definition) canvasId = definition.id;
