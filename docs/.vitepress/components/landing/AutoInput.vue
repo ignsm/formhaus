@@ -3,7 +3,7 @@ import { ref } from 'vue';
 
 defineProps<{ placeholder: string; label: string; list?: string }>();
 const model = defineModel<string>({ required: true });
-const emit = defineEmits<{ keydown: [event: KeyboardEvent]; input: [] }>();
+const emit = defineEmits<{ keydown: [event: KeyboardEvent]; input: []; blur: [] }>();
 const input = ref<HTMLInputElement>();
 
 defineExpose({ focus: (options?: FocusOptions) => input.value?.focus(options), blur: () => input.value?.blur() });
@@ -24,6 +24,7 @@ defineExpose({ focus: (options?: FocusOptions) => input.value?.focus(options), b
       :aria-label="label"
       @keydown="emit('keydown', $event)"
       @input="emit('input')"
+      @blur="emit('blur')"
     />
   </span>
 </template>
