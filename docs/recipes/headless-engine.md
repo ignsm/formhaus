@@ -107,7 +107,7 @@ const label = engine.isLastStep ? definition.submit.label : 'Continue';
 - `setValue()` clears the field's error and re-evaluates `show` conditions, removing values of fields that become hidden.
 - `submitAsync(handler)` validates the visible fields, runs `onBeforeSubmit`, awaits the handler, then runs `onAfterSubmit`. It resolves to `false` and fills `engine.errors` when validation fails.
 - `getSubmitValues()` returns the visible values on the active path, the same payload the handler receives.
-- `subscribeField(key, listener)` and the snapshot methods let a renderer update one field at a time. The snapshots return stable numbers, so React's `useSyncExternalStore` can read them.
+- `subscribeField(key, listener)` and the snapshot methods let a renderer update one field at a time.
 
 ## Svelte
 
