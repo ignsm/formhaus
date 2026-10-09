@@ -49,14 +49,20 @@ export async function skipStepAsync(engine: EngineInternals, submit?: SubmitFn):
   const step = engine.currentStep;
   if (!submit || !step) return false;
   const values = engine.values;
-  let submitted = false;
+  const errors = { ...engine.errors };
+  let committed = false;
   const fieldKeys = skipCurrentStep(engine);
   const skippedValues = engine.values;
+  const edited = watchCheckedInputs(engine, { ...skippedValues });
   try {
-    return submitted = await submitAsync(engine, submit, true);
+    return await submitAsync(engine, async (submitted) => {
+      await submit(submitted);
+      committed = true;
+    }, true);
   } finally {
-    if (!submitted && engine.values === skippedValues) {
+    if (!committed && engine.values === skippedValues && !edited()) {
       engine.values = values;
+      engine.errors = { ...errors, ...engine.errors };
       engine.skipped.delete(step.id);
       engine.notify({ fieldKeys, structureChanged: true, valuesChanged: true });
     }
