@@ -2,12 +2,12 @@ import { validateDefinition } from '../definition-validation';
 import type { ValidatorFn } from '../validation';
 import type { FormDefinition, FormField, FormStep } from '../types';
 import type { FormEngineOptions, StepValidateFn, SubmitFn } from './engine-options';
-import { createValues, getChangedKeys } from './engine-utils';
+import { createValues } from './engine-utils';
 import { changeStep, goToStepWithField, nextStep, prevStep, skipStep, skipStepAsync } from './navigation';
 import type { EngineInternals, RuntimeNotifyOptions } from './runtime-internals';
 import { FormSubscriptions, type NotifyOptions } from './subscriptions';
 import {
-  applyExternalErrors,
+  applyValidationErrors,
   getSubmitValues,
   resetEngine,
   validateForm,
@@ -119,7 +119,7 @@ export class FormEngine {
     const hadError = this.errors[key] !== undefined;
     this.values[key] = value;
     delete this.errors[key];
-    for (const [stepId, keys] of this.skipped) if (keys.includes(key)) this.skipped.delete(stepId);
+    for (const [stepId, keys] of this.skipped) if (valueChanged && keys.includes(key)) this.skipped.delete(stepId);
     const clearedFields = this.visibility.cascadeHiddenFields(key, this.values, this.errors);
     const revalidated = clearResolvedMatchErrors(this.internals, key);
     const changedFields = new Set([...clearedFields, ...revalidated]);
@@ -135,7 +135,7 @@ export class FormEngine {
   }
 
   setErrors(errors: Record<string, string>): void {
-    applyExternalErrors(this.internals, errors);
+    applyValidationErrors(this.internals, errors, true);
   }
 
   setFieldLoading(key: string, loading: boolean): void {
@@ -170,8 +170,6 @@ export class FormEngine {
   private get internals(): EngineInternals {
     return this as unknown as EngineInternals;
   }
-
-  private getChangedKeys = getChangedKeys;
 
   private notify(options: RuntimeNotifyOptions = {}): void {
     this.visibility.markChanged(!!options.structureChanged, !!options.valuesChanged);

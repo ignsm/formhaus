@@ -30,9 +30,5 @@ export interface EngineInternals {
   readonly visibleFields: FormField[];
   readonly isFirstStep: boolean;
   readonly isLastStep: boolean;
-  getChangedKeys(
-    previous: Record<string, unknown>,
-    next: Record<string, unknown>,
-  ): Set<string>;
   notify(options?: RuntimeNotifyOptions): void;
 }

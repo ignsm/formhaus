@@ -3,37 +3,21 @@ import type { FormDefinition } from '../types';
 import { createValues, getChangedKeys, hasFieldsAndSteps } from './engine-utils';
 import type { EngineInternals } from './runtime-internals';
 
-function replaceErrors(engine: EngineInternals, errors: Record<string, string>): Set<string> {
+export function applyValidationErrors(engine: EngineInternals, errors: Record<string, string>, navigate = false): void {
   const previousErrors = engine.errors;
   engine.errors = {};
   engine.topLevelErrors = [];
   for (const [key, message] of Object.entries(errors)) {
-    if (engine.visibility.isFieldVisible(key, engine.values)) {
-      engine.errors[key] = message;
-    } else {
-      engine.topLevelErrors.push(message);
-    }
+    if (engine.visibility.isFieldVisible(key, engine.values)) engine.errors[key] = message;
+    else engine.topLevelErrors.push(message);
   }
-  return getChangedKeys(previousErrors, engine.errors);
-}
-
-export function applyExternalErrors(engine: EngineInternals, errors: Record<string, string>): void {
-  const changedFields = replaceErrors(engine, errors);
   const firstErrorKey = Object.keys(errors).find((key) => engine.errors[key] !== undefined);
-  const targetIndex = firstErrorKey && engine.isMultiStep
+  const targetIndex = navigate && firstErrorKey && engine.isMultiStep
     ? engine.visibility.findStepIndex(firstErrorKey, engine.values, engine.currentStepIndex)
     : null;
   const structureChanged = targetIndex !== null && targetIndex !== engine.currentStepIndex;
   if (targetIndex !== null) engine.currentStepIndex = targetIndex;
-  engine.notify({ fieldKeys: changedFields, structureChanged });
-}
-
-export function applyValidationErrors(
-  engine: EngineInternals,
-  errors: Record<string, string>,
-): void {
-  const changedFields = replaceErrors(engine, errors);
-  engine.notify({ fieldKeys: changedFields });
+  engine.notify({ fieldKeys: getChangedKeys(previousErrors, engine.errors), structureChanged });
 }
 
 export function clearResolvedMatchErrors(engine: EngineInternals, key: string): string[] {
