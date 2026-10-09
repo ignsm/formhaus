@@ -24,34 +24,39 @@ export function describeCondition(condition: ShowCondition, fields: Map<string, 
   const field = fields.get(condition.field);
   const name = field?.label ?? condition.field;
   const list = (values: (string | number)[]) => values.map((value) => valueText(field, value)).join(' or ');
-  if (condition.notEmpty) return `${name} is filled`;
   if (condition.eq !== undefined) return `${name} is ${valueText(field, condition.eq)}`;
   if (condition.neq !== undefined) return `${name} is not ${valueText(field, condition.neq)}`;
   if (condition.in) return `${name} is ${list(condition.in)}`;
   if (condition.notIn) return `${name} is not ${list(condition.notIn)}`;
-  return name;
+  return condition.notEmpty ? `${name} is filled` : '';
 }
 
 export function describeConditions(owner: { show?: ShowCondition[]; showAny?: ShowCondition[] }, fields: Map<string, FormField>): string {
-  const all = (owner.show ?? []).map((condition) => describeCondition(condition, fields)).join(' and ');
-  const any = (owner.showAny ?? []).map((condition) => describeCondition(condition, fields)).join(' or ');
+  const describe = (conditions: ShowCondition[] = [], joiner: string) => conditions.map((condition) => describeCondition(condition, fields)).filter(Boolean).join(joiner);
+  const all = describe(owner.show, ' and ');
+  const anyConditions = owner.showAny ?? [];
+  const any = anyConditions.every((condition) => describeCondition(condition, fields)) ? describe(anyConditions, ' or ') : '';
   return [all, any].filter(Boolean).join(' and ');
 }
 
 function stepEdges(steps: FormStep[], index: number, fields: Map<string, FormField>): FlowEdge[] {
   const step = steps[index];
-  const routes = step.routes ?? [];
-  const edges = routes.map((route, order) => ({ from: step.id, to: route.to, label: describeConditions(route, fields) || (order > 0 ? 'Otherwise' : '') }));
-  if (routes.some((route) => !route.show?.length && !route.showAny?.length)) return edges;
+  const edges: FlowEdge[] = [];
+  for (const route of step.routes ?? []) {
+    if (route.to !== null && steps.findIndex((other) => other.id === route.to) <= index) continue;
+    const label = describeConditions(route, fields);
+    edges.push({ from: step.id, to: route.to, label: label || (edges.length > 0 ? 'Otherwise' : '') });
+    if (!label) return edges;
+  }
   const next = steps[index + 1];
-  return [...edges, { from: step.id, to: next?.id ?? null, label: routes.length > 0 ? 'Otherwise' : '' }];
+  return [...edges, { from: step.id, to: next?.id ?? null, label: edges.length > 0 ? 'Otherwise' : '' }];
 }
 
 function merged(edges: FlowEdge[]): FlowEdge[] {
   const result: FlowEdge[] = [];
   for (const edge of edges) {
     const same = result.find((item) => item.from === edge.from && item.to === edge.to);
-    if (same) same.label = [same.label, edge.label.toLowerCase()].filter(Boolean).join(' or ');
+    if (same) same.label = [same.label, edge.label].filter(Boolean).join(' or ');
     else result.push({ ...edge });
   }
   return result;
