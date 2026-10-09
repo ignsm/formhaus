@@ -21,6 +21,9 @@ Opens at http://localhost:3000. Choose the Team plan and enter `Acme` as the com
 - [app/pages/index.vue](app/pages/index.vue) posts values with `$fetch` from `submitHandler` and passes returned errors to `FormRenderer`.
 - [server/api/submit.post.ts](server/api/submit.post.ts) runs `FormEngine.validate()` on the posted values and returns `422` with field errors.
 - [server/validators.ts](server/validators.ts) holds the server-only `companyAvailable` validator.
+- [server/parse-values.ts](server/parse-values.ts) rejects bodies that are not an object of string, number, boolean or string array values with `400`.
+
+`FormEngine` does not coerce types: `"5"` sent for a number field is validated as a string. The server route does not limit the request body size; set a limit in your proxy or hosting platform.
 
 ## Use as a starter
 

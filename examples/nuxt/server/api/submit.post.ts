@@ -1,14 +1,16 @@
 import { FormEngine } from '@formhaus/core';
 import { definition } from '~~/shared/definition';
+import { parseValues } from '../parse-values';
 import { serverValidators } from '../validators';
 
 export default defineEventHandler(async (event) => {
-  const body: unknown = await readBody(event);
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    throw createError({ statusCode: 400, statusMessage: 'Expected a JSON object' });
+  const values = parseValues(await readBody(event).catch(() => null));
+  if (!values) {
+    setResponseStatus(event, 400);
+    return { message: 'Expected an object of string, number or boolean values' };
   }
 
-  const engine = new FormEngine(definition, body as Record<string, unknown>, { validators: serverValidators });
+  const engine = new FormEngine(definition, values, { validators: serverValidators });
   const errors = engine.validate();
   if (Object.keys(errors).length > 0) {
     setResponseStatus(event, 422);
