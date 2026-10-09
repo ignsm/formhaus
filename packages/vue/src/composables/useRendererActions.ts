@@ -41,25 +41,28 @@ export function useRendererActions(form: UseFormEngineReturn, props: FormRendere
       if (engine === form.engine) emit('submit', values);
     };
   }
-  const submit = () => run(async () => {
-    const engine = form.engine;
-    if (engine.definition.submit.disabled?.every((condition) => evaluateCondition(condition, engine.values))
-      && engine.definition.submit.disabled.length > 0) return false;
-    const result = await engine.submitAsync(send(engine, props.submitHandler));
+  async function report(engine: typeof form.engine, action: Promise<boolean>) {
+    const result = await action;
     if (!result) {
       for (const [fieldKey, error] of Object.entries(engine.errors)) {
         emit('analyticsEvent', { type: 'field_error', fieldKey, error });
       }
     }
     return result;
+  }
+  const submit = () => run(async () => {
+    const engine = form.engine;
+    if (engine.definition.submit.disabled?.every((condition) => evaluateCondition(condition, engine.values))
+      && engine.definition.submit.disabled.length > 0) return false;
+    return report(engine, engine.submitAsync(send(engine, props.submitHandler)));
   });
   const skip = () => run(() => {
     const engine = form.engine;
     const submit = send(engine, props.submitHandler);
-    return engine.skipStepAsync((values) => {
+    return report(engine, engine.skipStepAsync((values) => {
       emit('analyticsEvent', { type: 'step_skipped', stepId: engine.currentStep!.id });
       return submit(values);
-    });
+    }));
   });
   return { update, commit, next, prev, skip, submit, actionError };
 }

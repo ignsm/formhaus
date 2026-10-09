@@ -10,7 +10,7 @@ const definition: FormDefinition = {
   submit: { label: 'Send' },
   cancel: { label: 'Cancel' },
   steps: [
-    { id: 'name', title: 'Name', fields: [{ key: 'name', type: 'text', label: 'Name' }] },
+    { id: 'name', title: 'Name', fields: [{ key: 'name', type: 'text', label: 'Name', validation: { validator: 'flaky' } }] },
     {
       id: 'phone',
       title: 'Phone',
@@ -43,6 +43,19 @@ describe('FormRenderer skip and button roles', () => {
     await fireEvent.click(button('Skip notes'));
     await waitFor(() => expect(submitHandler).toHaveBeenCalledWith({ name: 'Ada' }));
     expect(emitted().analyticsEvent).toContainEqual([{ type: 'step_skipped', stepId: 'notes' }]);
+  });
+
+  it('reports field errors when a skip submit fails validation', async () => {
+    let failing = false;
+    const { emitted } = render(FormRenderer, { props: { definition, validators: { flaky: () => (failing ? 'Bad name' : null) } } });
+    await fireEvent.update(screen.getByRole('textbox', { name: /Name/ }), 'Ada');
+    await fireEvent.click(button('Continue'));
+    await screen.findByRole('textbox', { name: /Phone/ });
+    await fireEvent.click(button('Not now'));
+    await screen.findByRole('textbox', { name: /Notes/ });
+    failing = true;
+    await fireEvent.click(button('Skip notes'));
+    await waitFor(() => expect(emitted().analyticsEvent).toContainEqual([{ type: 'field_error', fieldKey: 'name', error: 'Bad name' }]));
   });
 
   it('hides skip on steps with next: false', () => {
