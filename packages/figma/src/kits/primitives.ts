@@ -79,6 +79,24 @@ export function component(role: Role, name: string, version: number, build: (roo
   return root;
 }
 
+export const STATE_PROPERTY = 'State';
+
+export type KitNode = ComponentNode | ComponentSetNode;
+
+export function variantSet(role: Role, version: number, builds: Record<string, (root: ComponentNode) => void>): ComponentSetNode {
+  const variants = Object.entries(builds).map(([state, build]) => component(role, `${STATE_PROPERTY}=${state}`, version, build));
+  const set = figma.combineAsVariants(variants, figma.currentPage);
+  set.name = role;
+  set.layoutMode = 'HORIZONTAL';
+  set.primaryAxisSizingMode = 'AUTO';
+  set.counterAxisSizingMode = 'AUTO';
+  set.itemSpacing = 24;
+  set.fills = [];
+  set.setSharedPluginData(PLUGIN_NAMESPACE, 'role', role);
+  set.setSharedPluginData(PLUGIN_NAMESPACE, 'kitVersion', String(version));
+  return set;
+}
+
 export function bindText(root: ComponentNode, node: TextNode, slot: TextSlot): void {
   const key = root.addComponentProperty(SLOT_PROPERTY[slot], 'TEXT', node.characters);
   node.componentPropertyReferences = { characters: key };

@@ -2,9 +2,9 @@ import type { KitFonts } from '../fonts';
 import type { IconName } from '../icons';
 import type { Role } from '../roles';
 import type { Kit } from './kit';
-import { bindHelperVisibility, bindText, component, fill, fixed, icon, solid, stack, text } from './primitives';
+import { bindHelperVisibility, bindText, component, fill, fixed, icon, solid, stack, text, variantSet, type KitNode } from './primitives';
 
-const VERSION = 1;
+const VERSION = 2;
 const WIDTH = 320;
 
 const C = {
@@ -16,6 +16,12 @@ const C = {
   outline: '#79747E',
 };
 
+function fixedWidth(root: ComponentNode): void {
+  root.resize(WIDTH, 40);
+  root.counterAxisSizingMode = 'FIXED';
+  root.primaryAxisSizingMode = 'AUTO';
+}
+
 function helperRow(root: ComponentNode, fonts: KitFonts, indent: number): void {
   const row = stack('HORIZONTAL', 'Supporting', { paddingLeft: indent });
   const helper = text('Supporting text', { font: fonts.regular, size: 12, color: C.onSurfaceVariant }, 'Helper');
@@ -25,37 +31,46 @@ function helperRow(root: ComponentNode, fonts: KitFonts, indent: number): void {
   bindHelperVisibility(root, row);
 }
 
-function inputField(fonts: KitFonts, trailing?: IconName, height = 56) {
+function inputContainer(fonts: KitFonts, trailing: IconName | undefined, multiline: boolean, filled: boolean) {
   return (root: ComponentNode) => {
+    fixedWidth(root);
     root.itemSpacing = 4;
     const container = stack('HORIZONTAL', 'Container', {
       paddingLeft: 16,
       paddingRight: trailing ? 12 : 16,
+      paddingTop: multiline ? 16 : 0,
       itemSpacing: 12,
-      counterAxisAlignItems: height > 56 ? 'MIN' : 'CENTER',
-      paddingTop: height > 56 ? 8 : 0,
+      counterAxisAlignItems: multiline ? 'MIN' : 'CENTER',
     });
     container.cornerRadius = 4;
     container.strokes = solid(C.outline);
     container.strokeWeight = 1;
     const column = stack('VERTICAL', 'Content');
-    const label = text('Label', { font: fonts.regular, size: 12, color: C.onSurfaceVariant }, 'Label');
-    const value = text('Placeholder', { font: fonts.regular, size: 16, color: C.onSurfaceVariant }, 'Value');
+    const labelStyle = filled
+      ? { font: fonts.regular, size: 12, color: C.onSurfaceVariant }
+      : { font: fonts.regular, size: 16, color: C.onSurfaceVariant };
+    const label = text('Label', labelStyle, 'Label');
+    const value = filled ? text('Value', { font: fonts.regular, size: 16, color: C.onSurface }, 'Value') : null;
     column.appendChild(label);
-    column.appendChild(value);
+    if (value) column.appendChild(value);
     container.appendChild(column);
     if (trailing) container.appendChild(icon(trailing, C.onSurfaceVariant, 24));
     root.appendChild(container);
-    fixed(container, WIDTH, height);
+    bindText(root, label, 'label');
+    if (value) bindText(root, value, 'value');
+    fixed(container, WIDTH, multiline ? 112 : 56);
     container.primaryAxisSizingMode = 'FIXED';
     fill(container);
     fill(column);
-    bindText(root, label, 'label');
-    bindText(root, value, 'value');
     helperRow(root, fonts, 16);
-    root.resize(WIDTH, root.height);
-    root.counterAxisSizingMode = 'FIXED';
   };
+}
+
+function inputField(role: Role, fonts: KitFonts, trailing?: IconName, multiline = false): KitNode {
+  return variantSet(role, VERSION, {
+    Empty: inputContainer(fonts, trailing, multiline, false),
+    Filled: inputContainer(fonts, trailing, multiline, true),
+  });
 }
 
 function checkboxGlyph(): FrameNode {
@@ -102,18 +117,17 @@ function switchGlyph(): FrameNode {
 
 function control(fonts: KitFonts, glyph: () => SceneNode, trailing: boolean, withHelper: boolean) {
   return (root: ComponentNode) => {
+    fixedWidth(root);
     const row = stack('HORIZONTAL', 'Row', { itemSpacing: 12, counterAxisAlignItems: 'CENTER', paddingTop: 8, paddingBottom: 8 });
     const label = text('Label', { font: fonts.regular, size: 16, color: C.onSurface }, 'Label');
     if (!trailing) row.appendChild(glyph());
     row.appendChild(label);
     if (trailing) row.appendChild(glyph());
     root.appendChild(row);
-    fixed(row, WIDTH);
+    fill(row);
     fill(label);
     bindText(root, label, 'label');
     if (withHelper) helperRow(root, fonts, trailing ? 0 : 30);
-    root.resize(WIDTH, root.height);
-    root.counterAxisSizingMode = 'FIXED';
   };
 }
 
@@ -139,18 +153,18 @@ function button(fonts: KitFonts, primary: boolean) {
   };
 }
 
-const BUILDERS: Record<Role, (fonts: KitFonts) => (root: ComponentNode) => void> = {
-  'field.text': (fonts) => inputField(fonts),
-  'field.select': (fonts) => inputField(fonts, 'arrowDropDown'),
-  'field.date': (fonts) => inputField(fonts, 'calendar'),
-  'field.file': (fonts) => inputField(fonts, 'upload'),
-  'field.textarea': (fonts) => inputField(fonts, undefined, 112),
-  'field.checkbox': (fonts) => control(fonts, checkboxGlyph, false, true),
-  'field.switch': (fonts) => control(fonts, switchGlyph, true, true),
-  'option.radio': (fonts) => control(fonts, radioGlyph, false, false),
-  'option.checkbox': (fonts) => control(fonts, checkboxGlyph, false, false),
-  'button.primary': (fonts) => button(fonts, true),
-  'button.secondary': (fonts) => button(fonts, false),
+const BUILDERS: Record<Role, (role: Role, fonts: KitFonts) => KitNode> = {
+  'field.text': (role, fonts) => inputField(role, fonts),
+  'field.select': (role, fonts) => inputField(role, fonts, 'arrowDropDown'),
+  'field.date': (role, fonts) => inputField(role, fonts, 'calendar'),
+  'field.file': (role, fonts) => inputField(role, fonts, 'upload'),
+  'field.textarea': (role, fonts) => inputField(role, fonts, undefined, true),
+  'field.checkbox': (role, fonts) => component(role, role, VERSION, control(fonts, checkboxGlyph, false, true)),
+  'field.switch': (role, fonts) => component(role, role, VERSION, control(fonts, switchGlyph, true, true)),
+  'option.radio': (role, fonts) => component(role, role, VERSION, control(fonts, radioGlyph, false, false)),
+  'option.checkbox': (role, fonts) => component(role, role, VERSION, control(fonts, checkboxGlyph, false, false)),
+  'button.primary': (role, fonts) => component(role, role, VERSION, button(fonts, true)),
+  'button.secondary': (role, fonts) => component(role, role, VERSION, button(fonts, false)),
 };
 
 export const materialKit: Kit = {
@@ -168,5 +182,5 @@ export const materialKit: Kit = {
     bodySize: 16,
     captionSize: 12,
   }),
-  build: (role, fonts) => component(role, role, VERSION, BUILDERS[role](fonts)),
+  build: (role, fonts) => BUILDERS[role](role, fonts),
 };

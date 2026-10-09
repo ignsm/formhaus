@@ -3,6 +3,7 @@ import { resolveFonts } from '../fonts';
 import { ROLES, type Role } from '../roles';
 import type { Kit, KitTheme } from './kit';
 import { materialKit } from './material';
+import type { KitNode } from './primitives';
 
 const KITS: Record<KitId, Kit> = { material: materialKit, ios: materialKit };
 const SECTION_GAP = 48;
@@ -11,7 +12,7 @@ const SECTION_PADDING = 40;
 export interface LoadedKit {
   kit: Kit;
   theme: KitTheme;
-  components: Map<Role, ComponentNode>;
+  components: Map<Role, KitNode>;
 }
 
 export function kitById(id: KitId): Kit {
@@ -23,11 +24,11 @@ export async function loadKit(id: KitId): Promise<LoadedKit> {
   const fonts = await resolveFonts(kit.fontFamilies);
   const config = readConfig();
   const known = config.kitNodes[id] ?? {};
-  const components = new Map<Role, ComponentNode>();
+  const components = new Map<Role, KitNode>();
   const missing: Role[] = [];
   for (const role of ROLES) {
     const node = known[role] ? await figma.getNodeByIdAsync(known[role]!) : null;
-    if (node?.type === 'COMPONENT') components.set(role, node);
+    if (isCurrent(node, kit)) components.set(role, node);
     else missing.push(role);
   }
   if (missing.length > 0) {
@@ -44,9 +45,14 @@ export async function loadKit(id: KitId): Promise<LoadedKit> {
   return { kit, theme: kit.theme(fonts), components };
 }
 
+function isCurrent(node: BaseNode | null, kit: Kit): node is KitNode {
+  if (node?.type !== 'COMPONENT' && node?.type !== 'COMPONENT_SET') return false;
+  return node.getSharedPluginData(PLUGIN_NAMESPACE, 'kitVersion') === String(kit.version);
+}
+
 function createSection(kit: Kit): SectionNode {
   const section = figma.createSection();
-  section.name = `Formhaus · ${kit.name}`;
+  section.name = `Formhaus · ${kit.name} v${kit.version}`;
   section.setSharedPluginData(PLUGIN_NAMESPACE, 'kit', kit.id);
   const page = figma.currentPage;
   const bottom = page.children.reduce((edge, node) => (
@@ -57,7 +63,7 @@ function createSection(kit: Kit): SectionNode {
   return section;
 }
 
-function arrange(section: SectionNode, nodes: ComponentNode[]): void {
+function arrange(section: SectionNode, nodes: KitNode[]): void {
   let x = SECTION_PADDING;
   let rowHeight = 0;
   let y = SECTION_PADDING;

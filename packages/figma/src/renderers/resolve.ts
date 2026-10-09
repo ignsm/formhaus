@@ -20,6 +20,19 @@ async function findNode(binding: Binding): Promise<BaseNode | null> {
   }
 }
 
+export function asComponent(node: ComponentNode | ComponentSetNode): ComponentNode {
+  return node.type === 'COMPONENT_SET' ? (node.defaultVariant as ComponentNode) : node;
+}
+
+export function setVariant(instance: InstanceNode, property: string, value: string): void {
+  if (instance.componentProperties[property]?.type !== 'VARIANT') return;
+  try {
+    instance.setProperties({ [property]: value });
+  } catch {
+    return;
+  }
+}
+
 export function instantiate(component: ComponentNode, binding?: Binding): InstanceNode {
   const instance = component.createInstance();
   if (binding?.variant && component.parent?.type === 'COMPONENT_SET') {

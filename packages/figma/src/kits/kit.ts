@@ -1,6 +1,7 @@
 import type { KitId } from '../config';
 import type { KitFonts } from '../fonts';
 import type { Role } from '../roles';
+import type { KitNode } from './primitives';
 
 export interface KitTheme {
   fonts: KitFonts;
@@ -19,5 +20,5 @@ export interface Kit {
   version: number;
   fontFamilies: string[];
   theme(fonts: KitFonts): KitTheme;
-  build(role: Role, fonts: KitFonts): ComponentNode;
+  build(role: Role, fonts: KitFonts): KitNode;
 }

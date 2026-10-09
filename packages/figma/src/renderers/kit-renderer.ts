@@ -1,11 +1,11 @@
 import type { FormField } from '@formhaus/core';
 import type { Binding, PluginConfig } from '../config';
 import type { KitTheme } from '../kits/kit';
-import { solid, stack, text } from '../kits/primitives';
+import { STATE_PROPERTY, solid, stack, text } from '../kits/primitives';
 import { loadKit } from '../kits/registry';
 import { isOptionRole, roleForField, type Role } from '../roles';
 import { applySlots } from '../text-slots';
-import { componentForBinding, instantiate } from './resolve';
+import { asComponent, componentForBinding, instantiate, setVariant } from './resolve';
 import { labelText, type FormRenderer } from './types';
 
 interface Resolved {
@@ -22,14 +22,15 @@ export async function createKitRenderer(config: PluginConfig): Promise<FormRende
     if (cached) return cached;
     const binding = config.bindings[role];
     const bound = binding ? await componentForBinding(binding) : null;
-    const resolved = bound ? { component: bound, binding } : { component: components.get(role)! };
+    const resolved = bound ? { component: bound, binding } : { component: asComponent(components.get(role)!) };
     cache.set(role, resolved);
     return resolved;
   }
 
-  async function instance(role: Role, values: Parameters<typeof applySlots>[1]): Promise<InstanceNode> {
+  async function instance(role: Role, values: Parameters<typeof applySlots>[1], state?: string): Promise<InstanceNode> {
     const { component, binding } = await resolve(role);
     const node = instantiate(component, binding);
+    if (state) setVariant(node, STATE_PROPERTY, state);
     await applySlots(node, values, binding);
     return node;
   }
@@ -39,11 +40,12 @@ export async function createKitRenderer(config: PluginConfig): Promise<FormRende
     async field(field) {
       const role = roleForField(field);
       if (isOptionRole(role)) return optionGroup(field, role, theme, instance);
+      const filled = field.defaultValue !== undefined && field.defaultValue !== '';
       const node = await instance(role, {
         label: labelText(field),
-        value: field.placeholder || ' ',
+        value: filled ? String(field.defaultValue) : field.placeholder || ' ',
         helper: field.helperText ?? '',
-      });
+      }, filled ? 'Filled' : 'Empty');
       node.name = field.key;
       return node;
     },
