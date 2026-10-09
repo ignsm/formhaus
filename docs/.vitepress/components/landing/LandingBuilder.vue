@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import AutoInput from './AutoInput.vue';
 import BuilderActions from './BuilderActions.vue';
 import BuilderBreak from './BuilderBreak.vue';
@@ -8,7 +8,7 @@ import BuilderGutter, { type GutterAction } from './BuilderGutter.vue';
 import BuilderQuestion from './BuilderQuestion.vue';
 import BuilderTooltip from './BuilderTooltip.vue';
 import { moveTo, usePointerDrag } from './builder-drag';
-import { laterPages, newOption, newPage, setType, type BuilderForm, type BuilderOption, type BuilderPage } from './builder-model';
+import { newOption, newPage, pagesAfter, setType, type BuilderForm, type BuilderOption, type BuilderPage } from './builder-model';
 import { convertToPage, insertPage, insertQuestion, moveBlock, outdent, pageSpan, removeBlock } from './builder-ops';
 import type { Shortcut } from './builder-smart';
 import './builder.css';
@@ -27,6 +27,7 @@ const drag = usePointerDrag({
   drop: (from, at) => { if (moveTo(props.form, from, at)) touch(); },
 });
 const blocks = () => props.form.blocks;
+const later = computed(() => pagesAfter(props.form));
 const inputs = () => [...(root.value?.querySelectorAll<HTMLInputElement>('.nb-doc .auto__input') ?? [])];
 const pageNumber = (index: number) => blocks().slice(0, index + 1).filter((block) => block.kind === 'page').length - 1;
 const lastOfPage = (index: number) => blocks()[index + 1]?.kind !== 'question' && (blocks()[index].kind === 'question' || blocks()[index].kind === 'page');
@@ -182,11 +183,11 @@ function onKey(event: KeyboardEvent) {
         <BuilderGap v-if="index > 0 || block.kind !== 'page' || drag.from.value !== null" :active="drag.over.value === index" @insert="addQuestion(index)" />
         <div class="nb-row" :data-index="index" :data-uid="block.uid" :data-kind="block.kind" :data-dragged="drag.from.value === index">
           <BuilderGutter :form="form" :index="index" :guard="drag.wasDrag" @action="onAction(index, $event)" @grab="drag.down($event, index)" />
-          <BuilderBreak v-if="block.kind === 'page'" :page="block" :position="pageNumber(index)" :pages="laterPages(form, index)" @after="addQuestion(index + 1)" @remove="removeEmpty(index)" @edit="touch" />
+          <BuilderBreak v-if="block.kind === 'page'" :page="block" :position="pageNumber(index)" :pages="later[index]" @after="addQuestion(index + 1)" @remove="removeEmpty(index)" @edit="touch" />
           <BuilderQuestion
             v-else
             :question="block"
-            :pages="laterPages(form, index)"
+            :pages="later[index]"
             :picker="pending === block.uid"
             @settled="pending = null"
             @after="addQuestion(index + 1)"

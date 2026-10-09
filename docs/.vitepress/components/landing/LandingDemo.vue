@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, reactive, ref, shallowRef, watch } from 'vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 import { validateDefinition, type FormDefinition } from '@formhaus/core';
 import seed from '../../../recipes/definitions/onboarding.json';
 import LandingBuilder from './LandingBuilder.vue';
@@ -25,7 +25,9 @@ const model = reactive(fromDefinition(seed as FormDefinition));
 const history = useHistory(model);
 const definition = computed(() => toDefinition(model));
 const source = computed(() => formatJson(definition.value));
-const issues = computed(() => safeValidate(definition.value).length);
+const problems = computed(() => safeValidate(definition.value));
+const issues = computed(() => problems.value.length);
+const liveVersion = ref(0);
 const live = shallowRef(definition.value);
 const graph = computed(() => buildGraph(live.value));
 const tab = ref<Tab>('write');
@@ -58,6 +60,7 @@ watch(definition, (next) => {
       keep.push(id);
     }
     live.value = next;
+    liveVersion.value += 1;
     path.value = keep.length > 1 && keep[0] === first() ? keep : [];
     history_.value = [first()];
     done.value = false;
@@ -117,6 +120,11 @@ function applyJson(text: string) {
   history.replace(fromDefinition(parsed as FormDefinition));
 }
 
+onBeforeUnmount(() => {
+  clearTimeout(timer);
+  clearTimeout(jsonTimer);
+});
+
 function onSandboxKey(event: KeyboardEvent) {
   if ((event.target as HTMLElement).closest('.cm-editor')) return;
   history.onKey(event);
@@ -157,7 +165,7 @@ function onTabKey(event: KeyboardEvent) {
             {{ item.label }}
           </button>
         </div>
-        <span v-if="issues" class="sandbox__issues" role="status" :title="safeValidate(definition).join('\n')">{{ issues }} {{ issues === 1 ? 'issue' : 'issues' }}</span>
+        <span v-if="issues" class="sandbox__issues" role="status" :title="problems.join('\n')">{{ issues }} {{ issues === 1 ? 'issue' : 'issues' }}</span>
         <div class="sandbox__actions">
           <button type="button" class="sandbox__icon" title="Undo ⌘Z" aria-label="Undo" :disabled="!history.canUndo.value" @click="history.undo()"><LucideIcon name="undo" /></button>
           <button type="button" class="sandbox__icon" title="Redo ⇧⌘Z" aria-label="Redo" :disabled="!history.canRedo.value" @click="history.redo()"><LucideIcon name="redo" /></button>
@@ -180,7 +188,7 @@ function onTabKey(event: KeyboardEvent) {
         <div class="sandbox__preview">
           <ClientOnly>
             <LandingDemoForm
-              :key="`${run}-${formatJson(live)}`"
+              :key="`${run}-${liveVersion}`"
               :definition="live"
               :initial="values"
               :path="path"
