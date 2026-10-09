@@ -16,11 +16,13 @@ interface UiMessage extends BindingMessage {
 }
 
 figma.showUI(__html__, { width: 480, height: 680, themeColors: true });
-migrateStoredMap().then((count) => {
+migrateStoredMap().catch(() => 0).then((count) => {
+  const { source, bindings } = currentConfig();
+  if (source === 'custom' && Object.keys(bindings).length === 0) updateComponents('kit');
   sendState();
   void sendSelection();
   if (count > 0) figma.ui.postMessage({ type: 'notice', message: `Your saved JSON component map now lives in Components: ${count} elements bound.` });
-}, (error) => postError('error', error));
+});
 figma.on('selectionchange', () => void sendSelection());
 figma.on('drop', (event) => {
   const role = droppedRole(event);
@@ -74,7 +76,7 @@ function sendState(): void {
 
 async function updateBindings(message: BindingMessage): Promise<void> {
   try {
-    figma.ui.postMessage({ type: 'bindings', ...(await runBindingMessage(message, currentConfig().source)) });
+    figma.ui.postMessage({ type: 'bindings', ...(await runBindingMessage(message)) });
     const { source, bindings } = currentConfig();
     if (source === 'custom' && Object.keys(bindings).length === 0) updateComponents('kit');
   } catch (error) {

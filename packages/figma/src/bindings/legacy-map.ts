@@ -80,7 +80,8 @@ export async function migrateStoredMap(): Promise<number> {
   if (!stored || config.source !== 'custom' || Object.keys(config.bindings).length > 0) return 0;
   const bindings = await bindingsFromMap(stored);
   const count = Object.keys(bindings).length;
+  if (count === 0) return 0;
   figma.root.setSharedPluginData(PLUGIN_NAMESPACE, MIGRATED_KEY, '1');
-  if (count > 0) writeConfig({ ...config, source: 'custom', bindings });
+  writeConfig({ ...config, source: 'custom', bindings });
   return count;
 }

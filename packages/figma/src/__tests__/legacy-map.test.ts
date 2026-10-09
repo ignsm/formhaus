@@ -70,6 +70,14 @@ describe('migrateStoredMap', () => {
     expect(await migrateStoredMap()).toBe(0);
   });
 
+  it('retries later when nothing could be imported', async () => {
+    stored = { ...map, formsConstructorKey: 'gone', buttonKey: 'gone', fields: {} };
+    expect(await migrateStoredMap()).toBe(0);
+    expect(data.get('mapMigrated')).toBeUndefined();
+    stored = map;
+    expect(await migrateStoredMap()).toBe(7);
+  });
+
   it('leaves documents that already use a kit or bindings alone', async () => {
     data.set('config', JSON.stringify({ source: 'kit' }));
     expect(await migrateStoredMap()).toBe(0);
