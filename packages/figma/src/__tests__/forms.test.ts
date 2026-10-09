@@ -4,13 +4,14 @@ import { selectedForm } from '../forms';
 const definition = { id: 'signup', title: 'Sign up', submit: { label: 'Go' }, fields: [] };
 
 function frame(data: Record<string, string>) {
-  return { type: 'FRAME', parent: { type: 'PAGE' }, getSharedPluginData: (_: string, key: string) => data[key] ?? '' };
+  return { type: 'FRAME', parent: { type: 'SECTION', parent: { type: 'PAGE' } }, getSharedPluginData: (_: string, key: string) => data[key] ?? '' };
 }
 
 describe('selectedForm', () => {
   it('reads the definition from the form frame that contains the selection', () => {
     const form = frame({ definitionId: 'signup', definition: JSON.stringify(definition) });
-    const field = { type: 'INSTANCE', parent: { type: 'FRAME', parent: form } };
+    const group = { type: 'FRAME', parent: form, getSharedPluginData: () => '' };
+    const field = { type: 'INSTANCE', parent: group };
     expect(selectedForm([field as unknown as SceneNode])).toEqual(definition);
   });
 

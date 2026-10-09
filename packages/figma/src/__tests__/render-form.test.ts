@@ -34,7 +34,10 @@ function node(extra: Record<string, unknown> = {}) {
 function stubFigma(children: unknown[]) {
   const created: { x: number }[] = [];
   vi.stubGlobal('figma', {
-    currentPage: { children },
+    currentPage: {
+      children,
+      findAllWithCriteria: ({ types }: { types: string[] }) => (children as { type: string }[]).filter((child) => types.includes(child.type)),
+    },
     createText: () => node({ type: 'TEXT' }),
     createFrame: () => {
       const frame = node({ type: 'FRAME' });
@@ -52,6 +55,16 @@ function renderer(field: FormRenderer['field']): FormRenderer {
 describe('renderForm', () => {
   beforeEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('places each new step where the matching old step frame was', async () => {
+    const stepOne = { type: 'FRAME', x: 0, y: 500, width: 300, getSharedPluginData: () => definition.id, remove: vi.fn() };
+    const stepTwo = { type: 'FRAME', x: 0, y: 1200, width: 300, getSharedPluginData: () => definition.id, remove: vi.fn() };
+    const created = stubFigma([stepTwo, stepOne]);
+    const twoSteps = { ...definition, steps: [{ id: 'a', title: 'A', fields: [] }, { id: 'b', title: 'B', fields: [] }] };
+    await renderForm(twoSteps, renderer(async () => node() as unknown as SceneNode));
+    const frames = created.filter((frame) => (frame as unknown as { name: string }).name.includes('Step'));
+    expect(frames.map((frame) => [frame.x, (frame as unknown as { y: number }).y])).toEqual([[0, 500], [0, 1200]]);
   });
 
   it('replaces a previous render of the same definition in place', async () => {

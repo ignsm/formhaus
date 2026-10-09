@@ -3,10 +3,10 @@ import { PLUGIN_NAMESPACE } from './config';
 import { DEFINITION_KEY } from './render-form';
 
 function formFrame(node: BaseNode | null): FrameNode | null {
-  let current = node;
-  while (current && current.parent && current.parent.type !== 'PAGE') current = current.parent;
-  if (current?.type !== 'FRAME') return null;
-  return current.getSharedPluginData(PLUGIN_NAMESPACE, 'definitionId') ? current : null;
+  for (let current = node; current && current.type !== 'PAGE'; current = current.parent) {
+    if (current.type === 'FRAME' && current.getSharedPluginData(PLUGIN_NAMESPACE, 'definitionId')) return current;
+  }
+  return null;
 }
 
 export function selectedForm(selection: readonly SceneNode[]): FormDefinition | null {
