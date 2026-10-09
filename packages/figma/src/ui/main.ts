@@ -58,7 +58,7 @@ const HANDLERS: Record<string, (message: PluginMessage) => void> = {
   form: (message) => form.setCanvasForm(message.definition ?? null),
   selection: (message) => components.setSelection(message.item ?? null),
   bindings: (message) => {
-    components.setRows(message.rows ?? [], message.profiles ?? []);
+    components.setRows(message.rows ?? [], message.profiles ?? [], message.notice?.profileId);
     showOutput(bindingsOutput, message.notice?.text ?? '', message.notice?.tone);
   },
   bindingsError: (message) => showOutput(bindingsOutput, message.message ?? '', 'error'),

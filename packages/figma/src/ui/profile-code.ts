@@ -7,7 +7,9 @@ export function encodeProfile(profile: { name: string; bindings: unknown }): str
 }
 
 export function decodeProfile(code: string): unknown {
-  const body = code.trim().replace(PREFIX, '').replace(/-/g, '+').replace(/_/g, '/');
+  const trimmed = code.trim();
+  if (!trimmed.startsWith(PREFIX) || trimmed.length > 20000) throw new Error('Not a setup code');
+  const body = trimmed.slice(PREFIX.length).replace(/-/g, '+').replace(/_/g, '/');
   const binary = atob(body);
   return JSON.parse(new TextDecoder().decode(Uint8Array.from(binary, (char) => char.charCodeAt(0))));
 }

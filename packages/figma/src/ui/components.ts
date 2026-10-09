@@ -14,7 +14,7 @@ type Post = (message: Record<string, unknown>) => void;
 
 const KIT_NAMES: Record<string, string> = { material: 'Material 3', ios: 'iOS-like' };
 
-export function createComponentsPanel(post: Post, show: (text: string, tone?: 'error' | 'success') => void) {
+export function createComponentsPanel(post: Post, show: (text: string, tone?: 'error' | 'success' | 'info') => void) {
   const profilesBar = createProfilesBar(post, show);
   const list = byId('bindings');
   const tray = byId('tray');
@@ -48,10 +48,10 @@ export function createComponentsPanel(post: Post, show: (text: string, tone?: 'e
 
   renderTray(tray, null, bind);
   return {
-    setRows(next: BindingRow[], profiles: Profile[] = []) {
+    setRows(next: BindingRow[], profiles: Profile[] = [], focusProfile?: string) {
       rows = next;
       render();
-      profilesBar.update(profiles, rows.some((row) => coverageOf(row) === 'yours'));
+      profilesBar.update(profiles, rows.some((row) => coverageOf(row) === 'yours'), focusProfile);
     },
     setSelection(next: SelectionPreview | null) {
       selection = next;
