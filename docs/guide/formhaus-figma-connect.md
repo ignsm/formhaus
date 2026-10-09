@@ -1,9 +1,9 @@
 ---
-title: "/formhaus-figma-connect Claude Code skill"
-description: "Find form components in your Figma library and bind them to the Formhaus Figma plugin with the /formhaus-figma-connect skill and Figma MCP."
+title: "/formhaus:formhaus-figma-connect Claude Code skill"
+description: "Find form components in your Figma library and bind them to the Formhaus Figma plugin with the /formhaus:formhaus-figma-connect skill and Figma MCP."
 ---
 
-# /formhaus-figma-connect
+# /formhaus:formhaus-figma-connect
 
 Find your form components in a Figma library and bind them to the [Figma plugin](/guide/figma#my-components).
 
@@ -13,12 +13,14 @@ Find your form components in a Figma library and bind them to the [Figma plugin]
 - The Formhaus Claude Code plugin
 - [Figma MCP server](https://developers.figma.com/docs/figma-mcp-server/) connected to Claude Code
 
-Install the plugin in Claude Code:
+Install the plugin:
 
+```bash
+claude plugin marketplace add ignsm/formhaus
+claude plugin install formhaus@formhaus
 ```
-/plugin marketplace add ignsm/formhaus
-/plugin install formhaus@formhaus
-```
+
+Inside a Claude Code session, `/plugin marketplace add ignsm/formhaus` and `/plugin install formhaus@formhaus` do the same after a confirmation prompt.
 
 ## Setting up Figma MCP
 
@@ -68,5 +70,5 @@ After the initial setup, you only need steps 1, 4, and 5 for each new form.
 ## Next steps
 
 - [Figma Plugin](/guide/figma): how the plugin works and how bindings fall back
-- [/formhaus-create-form](/guide/formhaus-create-form): generate form definitions from descriptions
+- [/formhaus:formhaus-create-form](/guide/formhaus-create-form): generate form definitions from descriptions
 - [Examples](/guide/examples): example definitions to try with the plugin
