@@ -46,7 +46,7 @@ function onKey(event: KeyboardEvent) {
   <div ref="root" class="nb-block nb-page" :data-uid="page.uid">
     <div class="nb-line nb-page__line">
       <span class="nb-page__icon" aria-hidden="true"><LucideIcon name="file" /></span>
-      <AutoInput v-model="page.title" placeholder="Page title" :label="`Page ${position + 1} title`" @keydown="onKey" @input="emit('edit')" />
+      <AutoInput v-model="page.title" placeholder="Page title" :label="`Page ${position + 1} title`" :select-on-focus="/^Page \d+$/.test(page.title)" @keydown="onKey" @input="emit('edit')" />
       <span v-if="pages.length" ref="anchor" class="nb-anchor">
         <button
           type="button"

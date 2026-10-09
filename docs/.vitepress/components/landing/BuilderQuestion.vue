@@ -12,7 +12,7 @@ import { inferType, questionSlash, shortcut, slashQuery, type Shortcut } from '.
 
 const props = defineProps<{ question: BuilderQuestion; pages: { uid: string; title: string }[]; picker?: boolean }>();
 const emit = defineEmits<{
-  after: []; remove: []; page: []; settled: []; outdent: [position: number];
+  after: []; remove: []; cancel: []; page: []; settled: []; outdent: [position: number];
   shortcut: [shortcut: Shortcut]; newPage: [option: BuilderOption]; edit: [];
 }>();
 
@@ -24,7 +24,7 @@ const picking = ref(false);
 const slashRef = ref<InstanceType<typeof BuilderMenu>>();
 const dismissed = ref(false);
 const icon = computed(() => QUESTION_TYPES.find((item) => item.type === props.question.type)?.icon ?? 'type');
-const query = computed(() => (picking.value ? props.question.label : slashQuery(props.question.label) ?? ''));
+const query = computed(() => (picking.value ? props.question.label.replace(/^\//, '') : slashQuery(props.question.label) ?? ''));
 const suggestion = computed(() => {
   if (dismissed.value || props.question.type !== 'text') return undefined;
   const type = inferType(props.question.label);
@@ -61,7 +61,10 @@ function settle() {
 
 function onInput() {
   emit('edit');
-  if (picking.value) return;
+  if (picking.value) {
+    if (!questionSlash(query.value).length) settle();
+    return;
+  }
   const found = shortcut(props.question.label);
   if (found) {
     props.question.label = '';
@@ -101,11 +104,11 @@ function pickSlash(id: string) {
   focus();
 }
 
-function closeSlash() {
+function closeSlash(blurred = false) {
   const cancel = picking.value && !props.question.label;
   settle();
-  if (cancel) return emit('remove');
-  focus();
+  if (cancel) return emit(blurred ? 'cancel' : 'remove');
+  if (!blurred) focus();
 }
 
 function pickType(id: string) {
@@ -125,7 +128,7 @@ function pickType(id: string) {
           label="Question"
           @keydown="onTitleKey"
           @input="onInput"
-          @blur="picking && closeSlash()"
+          @blur="picking && closeSlash(true)"
         />
         <BuilderMenu
           v-if="menu === 'slash'"
@@ -157,8 +160,11 @@ function pickType(id: string) {
           aria-label="Required"
           @click="question.required = !question.required; emit('edit')"
         >
-          <LucideIcon :name="question.required ? 'asterisk' : 'plus'" />
+          <LucideIcon name="asterisk" />
           Required
+        </button>
+        <button type="button" class="nb-tool nb-tool--ghost" data-tip="Delete question" aria-label="Delete question" @mousedown.prevent @click="emit('remove')">
+          <LucideIcon name="x" />
         </button>
         <button v-if="suggestion" type="button" class="nb-suggest" data-tip="Press → at the end of the text to accept" @click="apply(suggestion); focus()">
           {{ typeLabel(suggestion) }}? <kbd>→</kbd>
