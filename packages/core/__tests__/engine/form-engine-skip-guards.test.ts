@@ -117,6 +117,33 @@ describe('FormEngine skip guards', () => {
     expect(engine.isStepSkipped('kind')).toBe(false);
   });
 
+  it('keeps a committed skip submit when onAfterSubmit throws', async () => {
+    const engine = new FormEngine(endingDefinition(), { kind: 'more' }, { onAfterSubmit: () => { throw new Error('receipt'); } });
+    const submit = vi.fn();
+    await expect(engine.skipStepAsync(submit)).rejects.toMatchObject({ committed: true });
+    expect(submit).toHaveBeenCalledWith({});
+    expect(engine.values.kind).toBe('done');
+    expect(engine.isStepSkipped('kind')).toBe(true);
+  });
+
+  it('does not restore over values edited during a skip submit', async () => {
+    let release!: (allowed: boolean) => void;
+    const onBeforeSubmit = () => new Promise<boolean>((resolve) => { release = resolve; });
+    const engine = new FormEngine(endingDefinition(), { kind: 'more', details: 'old' }, { onBeforeSubmit });
+    const pending = engine.skipStepAsync(vi.fn());
+    engine.setValue('details', 'new');
+    release(false);
+    expect(await pending).toBe(false);
+    expect(engine.values.details).toBe('new');
+  });
+
+  it('restores errors of the step when a skip submit is cancelled', async () => {
+    const engine = new FormEngine(endingDefinition(), { kind: 'more' }, { onBeforeSubmit: () => false });
+    engine.setErrors({ kind: 'Taken' });
+    expect(await engine.skipStepAsync(vi.fn())).toBe(false);
+    expect(engine.errors.kind).toBe('Taken');
+  });
+
   it('skips forward from the last step when the reset values add a step', async () => {
     const sync = new FormEngine(endingDefinition(false, ''), { kind: 'done' });
     const async = new FormEngine(endingDefinition(false, ''), { kind: 'done' });
