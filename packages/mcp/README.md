@@ -27,12 +27,12 @@ Claude Desktop (`claude_desktop_config.json`) and Cursor (`.cursor/mcp.json`):
 
 | Tool | Input | Output |
 |------|-------|--------|
-| `validate_definition` | `definition` (object or JSON string) | `{ valid, errors, warnings, schemaChecked }` |
+| `validate_definition` | `definition` (object or JSON string) | `{ valid, errors, warnings }` |
 | `simulate_path` | `definition`, `answers`, optional `actions` (`next`, `back`, `skip`) | Active step path with visible fields, action trace, validation `errors`, `wouldSubmit`, `submitValues` |
 | `capabilities` | none | Field types, field props, validation rules, condition operators, step and route semantics, adapters |
 | `example_definitions` | optional `id` | List of bundled examples, or one definition |
 
-Without `actions`, `simulate_path` presses Next until the last step or the first validation error. The capabilities are also available as the `formhaus://capabilities` resource.
+`simulate_path` applies `answers` as initial values, then presses the actions in order, or Next until the last step or the first blocking error. `errors` covers visited steps only. Custom validators, `onStepValidate` and lifecycle hooks are not run. The capabilities are also available as the `formhaus://capabilities` resource.
 
 The tool handlers are exported for use without MCP:
 

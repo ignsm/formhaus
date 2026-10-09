@@ -10,20 +10,7 @@ Claude Code:
 claude mcp add formhaus -- npx -y @formhaus/mcp
 ```
 
-Claude Desktop, in `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "formhaus": {
-      "command": "npx",
-      "args": ["-y", "@formhaus/mcp"]
-    }
-  }
-}
-```
-
-Cursor, in `.cursor/mcp.json`:
+Claude Desktop (`claude_desktop_config.json`) and Cursor (`.cursor/mcp.json`):
 
 ```json
 {
@@ -40,14 +27,14 @@ Cursor, in `.cursor/mcp.json`:
 
 | Tool | Input | Output |
 |------|-------|--------|
-| `validate_definition` | `definition` (object or JSON string) | `{ valid, errors, warnings, schemaChecked }` |
+| `validate_definition` | `definition` (object or JSON string) | `{ valid, errors, warnings }` |
 | `simulate_path` | `definition`, `answers`, optional `actions` (`next`, `back`, `skip`) | Active step path with visible fields, action trace, validation `errors`, `wouldSubmit`, `submitValues` |
 | `capabilities` | none | Field types, field props, validation rules, condition operators, step and route semantics, adapters |
 | `example_definitions` | optional `id` | List of bundled examples, or one definition |
 
-Errors are problems the engine rejects, such as a missing `id` or a route to an earlier step. Warnings come from [`validateDefinition()`](/api/definition) and point to likely mistakes.
+Errors come from the [JSON Schema](/api/definition) and from checks the engine rejects, such as a route to an earlier step or duplicate step ids. Warnings come from `validateDefinition()` and point to likely mistakes.
 
-Without `actions`, `simulate_path` presses Next until the last step or the first validation error.
+`simulate_path` applies `answers` as initial values, then presses the actions in order. Without `actions` it presses Next until the last step or the first blocking error. Next is refused on `next: false` steps until an autoAdvance radio is answered. Skip works only on steps with `skip` and submits on the last step. `errors` covers visited steps only. Custom validators, `onStepValidate` and lifecycle hooks are not run.
 
 The capabilities are also available as the `formhaus://capabilities` resource.
 
@@ -66,9 +53,9 @@ Output, without the `validation` report:
   "ok": true,
   "multiStep": true,
   "path": [
-    { "id": "kind", "title": "Choose an account type", "skipped": false, "visibleFields": ["kind"] },
-    { "id": "business", "title": "Company details", "skipped": false, "visibleFields": ["company"] },
-    { "id": "review", "title": "Review and submit", "skipped": false, "visibleFields": [] }
+    { "id": "kind", "title": "Choose an account type", "visited": true, "skipped": false, "visibleFields": ["kind"] },
+    { "id": "business", "title": "Company details", "visited": true, "skipped": false, "visibleFields": ["company"] },
+    { "id": "review", "title": "Review and submit", "visited": true, "skipped": false, "visibleFields": [] }
   ],
   "currentStep": { "id": "review", "title": "Review and submit", "index": 2 },
   "isLastStep": true,
