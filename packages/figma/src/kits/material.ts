@@ -1,5 +1,6 @@
 import type { KitFonts } from '../fonts';
 import type { IconName } from '../icons';
+import type { ButtonKind } from '../roles';
 import type { Kit } from './kit';
 import { buildRole, type KitParts } from './builders';
 import { bindHelperVisibility, bindText, buttonShell, fill, fixed, fixedWidth, icon, solid, stack, text } from './primitives';
@@ -118,17 +119,17 @@ function control(fonts: KitFonts, glyph: () => SceneNode, trailing: boolean, wit
   };
 }
 
-function button(fonts: KitFonts, primary: boolean) {
+function button(fonts: KitFonts, kind: ButtonKind) {
   return (root: ComponentNode) => {
     root.paddingLeft = 24;
     root.paddingRight = 24;
     root.cornerRadius = 20;
-    root.fills = primary ? solid(C.primary) : [];
-    if (!primary) {
+    root.fills = kind === 'primary' ? solid(C.primary) : [];
+    if (kind === 'secondary') {
       root.strokes = solid(C.outline);
       root.strokeWeight = 1;
     }
-    const label = text('Button', { font: fonts.medium, size: 14, color: primary ? C.onPrimary : C.primary }, 'Label');
+    const label = text('Button', { font: fonts.medium, size: 14, color: kind === 'primary' ? C.onPrimary : C.primary }, 'Label');
     buttonShell(root, label, WIDTH, 40);
   };
 }
@@ -159,6 +160,7 @@ export const materialKit: Kit = {
     actionsGap: 8,
     optionGroup: { gap: 0 },
     titleSize: 24,
+    headingSize: 20,
     bodySize: 16,
     captionSize: 12,
   }),
