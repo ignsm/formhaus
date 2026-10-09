@@ -70,8 +70,8 @@ It returns `false` only when `nextErrors` equals `previousErrors` and the engine
 | `nextStepAsync(reason?)` | `Promise<boolean>` | Validates, awaits `onStepValidate` and navigation hooks; `reason` is `next` (default) or `autoAdvance` |
 | `prevStep()` | `void` | Moves to the previous visible step without lifecycle hooks |
 | `prevStepAsync()` | `Promise<boolean>` | Runs navigation hooks and moves back without forward validation |
-| `skipStep()` | `boolean` | Resets the current step to defaults, marks it skipped and advances without validation or lifecycle hooks |
-| `skipStepAsync(submit?)` | `Promise<boolean>` | Same as `skipStep()` with navigation hooks and `reason: 'skip'`; on the last step it submits through `submit` |
+| `skipStep()` | `boolean` | Resets the current step to defaults, marks it skipped and advances without validation or lifecycle hooks; returns `false` without changes when no step follows |
+| `skipStepAsync(submit?)` | `Promise<boolean>` | Runs navigation hooks with `reason: 'skip'` and the pre-skip values, then resets and advances; when no step follows, it submits through `submit` without the step |
 | `isStepSkipped(stepId)` | `boolean` | Whether the step is skipped and left out of validation and submitted values |
 | `goToStepWithField(key)` | `void` | Moves to the visible step containing a field without lifecycle hooks |
 

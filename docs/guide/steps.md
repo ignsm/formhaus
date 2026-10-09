@@ -87,7 +87,7 @@ Add `skip` to show a Skip button on an optional step:
 }
 ```
 
-Skip resets the step's fields to their defaults and moves forward without validation or `onStepValidate`. The skipped step's fields are left out of submit validation and submitted values. Routes and conditions use the reset values. Skip on the last step submits the form without that step. Going back to a skipped step and pressing Continue or Submit includes it again. Skip is not rendered on steps with `next: false`.
+Skip resets the step's fields to their defaults and moves forward without validation or `onStepValidate`. The skipped step's fields are left out of submit validation and submitted values. Routes and conditions use the reset values. Skip on the last step submits the form without that step. Pressing Continue or Submit on a skipped step, or changing one of its fields, includes it again. A skip cancelled by `onBeforeStepChange` or `onBeforeSubmit` changes nothing. Skip is not rendered on steps with `next: false`.
 
 ## Conditional steps
 
