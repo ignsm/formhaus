@@ -34,16 +34,18 @@ export function useRendererActions(form: UseFormEngineReturn, props: FormRendere
     update(key, value);
     if (field.autoAdvance && engine.currentStep?.id === step?.id && !engine.isLastStep) void run(() => engine.nextStepAsync('autoAdvance'));
   }
-  const submit = () => run(async () => {
-    const engine = form.engine;
-    const handler = props.submitHandler;
-    if (engine.definition.submit.disabled?.every((condition) => evaluateCondition(condition, engine.values))
-      && engine.definition.submit.disabled.length > 0) return false;
-    const result = await engine.submitAsync(async (values) => {
+  function send(engine: typeof form.engine, handler: typeof props.submitHandler) {
+    return async (values: Record<string, unknown>) => {
       emit('analyticsEvent', { type: 'form_submitted', fieldCount: Object.keys(values).length });
       if (handler) await handler(values);
       if (engine === form.engine) emit('submit', values);
-    });
+    };
+  }
+  const submit = () => run(async () => {
+    const engine = form.engine;
+    if (engine.definition.submit.disabled?.every((condition) => evaluateCondition(condition, engine.values))
+      && engine.definition.submit.disabled.length > 0) return false;
+    const result = await engine.submitAsync(send(engine, props.submitHandler));
     if (!result) {
       for (const [fieldKey, error] of Object.entries(engine.errors)) {
         emit('analyticsEvent', { type: 'field_error', fieldKey, error });
@@ -51,5 +53,6 @@ export function useRendererActions(form: UseFormEngineReturn, props: FormRendere
     }
     return result;
   });
-  return { update, commit, next, prev, submit, actionError };
+  const skip = () => run(() => form.engine.skipStepAsync(send(form.engine, props.submitHandler)));
+  return { update, commit, next, prev, skip, submit, actionError };
 }
