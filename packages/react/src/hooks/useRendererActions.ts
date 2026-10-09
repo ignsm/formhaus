@@ -1,18 +1,20 @@
 import { evaluateCondition } from '@formhaus/core';
 import type { FormEngine } from '@formhaus/core';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { FormRendererProps } from '../types';
 
 export function useRendererActions(engine: FormEngine, props: FormRendererProps) {
   const { loading, onError, onFieldChange, onSubmit, onAnalyticsEvent } = props;
+  const [actionError, setActionError] = useState<string | null>(null);
   const run = useCallback(async (action: () => Promise<boolean>) => {
     if (loading) return;
+    setActionError(null);
     try { await action(); }
     catch (error) {
       if (onError) onError(error);
-      else engine.setErrors({ _form: error instanceof Error ? error.message : 'Form action failed' });
+      else setActionError(error instanceof Error ? error.message : 'Form action failed');
     }
-  }, [engine, loading, onError]);
+  }, [loading, onError]);
   const next = useCallback(() => run(() => engine.nextStepAsync()), [run, engine]);
   const prev = useCallback(() => run(() => engine.prevStepAsync()), [run, engine]);
   const update = useCallback((key: string, value: unknown) => {
@@ -37,10 +39,10 @@ export function useRendererActions(engine: FormEngine, props: FormRendererProps)
     });
     if (!result) {
       for (const [key, error] of Object.entries(engine.errors)) {
-        if (key !== '_form') onAnalyticsEvent?.({ type: 'field_error', fieldKey: key, error });
+        onAnalyticsEvent?.({ type: 'field_error', fieldKey: key, error });
       }
     }
     return result;
   }), [engine, run, onSubmit, onAnalyticsEvent]);
-  return { next, prev, update, commit, submit };
+  return { next, prev, update, commit, submit, actionError };
 }

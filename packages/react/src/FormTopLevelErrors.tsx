@@ -1,13 +1,14 @@
 import type { FormEngine } from '@formhaus/core';
 import { useFormSnapshot } from './hooks/useEngineSnapshot';
 
-export function FormTopLevelErrors({ engine }: { engine: FormEngine }) {
+export function FormTopLevelErrors({ engine, actionError }: { engine: FormEngine; actionError?: string | null }) {
   useFormSnapshot(engine);
-  if (engine.topLevelErrors.length === 0) return null;
+  const errors = actionError ? [...engine.topLevelErrors, actionError] : engine.topLevelErrors;
+  if (errors.length === 0) return null;
 
   return (
     <div className="fh-form__top-errors">
-      {engine.topLevelErrors.map((error) => (
+      {errors.map((error) => (
         <p key={error} className="fh-form__top-error">
           {error}
         </p>
