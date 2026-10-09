@@ -9,6 +9,12 @@ import { useFormSnapshot } from './hooks/useEngineSnapshot';
 import { useRendererActions } from './hooks/useRendererActions';
 import type { FormRendererProps } from './types';
 
+function sameErrors(a: Record<string, string> | undefined, b: Record<string, string>): boolean {
+  if (!a) return false;
+  const keys = Object.keys(b);
+  return keys.length === Object.keys(a).length && keys.every((key) => a[key] === b[key]);
+}
+
 export function HeadlessFormRenderer(props: FormRendererProps) {
   const { definition, initialValues, loading = false, components, optionsProviders,
     ActionsComponent, ProgressComponent, onAnalyticsEvent } = props;
@@ -33,8 +39,13 @@ export function HeadlessFormRenderer(props: FormRendererProps) {
   const previousStep = useRef(engine.currentStep?.id);
   const actions = useRendererActions(engine, props);
 
+  const appliedErrors = useRef<{ engine: typeof engine; errors: Record<string, string> } | null>(null);
   useEffect(() => {
-    if (props.errors) engine.setErrors(props.errors);
+    if (!props.errors) return;
+    const applied = appliedErrors.current;
+    if (applied?.engine === engine && sameErrors(applied.errors, props.errors)) return;
+    appliedErrors.current = { engine, errors: props.errors };
+    engine.setErrors(props.errors);
   }, [props.errors, engine]);
 
   useEffect(() => {

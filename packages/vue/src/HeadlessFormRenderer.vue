@@ -47,12 +47,18 @@ const {
   submitting,
 } = form;
 
+function sameErrors(a: Record<string, string> | undefined, b: Record<string, string>): boolean {
+  if (!a) return false;
+  const keys = Object.keys(b);
+  return keys.length === Object.keys(a).length && keys.every((key) => a[key] === b[key]);
+}
+
 const resolvedOptions = useFieldOptions(visibleFields, () => form.engine, props.optionsProviders);
 
 watch(
   () => props.errors,
-  (newErrors) => {
-    if (newErrors) {
+  (newErrors, oldErrors) => {
+    if (newErrors && !sameErrors(oldErrors, newErrors)) {
       form.engine.setErrors(newErrors);
     }
   },
