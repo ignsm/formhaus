@@ -28,22 +28,6 @@ export function formatJson(value: unknown): string {
   return `${format(value, 0, '')}\n`;
 }
 
-export function stepRanges(source: string, ids: string[]): Record<string, [number, number]> {
-  const lines = source.split('\n');
-  const indent = (line: string) => line.length - line.trimStart().length;
-  const ranges: Record<string, [number, number]> = {};
-  for (const id of ids) {
-    const at = lines.findIndex((line) => line.trim() === `"id": ${JSON.stringify(id)},`);
-    if (at < 0) continue;
-    let start = at;
-    while (start > 0 && lines[start].trim() !== '{') start--;
-    let end = start + 1;
-    while (end < lines.length && !(indent(lines[end]) === indent(lines[start]) && lines[end].trim().startsWith('}'))) end++;
-    ranges[id] = [start, end];
-  }
-  return ranges;
-}
-
 export type TokenKind = 'key' | 'string' | 'literal' | 'punct';
 export interface Token { kind: TokenKind; text: string }
 
