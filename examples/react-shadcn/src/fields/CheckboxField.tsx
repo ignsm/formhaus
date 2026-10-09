@@ -2,7 +2,7 @@ import type { FieldComponentProps } from '@formhaus/react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
-export function CheckboxField({ field, value, error, loading, disabled, onChange }: FieldComponentProps) {
+export function CheckboxField({ field, value, error, loading, disabled, onChange, onBlur }: FieldComponentProps) {
   return (
     <div className="grid gap-2">
       <Label className="font-normal">
@@ -12,6 +12,7 @@ export function CheckboxField({ field, value, error, loading, disabled, onChange
           disabled={disabled || loading}
           aria-invalid={!!error}
           onCheckedChange={(checked) => onChange(checked)}
+          onBlur={onBlur}
         />
         {field.label}
       </Label>
