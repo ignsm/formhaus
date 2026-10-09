@@ -47,6 +47,7 @@ export function homeJsonLd(description: string) {
           'https://www.npmjs.com/package/@formhaus/core',
           'https://www.npmjs.com/package/@formhaus/react',
           'https://www.npmjs.com/package/@formhaus/vue',
+          'https://www.npmjs.com/package/@formhaus/mcp',
         ],
       },
     ],

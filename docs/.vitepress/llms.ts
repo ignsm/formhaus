@@ -2,10 +2,12 @@ import llmstxt from 'vitepress-plugin-llms'
 import { repoUrl, siteUrl } from './site'
 
 const description =
-  'Formhaus is an open-source JSON form definition that runs the same everywhere: a zero-dependency engine (@formhaus/core) with validation, conditional visibility, multi-step and branching routes; React (@formhaus/react) and Vue (@formhaus/vue) renderers; a Figma plugin that draws the same definition with your design system; a JSON Schema; and Claude Code skills. MIT licensed.'
+  'Formhaus is an open-source JSON form definition that runs the same everywhere: a zero-dependency engine (@formhaus/core) with validation, conditional visibility, multi-step and branching routes; React (@formhaus/react) and Vue (@formhaus/vue) renderers; a Figma plugin that draws the same definition with your design system; a JSON Schema; an MCP server (@formhaus/mcp) that validates definitions and simulates step paths for AI agents; and Claude Code skills. MIT licensed.'
 
 const details = [
   'Install: `npm i @formhaus/core @formhaus/react` (or `@formhaus/vue`).',
+  '',
+  'Claude Code: `claude mcp add formhaus -- npx -y @formhaus/mcp`',
   '',
   `JSON Schema: ${siteUrl}/schema/form-definition.json`,
   '',
