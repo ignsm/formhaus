@@ -112,10 +112,11 @@
   padding: 6px 12px;
 }
 body:not(.has-selection) .bind-btn { display: none; }
-.card-actions:not(:has(.icon-btn:not(.bind-btn))) { display: none; }
+body:not(.has-selection) .only-bind { display: none; }
+.card:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .has-selection .card { cursor: pointer; }
 .has-selection .card:hover .card-overlay, .card.is-target .card-overlay { display: flex; }
-.has-selection .card:hover .card-actions { opacity: 0; }
+.has-selection .card:hover:not(:focus-within) .card-actions { opacity: 0; }
 .is-dragging .card { border-style: dashed; }
 
 .footnote { color: var(--text-3); padding-bottom: 4px; text-align: center; }
@@ -140,6 +141,7 @@ body:not(.has-selection) .bind-btn { display: none; }
   padding: 16px;
   width: 100%;
 }
+.sheet-hint { color: var(--text-2); font-size: 11px; }
 .sheet-header { align-items: flex-start; display: flex; justify-content: space-between; }
 .sheet-title { font-size: 14px; font-weight: 600; }
 .sheet-sub { color: var(--text-2); font-size: 11px; }
@@ -147,4 +149,4 @@ body:not(.has-selection) .bind-btn { display: none; }
 .sheet-preview img { max-height: 100%; max-width: 100%; object-fit: contain; }
 .sheet-field { align-items: center; display: grid; gap: 12px; grid-template-columns: 140px 1fr; }
 .sheet-field span { color: var(--text-2); font-size: 11px; font-weight: 500; }
-.sheet-field select { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; width: 100%; }
+.sheet-field select { width: 100%; }

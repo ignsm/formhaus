@@ -39,6 +39,17 @@ body {
 
 button, select, textarea, input { color: inherit; font: inherit; }
 
+select {
+  appearance: none;
+  background: var(--bg) url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%20-960%20960%20960%22%3E%3Cpath%20fill%3D%22%238a8a8f%22%20d%3D%22M469-358q-5-2-10-7L261-563q-9-9-8.5-21.5T262-606q9-9%2021.5-9t21.5%209l175%20176%20176-176q9-9%2021-8.5t21%209.5q9%209%209%2021.5t-9%2021.5L501-365q-5%205-10%207t-11%202q-6%200-11-2Z%22/%3E%3C/svg%3E") no-repeat right 8px center / 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 6px 30px 6px 10px;
+}
+select:hover { border-color: var(--border-strong); }
+select:focus { border-color: var(--brand); outline: none; }
+
 .topbar { background: var(--bg); border-bottom: 1px solid var(--border); flex-shrink: 0; padding: 8px 12px; }
 .segmented { background: var(--bg-2); border-radius: var(--radius); display: flex; gap: 2px; padding: 2px; }
 .tab {
@@ -141,13 +152,7 @@ textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand);
 .source-card input { position: absolute; right: 12px; top: 12px; accent-color: var(--brand); }
 .source-title { font-size: 12px; font-weight: 600; padding-right: 20px; }
 .source-sub { color: var(--text-2); font-size: 11px; }
-.source-card select {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  margin-top: 8px;
-  padding: 4px 6px;
-}
+.source-card select { margin-top: 8px; }
 .source-card .link { align-self: flex-start; margin-top: 10px; }
 
 .panel-footer { background: var(--bg); bottom: -16px; display: flex; flex-direction: column; gap: 8px; margin: 0 -16px -16px; padding: 12px 16px 16px; position: sticky; }
