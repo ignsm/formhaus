@@ -5,7 +5,8 @@ import { STATE_PROPERTY, solid, stack, text } from '../kits/primitives';
 import { loadKit } from '../kits/registry';
 import { isOptionRole, ROLE_FALLBACKS, ROLE_LABELS, roleForField, type Role } from '../roles';
 import { applySlots } from '../text-slots';
-import { customTheme } from './custom-theme';
+import { customTheme, textButtonStyle } from './custom-theme';
+import { textButton } from './text-button';
 import { asComponent, componentForBinding, instantiate, setVariant } from './resolve';
 import { labelText, type FormRenderer } from './types';
 
@@ -70,8 +71,13 @@ export async function createKitRenderer(config: PluginConfig): Promise<KitRender
       node.name = ROLE_LABELS[role];
       return node;
     },
-    async button(label, primary) {
-      const node = await instance(primary ? 'button.primary' : 'button.secondary', { label });
+    async button(label, kind) {
+      const primary = kind === 'text' && custom && !(await bound('button.text')) ? await bound('button.primary') : null;
+      if (primary) {
+        const fallback = { font: theme.fonts.medium, size: theme.bodySize, color: theme.text };
+        return textButton(label, await textButtonStyle(primary.component, fallback), primary.component);
+      }
+      const node = await instance(`button.${kind}`, { label });
       node.name = label;
       return node;
     },

@@ -38,3 +38,15 @@ export async function customTheme(base: KitTheme, sample?: ComponentNode): Promi
   const groupLabel = label ? await styleOf(label) : undefined;
   return { ...NEUTRAL, fonts, groupLabel, card: { ...NEUTRAL.card, width: base.card.width } };
 }
+
+function solidHex(node: SceneNode): string | undefined {
+  const fills = 'fills' in node && Array.isArray(node.fills) ? (node.fills as Paint[]) : [];
+  const fill = fills.find((paint) => paint.type === 'SOLID' && paint.visible !== false);
+  return fill?.type === 'SOLID' ? `#${toHex(fill.color.r)}${toHex(fill.color.g)}${toHex(fill.color.b)}` : undefined;
+}
+
+export async function textButtonStyle(primary: ComponentNode, fallback: TextStyle): Promise<TextStyle> {
+  const label = primary.findOne((node) => node.type === 'TEXT') as TextNode | null;
+  const style = label ? await styleOf(label) : undefined;
+  return { ...(style ?? fallback), color: solidHex(primary) ?? style?.color ?? fallback.color };
+}
