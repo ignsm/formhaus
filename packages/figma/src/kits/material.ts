@@ -177,6 +177,7 @@ export const materialKit: Kit = {
     text: C.onSurface,
     muted: C.onSurfaceVariant,
     card: { fill: C.surface, radius: 28, padding: 24, gap: 16, width: 400 },
+    actionsGap: 8,
     optionGroup: { gap: 0 },
     titleSize: 24,
     bodySize: 16,

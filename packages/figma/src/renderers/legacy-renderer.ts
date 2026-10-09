@@ -18,6 +18,7 @@ export async function createLegacyRenderer(): Promise<FormRenderer> {
     text: '#1A1A1A',
     muted: '#808080',
     card: { fill: '#FFFFFF', radius: 12, padding: 24, gap: 16, width: 400 },
+    actionsGap: 8,
     optionGroup: { gap: 4 },
     titleSize: 24,
     bodySize: 14,

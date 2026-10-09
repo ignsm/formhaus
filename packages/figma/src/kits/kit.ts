@@ -8,6 +8,7 @@ export interface KitTheme {
   text: string;
   muted: string;
   card: { fill: string; radius: number; padding: number; gap: number; width: number };
+  actionsGap: number;
   optionGroup: { gap: number; fill?: string; radius?: number; separator?: string };
   titleSize: number;
   bodySize: number;

@@ -104,7 +104,9 @@ async function appendButtons(
   isLast: boolean,
   isMultiStep: boolean,
 ): Promise<void> {
-  append(frame, await renderer.button(isLast ? definition.submit.label : 'Continue', true));
-  if (isMultiStep && !isFirst) append(frame, await renderer.button('Back', false));
-  if (definition.cancel && isFirst) append(frame, await renderer.button(definition.cancel.label, false));
+  const actions = stack('VERTICAL', 'Actions', { itemSpacing: renderer.theme.actionsGap });
+  append(frame, actions);
+  append(actions, await renderer.button(isLast ? definition.submit.label : 'Continue', true));
+  if (isMultiStep && !isFirst) append(actions, await renderer.button('Back', false));
+  if (definition.cancel && isFirst) append(actions, await renderer.button(definition.cancel.label, false));
 }
