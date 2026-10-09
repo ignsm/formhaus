@@ -29,7 +29,17 @@ export interface BuilderQuestion {
   extra: Partial<FormField>;
   key?: string;
 }
-export interface BuilderPage { kind: 'page'; uid: string; title: string; next: string | null; nextLabel: string; backLabel: string; id?: string }
+export interface BuilderPage {
+  kind: 'page';
+  uid: string;
+  title: string;
+  next: string | null;
+  nextLabel: string;
+  backLabel: string;
+  id?: string;
+  extra: Partial<FormStep>;
+  routes?: StepRoute[];
+}
 export const DEFAULT_NEXT = 'Continue';
 export const DEFAULT_BACK = 'Back';
 export type BuilderBlock = BuilderQuestion | BuilderPage;
@@ -42,7 +52,7 @@ export const hasOptions = (type: FieldType) => type === 'radio' || type === 'mul
 export const canBranch = (type: FieldType) => type === 'radio' || type === 'select';
 export const placeholderFor = (type: FieldType) => QUESTION_TYPES.find((item) => item.type === type)?.placeholder ?? 'Question';
 export const typeLabel = (type: FieldType) => QUESTION_TYPES.find((item) => item.type === type)?.label ?? type.charAt(0).toUpperCase() + type.slice(1);
-export const newPage = (title = ''): BuilderPage => ({ kind: 'page', uid: uid(), title, next: null, nextLabel: '', backLabel: '' });
+export const newPage = (title = ''): BuilderPage => ({ kind: 'page', uid: uid(), title, next: null, nextLabel: '', backLabel: '', extra: {} });
 export const newOption = (label = ''): BuilderOption => ({ uid: uid(), label, jump: null });
 export const pageTitle = (page: BuilderPage | undefined, position: number) => page?.title.trim() || `Page ${position + 1}`;
 
@@ -83,73 +93,24 @@ export function pagesAfter(form: BuilderForm): PageRef[][] {
   return result;
 }
 
-function words(label: string): string[] {
+export function words(label: string): string[] {
   return label.toLowerCase().normalize('NFKD').replace(/\p{M}/gu, '').replace(/['’]/g, '')
     .replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
 }
 
-function unique(base: string, taken: Set<string>, join = ''): string {
+export function unique(base: string, taken: Set<string>, join = ''): string {
   let value = base;
   for (let index = 2; taken.has(value); index++) value = `${base}${join}${index}`;
   taken.add(value);
   return value;
 }
 
-function keyFromLabel(label: string, taken: Set<string>): string {
+export function keyFromLabel(label: string, taken: Set<string>): string {
   const base = words(label).map((word, index) => (index ? word[0].toUpperCase() + word.slice(1) : word)).join('') || 'question';
   return unique(/^\d/.test(base) ? `q${base}` : base, taken);
 }
 
 const slug = (label: string, taken: Set<string>, fallback: string) => unique(words(label).join('-') || fallback, taken, '-');
-
-function question(field: FormField, routes: StepRoute[], ids: Map<string, string>): BuilderQuestion {
-  const { key, type, label, options, validation, ...extra } = field;
-  const { required, ...rules } = validation ?? {};
-  if (typeof required === 'string') (rules as Record<string, unknown>).required = required;
-  const shown = (value: string) => routes.find((item) => item.show?.length === 1 && item.show[0].field === key && item.show[0].eq === value)?.to;
-  const fallback = routes.find((item) => !item.show?.length && !item.showAny?.length)?.to;
-  const open = (options ?? []).filter((option) => !shown(option.value));
-  const jump = (value: string) => {
-    const to = shown(value) ?? (routes.some((item) => item.show?.[0]?.field === key) && open.length === 1 && open[0].value === value ? fallback : undefined);
-    return to ? ids.get(to) ?? null : null;
-  };
-  const result: BuilderQuestion = {
-    kind: 'question',
-    uid: uid(),
-    label: label ?? '',
-    type,
-    required: !!required,
-    options: (options ?? []).map((option) => {
-      const own: BuilderOption = { uid: uid(), label: option.label, jump: jump(option.value) };
-      if (option.value !== words(option.label).join('-')) own.value = option.value;
-      return own;
-    }),
-    extra: { ...extra, ...(Object.keys(rules).length ? { validation: rules } : {}) },
-  };
-  if (key !== keyFromLabel(label ?? '', new Set())) result.key = key;
-  return result;
-}
-
-export function fromDefinition(definition: FormDefinition): BuilderForm {
-  const base = { id: definition.id, title: definition.title ?? '', submit: definition.submit?.label ?? 'Submit' };
-  if (!definition.steps) return { ...base, blocks: (definition.fields ?? []).map((field) => question(field, [], new Map())) };
-  const steps = definition.steps;
-  const label = (action: FormStep['next']) => (typeof action === 'object' && action ? action.label : '');
-  const pages = steps.map((step) => {
-    const page = { ...newPage(step.title ?? step.id), nextLabel: label(step.next), backLabel: label(step.back) };
-    if (step.id !== words(step.title ?? '').join('-')) page.id = step.id;
-    return page;
-  });
-  const ids = new Map(steps.map((step, index) => [step.id, pages[index].uid]));
-  const blocks = steps.flatMap((step, index): BuilderBlock[] => {
-    const questions = step.fields.map((field) => question(field, step.routes ?? [], ids));
-    const fallback = step.routes?.find((item) => !item.show?.length && !item.showAny?.length)?.to;
-    const claimed = questions.some((item) => item.options.some((option) => option.jump === (fallback && ids.get(fallback))));
-    if (fallback && fallback !== steps[index + 1]?.id && !claimed) pages[index].next = ids.get(fallback) ?? null;
-    return [pages[index], ...questions];
-  });
-  return { ...base, blocks };
-}
 
 function field(item: BuilderQuestion, keys: Set<string>, values: Map<string, string>): FormField {
   const { validation, ...extra } = item.extra;
@@ -196,12 +157,18 @@ export function toDefinition(form: BuilderForm): FormDefinition {
     else if (routes[index].length && index + 1 < parts.length) routes[index].push({ to: ids[index + 1] });
   });
   const steps = parts.map((part, index): FormStep => {
-    const step: FormStep = { id: ids[index], title: pageTitle(part.page, index), fields: fields[index] };
     const next = part.page?.nextLabel.trim();
     const back = part.page?.backLabel.trim();
-    if (next && next !== DEFAULT_NEXT) step.next = { label: next };
-    if (back && back !== DEFAULT_BACK) step.back = { label: back };
-    if (routes[index].length) step.routes = routes[index];
+    const step: FormStep = {
+      id: ids[index],
+      title: pageTitle(part.page, index),
+      ...part.page?.extra,
+      ...(next && next !== DEFAULT_NEXT ? { next: { label: next } } : {}),
+      ...(back && back !== DEFAULT_BACK ? { back: { label: back } } : {}),
+      fields: fields[index],
+    };
+    const own = part.page?.routes ?? routes[index];
+    if (own.length) step.routes = own;
     return step;
   });
   return { ...head, steps } as FormDefinition;
