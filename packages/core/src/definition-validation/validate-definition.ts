@@ -54,5 +54,10 @@ export function validateDefinition(definition: FormDefinition): string[] {
   for (const cycle of detectCycles(graph)) {
     warnings.push(`Circular show condition detected: ${cycle.join(' -> ')}`);
   }
+  const steps = definition.steps ?? [];
+  for (const step of steps.filter((step) => step.skip)) {
+    if (steps.length === 1) warnings.push(`Step "${step.id}" has "skip" on a single-step form. Skipping submits the form without its values.`);
+    if (step.next === false) warnings.push(`Step "${step.id}" has "skip" with "next: false". The Skip button is not rendered.`);
+  }
   return [...warnings, ...routeWarnings(definition), ...routeFallthroughWarnings(definition)];
 }
