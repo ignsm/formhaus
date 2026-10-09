@@ -9,8 +9,6 @@ import { useFormSnapshot } from './hooks/useEngineSnapshot';
 import { useRendererActions } from './hooks/useRendererActions';
 import type { FormRendererProps } from './types';
 
-
-
 export function HeadlessFormRenderer(props: FormRendererProps) {
   const { definition, initialValues, loading = false, components, optionsProviders,
     ActionsComponent, ProgressComponent, onAnalyticsEvent } = props;

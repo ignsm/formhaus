@@ -47,8 +47,6 @@ const {
   submitting,
 } = form;
 
-
-
 const resolvedOptions = useFieldOptions(visibleFields, () => form.engine, props.optionsProviders);
 
 watch(

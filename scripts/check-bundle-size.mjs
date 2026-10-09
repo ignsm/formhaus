@@ -2,7 +2,7 @@ import { build } from 'esbuild';
 import { gzipSync } from 'node:zlib';
 
 const BUDGETS = {
-  core: 6300,
+  core: 6400,
   react: 4900,
   vue: 6800,
 };

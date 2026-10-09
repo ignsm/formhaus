@@ -86,6 +86,8 @@ export async function runModel(
       if (stillActive && engine.currentStep?.id !== before) fail(`setValue moved the user off active step ${before}`);
     }
     if (command.type === 'server') engine.setErrors({ [command.key]: SERVER_ERROR });
+    if (command.type === 'jump') engine.goToStepWithField(command.key);
+    if (command.type === 'validateOne') engine.validateField(command.key);
     if (command.type === 'next') run(engine.nextStepAsync());
     if (command.type === 'back') run(engine.prevStepAsync());
     if (command.type === 'submit') run(submit());
