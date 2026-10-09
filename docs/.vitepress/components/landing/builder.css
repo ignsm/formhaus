@@ -158,25 +158,6 @@
   color: var(--vp-c-text-1);
 }
 
-.nb-submit {
-  margin-top: 16px;
-}
-
-.nb-submit:hover,
-.nb-submit:focus-within {
-  background: transparent;
-}
-
-.nb-chip {
-  display: inline-flex;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--vp-c-brand-1);
-  background: var(--vp-c-brand-soft);
-}
-
 .nb button {
   cursor: pointer;
 }

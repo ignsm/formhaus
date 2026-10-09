@@ -98,6 +98,36 @@
   background: var(--vp-c-default-soft);
 }
 
+.nb-actions {
+  display: flex;
+  gap: 8px;
+  margin: 6px -8px 4px;
+  padding: 0 8px;
+}
+
+.nb-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+  background: var(--vp-c-default-soft);
+  cursor: text;
+}
+
+.nb-btn--primary {
+  margin-left: auto;
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.nb-btn:focus-within {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 1px;
+}
+
 @media (max-width: 767px) {
   .nb-row {
     display: flex;
