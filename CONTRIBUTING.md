@@ -30,7 +30,7 @@ pnpm build    # build all packages
 pnpm test     # test all packages (core + figma + react + vue)
 ```
 
-The CI workflow runs on pushes to `main` and pull requests targeting `main`. A stacked PR targeting another feature branch does not trigger it. Run the applicable checks locally and ensure CI passes after retargeting to `main`.
+CI runs on pushes to `main` and on PRs targeting `main`; build and test must pass. A stacked PR based on another branch gets no CI until it is retargeted to `main`.
 
 ## Run docs locally
 

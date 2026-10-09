@@ -32,8 +32,6 @@ All rules are optional. Combine them freely.
 | `matchField` | `string` | Value equals another field's value | "Fields must match" |
 | `validator` | `string` | Custom validator function returns null | (your message) |
 
-`required` accepts `false` and `0` as supplied values. To require a checked consent checkbox, also add a `pattern: "^true$"` rule or a custom validator; see [Checkbox](/guide/fields#checkbox).
-
 Length, range, pattern, and matching rules have a corresponding `...Message` field. For `required`, pass the message directly: `required: "Please enter your name"`.
 
 ## matchField
