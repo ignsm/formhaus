@@ -6,10 +6,11 @@ import LandingBuilder from './LandingBuilder.vue';
 import LandingFlow from './LandingFlow.vue';
 import LandingJson from './LandingJson.vue';
 import LucideIcon from './LucideIcon.vue';
+import { useHistory } from './builder-history';
 import { fromDefinition, toDefinition } from './builder-model';
 import { buildGraph, nextStep } from './flow-graph';
 import { flowState } from './flow-state';
-import { formatJson, stepRanges } from './json-format';
+import { formatJson } from './json-format';
 
 const LandingDemoForm = defineAsyncComponent(() => import('./LandingDemoForm.vue'));
 
@@ -21,51 +22,93 @@ const tabs = [
 type Tab = (typeof tabs)[number]['id'];
 
 const model = reactive(fromDefinition(seed as FormDefinition));
+const history = useHistory(model);
 const definition = computed(() => toDefinition(model));
 const source = computed(() => formatJson(definition.value));
-const issues = computed(() => validateDefinition(definition.value).length);
+const issues = computed(() => safeValidate(definition.value).length);
 const live = shallowRef(definition.value);
 const graph = computed(() => buildGraph(live.value));
 const tab = ref<Tab>('write');
-const group = ref(0);
+const edited = ref(false);
 const run = ref(0);
 const first = () => live.value.steps?.[0]?.id ?? '';
-const history = ref<string[]>([first()]);
+const history_ = ref<string[]>([first()]);
 const values = ref<Record<string, unknown>>({});
 const done = ref(false);
+const jsonError = ref('');
+
+function safeValidate(value: FormDefinition): string[] {
+  try {
+    return validateDefinition(value);
+  } catch (error) {
+    return [error instanceof Error ? error.message : 'Invalid definition'];
+  }
+}
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 watch(definition, (next) => {
   clearTimeout(timer);
   timer = setTimeout(() => {
     live.value = next;
-    history.value = [first()];
+    history_.value = [first()];
     done.value = false;
   }, 120);
 });
 
-const state = computed(() => flowState({ definition: live.value, graph: graph.value, history: history.value, values: values.value, done: done.value }));
-const range = computed(() => {
-  const id = definition.value.steps?.[group.value]?.id;
-  return id ? stepRanges(source.value, [id])[id] : undefined;
-});
+const state = computed(() => flowState({ definition: live.value, graph: graph.value, history: history_.value, values: values.value, done: done.value }));
 const progress = computed(() => {
   const path: string[] = [];
   for (let id: string | undefined = first(); id && !path.includes(id); id = nextStep(live.value, id, values.value)) path.push(id);
-  const at = path.indexOf(history.value[history.value.length - 1]);
+  const at = path.indexOf(history_.value[history_.value.length - 1]);
   return path.length > 1 ? `Step ${Math.max(1, at + 1)} of ${path.length}` : 'One page';
 });
 
 function onStep(id: string) {
-  const index = history.value.indexOf(id);
-  history.value = index >= 0 ? history.value.slice(0, index + 1) : [...history.value, id];
+  const index = history_.value.indexOf(id);
+  history_.value = index >= 0 ? history_.value.slice(0, index + 1) : [...history_.value, id];
 }
 
 function restart() {
   values.value = {};
-  history.value = [first()];
+  history_.value = [first()];
   done.value = false;
   run.value += 1;
+}
+
+function reset() {
+  history.replace(fromDefinition(seed as FormDefinition));
+  jsonError.value = '';
+  restart();
+}
+
+let jsonTimer: ReturnType<typeof setTimeout> | undefined;
+function onJson(text: string) {
+  clearTimeout(jsonTimer);
+  jsonTimer = setTimeout(() => applyJson(text), 300);
+}
+
+function applyJson(text: string) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Invalid JSON';
+    const at = /position (\d+)/.exec(message);
+    const line = at ? text.slice(0, Number(at[1])).split('\n').length : undefined;
+    jsonError.value = `${line ? `Line ${line}: ` : ''}${message.replace(/ in JSON.*$/, '').replace(/^JSON\.parse: /, '')}`;
+    return;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return void (jsonError.value = 'Expected an object with "fields" or "steps"');
+  const problems = safeValidate(parsed as FormDefinition);
+  if (problems.length) return void (jsonError.value = problems[0]);
+  jsonError.value = '';
+  edited.value = true;
+  history.replace(fromDefinition(parsed as FormDefinition));
+}
+
+function onSandboxKey(event: KeyboardEvent) {
+  if ((event.target as HTMLElement).closest('.cm-editor')) return;
+  history.onKey(event);
 }
 
 function onTabKey(event: KeyboardEvent) {
@@ -83,7 +126,7 @@ function onTabKey(event: KeyboardEvent) {
     <p class="lp-eyebrow">Live demo</p>
     <h2 id="demo-title" class="lp-title">Write it like a doc</h2>
     <p class="lp-lead">Type the questions. The form, the flow and the JSON follow.</p>
-    <div class="sandbox" :data-tab="tab">
+    <div class="sandbox" :data-tab="tab" @keydown="onSandboxKey">
       <div class="sandbox__bar sandbox__bar--left">
         <span class="sandbox__dots" aria-hidden="true"><i /><i /><i /></span>
         <div class="sandbox__tabs" role="tablist" aria-label="Demo view" @keydown="onTabKey">
@@ -103,17 +146,22 @@ function onTabKey(event: KeyboardEvent) {
             {{ item.label }}
           </button>
         </div>
-        <span v-if="issues" class="sandbox__issues" role="status">{{ issues }} {{ issues === 1 ? 'issue' : 'issues' }}</span>
+        <span v-if="issues" class="sandbox__issues" role="status" :title="safeValidate(definition).join('\n')">{{ issues }} {{ issues === 1 ? 'issue' : 'issues' }}</span>
+        <div class="sandbox__actions">
+          <button type="button" class="sandbox__icon" title="Undo ⌘Z" aria-label="Undo" :disabled="!history.canUndo.value" @click="history.undo()"><LucideIcon name="undo" /></button>
+          <button type="button" class="sandbox__icon" title="Redo ⇧⌘Z" aria-label="Redo" :disabled="!history.canRedo.value" @click="history.redo()"><LucideIcon name="redo" /></button>
+          <button type="button" class="sandbox__text" title="Reset to example" @click="reset"><LucideIcon name="restart" /> Reset</button>
+        </div>
       </div>
       <div class="sandbox__bar sandbox__bar--right">
         <span class="sandbox__label">Flow</span>
-        <button type="button" class="sandbox__restart" @click="restart">Restart <LucideIcon name="restart" /></button>
+        <span class="sandbox__muted">lights up as you answer</span>
       </div>
       <div id="sandbox-write" class="sandbox__pane sandbox__pane--write" role="tabpanel" aria-labelledby="sandbox-tab-write">
-        <LandingBuilder :form="model" @page="(index) => (group = index)" />
+        <LandingBuilder :form="model" :edited="edited" @edit="edited = true" />
       </div>
       <div id="sandbox-json" class="sandbox__pane sandbox__pane--json" role="tabpanel" aria-labelledby="sandbox-tab-json">
-        <LandingJson :source="source" :range="range" />
+        <LandingJson :source="source" :error="jsonError" :active="tab === 'json'" @change="onJson" />
       </div>
       <div class="sandbox__graph"><LandingFlow :graph="graph" :state="state" /></div>
       <div id="sandbox-preview" class="sandbox__pane sandbox__pane--preview" role="tabpanel" aria-labelledby="sandbox-tab-preview">
@@ -129,10 +177,15 @@ function onTabKey(event: KeyboardEvent) {
             />
           </ClientOnly>
         </div>
-        <div class="sandbox__footer"><span>{{ progress }}</span><code>@formhaus/vue</code></div>
+        <div class="sandbox__footer">
+          <span>{{ progress }}</span>
+          <button type="button" class="sandbox__restart" @click="restart"><LucideIcon name="restart" /> Restart</button>
+          <code>@formhaus/vue</code>
+        </div>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped src="./sandbox.css"></style>
+<style scoped src="./sandbox-panes.css"></style>

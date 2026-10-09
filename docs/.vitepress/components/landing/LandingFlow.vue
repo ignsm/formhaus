@@ -55,9 +55,8 @@ defineProps<{ graph: FlowGraph; state: FlowState }>();
   fill: none;
   stroke: var(--vp-c-text-3);
   stroke-width: 1.5;
-  stroke-dasharray: 2 5;
   stroke-linecap: round;
-  opacity: 0.5;
+  opacity: 0.55;
   transition: opacity 0.3s;
 }
 
