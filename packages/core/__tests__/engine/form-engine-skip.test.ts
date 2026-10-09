@@ -1,54 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { FormEngine } from '../../src/engine';
 import { validateDefinition } from '../../src';
-import type { FormDefinition } from '../../src/types';
-
-function skipDefinition(): FormDefinition {
-  return {
-    id: 'skip',
-    title: 'Skip',
-    submit: { label: 'Submit' },
-    steps: [
-      { id: 'name', title: 'Name', fields: [{ key: 'name', type: 'text', label: 'Name', validation: { required: true } }] },
-      {
-        id: 'extras',
-        title: 'Extras',
-        skip: { label: 'Not now' },
-        fields: [
-          { key: 'phone', type: 'text', label: 'Phone', validation: { required: true } },
-          { key: 'plan', type: 'text', label: 'Plan', defaultValue: 'free' },
-          { key: 'promo', type: 'text', label: 'Promo', show: [{ field: 'plan', eq: 'pro' }] },
-        ],
-      },
-      { id: 'notes', title: 'Notes', skip: { label: 'Skip' }, fields: [{ key: 'notes', type: 'text', label: 'Notes', validation: { required: true } }] },
-    ],
-  };
-}
-
-function routedSkipDefinition(): FormDefinition {
-  return {
-    id: 'routed-skip',
-    title: 'Routed',
-    submit: { label: 'Submit' },
-    steps: [
-      {
-        id: 'kind',
-        title: 'Kind',
-        skip: { label: 'Skip' },
-        fields: [{ key: 'kind', type: 'text', label: 'Kind', defaultValue: 'personal' }],
-        routes: [{ to: 'business', show: [{ field: 'kind', eq: 'business' }] }, { to: 'personal' }],
-      },
-      { id: 'business', title: 'Business', fields: [{ key: 'company', type: 'text', label: 'Company' }], routes: [{ to: null }] },
-      { id: 'personal', title: 'Personal', fields: [{ key: 'nickname', type: 'text', label: 'Nickname' }] },
-    ],
-  };
-}
-
-async function onExtras(options = {}) {
-  const engine = new FormEngine(skipDefinition(), { name: 'Ada' }, options);
-  await engine.nextStepAsync();
-  return engine;
-}
+import { onExtras, routedSkipDefinition } from './form-engine-skip.fixtures';
 
 describe('FormEngine step skip', () => {
   it('advances without validating and without running onStepValidate', async () => {
