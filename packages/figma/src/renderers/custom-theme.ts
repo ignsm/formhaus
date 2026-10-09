@@ -45,8 +45,12 @@ function solidHex(node: SceneNode): string | undefined {
   return fill?.type === 'SOLID' ? `#${toHex(fill.color.r)}${toHex(fill.color.g)}${toHex(fill.color.b)}` : undefined;
 }
 
+function accent(primary: ComponentNode): string | undefined {
+  return solidHex(primary) ?? primary.findAll((node) => node.type !== 'TEXT').map(solidHex).find(Boolean);
+}
+
 export async function textButtonStyle(primary: ComponentNode, fallback: TextStyle): Promise<TextStyle> {
   const label = primary.findOne((node) => node.type === 'TEXT') as TextNode | null;
   const style = label ? await styleOf(label) : undefined;
-  return { ...(style ?? fallback), color: solidHex(primary) ?? style?.color ?? fallback.color };
+  return { ...(style ?? fallback), color: accent(primary) ?? fallback.color };
 }
