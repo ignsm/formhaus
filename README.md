@@ -6,7 +6,7 @@
 [![core size](https://img.shields.io/bundlejs/size/@formhaus/core?label=core%20size)](https://bundlejs.com/?q=@formhaus/core)
 [![license](https://img.shields.io/github/license/ignsm/formhaus)](LICENSE)
 
-Formhaus is a JSON form definition that runs the same everywhere: a zero-dependency engine, React and Vue renderers, a Figma plugin and a JSON Schema. One file describes fields, validation, conditional fields, multi-step navigation, branching routes and skippable steps.
+Formhaus is a JSON form definition with a zero-dependency engine, React and Vue renderers, a Figma plugin, a JSON Schema and an MCP server for AI agents. One file describes fields, validation, conditional fields, multi-step navigation, branching routes and skippable steps.
 
 **[Example](#example) · [Packages](#packages) · [Install](#install) · [Quick start](#quick-start) · [Custom components](#custom-components) · [Figma plugin](#figma-plugin) · [Docs](https://formhaus.dev) · [Playground](https://formhaus.dev/playground.html)**
 
@@ -15,7 +15,7 @@ Formhaus is a JSON form definition that runs the same everywhere: a zero-depende
 - [Multi-step forms with branching](https://formhaus.dev/guide/steps.html#route-between-branches) in React or Vue.
 - [Rendering a form from JSON with your own components](https://formhaus.dev/guide/fields.html#override-default-components).
 - [Designing the form in Figma](https://formhaus.dev/guide/figma.html) from the same file.
-- Generating and checking definitions with AI agents: [Claude Code skills](https://formhaus.dev/guide/formhaus-create-form.html) and the [JSON Schema](https://formhaus.dev/api/definition.html#json-schema).
+- Generating and checking definitions with AI agents: [Claude Code skills](https://formhaus.dev/guide/formhaus-create-form.html), the [MCP server](https://formhaus.dev/guide/mcp.html) (`claude mcp add formhaus -- npx -y @formhaus/mcp`) and the [JSON Schema](https://formhaus.dev/api/definition.html#json-schema).
 - A [headless engine](https://formhaus.dev/api/form-engine.html) for Svelte or vanilla JS.
 
 ## Example
@@ -61,7 +61,7 @@ import definition from './signup.json';
 
 - Hand-written single forms: [react-hook-form](https://react-hook-form.com) or [TanStack Form](https://tanstack.com/form).
 - Your source of truth is a JSON Schema of the data model: [react-jsonschema-form](https://rjsf-team.github.io/react-jsonschema-form/) or [JSON Forms](https://jsonforms.io).
-- You need a hosted no-code builder and response analytics: [SurveyJS](https://surveyjs.io).
+- You need a drop-in form builder UI and response analytics: [SurveyJS](https://surveyjs.io).
 
 ## Packages
 
@@ -75,12 +75,6 @@ import definition from './signup.json';
 `@formhaus/figma` generates form mockups on the Figma canvas. It is not on Figma Community yet; build it locally, then import `packages/figma/manifest.json`.
 
 Svelte, Solid, or anything else: use `@formhaus/core` directly. The [playground](https://formhaus.dev/playground.html) has a Svelte example.
-
-## Navigation and submission
-
-Radio fields can advance on explicit activation with `autoAdvance: true`; a step can hide Next with `next: false`. Cancellable async hooks run before/after navigation and submission. See [step navigation and lifecycle hooks](docs/guide/steps.md).
-
-Step `routes` choose an ordered forward path from answers. Back, progress, validation and submission follow that path. See [branching and retained answers](docs/guide/steps.md#route-between-branches).
 
 ## Install
 
@@ -105,6 +99,7 @@ Write the JSON by hand, or use the [`/formhaus-create-form`](https://formhaus.de
 
 ```json
 {
+  "$schema": "https://formhaus.dev/schema/form-definition.json",
   "id": "contact",
   "title": "Contact Us",
   "submit": { "label": "Send" },
@@ -185,7 +180,7 @@ async function handleSubmit(values: Record<string, unknown>) {
 </template>
 ```
 
-By default, both adapters render native HTML inputs.
+By default, both adapters render native HTML inputs. A step can hide Next with `next: false`, and cancellable async hooks run before and after navigation and submission. See [lifecycle hooks](https://formhaus.dev/guide/steps.html#lifecycle-hooks).
 
 ## Custom components
 
