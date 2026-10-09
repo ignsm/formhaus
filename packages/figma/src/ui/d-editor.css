@@ -23,7 +23,8 @@
 
 .editor { display: flex; flex-direction: column; gap: 14px; }
 .editor[hidden], #definition[hidden] { display: none; }
-.form-head { display: flex; flex-direction: column; }
+.form-head { display: flex; flex-direction: column; gap: 10px; }
+.head-row { align-items: center; display: flex; justify-content: space-between; }
 .head-field { display: flex; flex-direction: column; gap: 4px; }
 .title-input { font-size: 14px; font-weight: 600; }
 
