@@ -78,8 +78,7 @@ For each form, the plugin creates:
 - Instances of the bound or kit components for every field, with labels, placeholders and helper text filled in.
 - An actions group with the step's buttons.
 - For forms with [routes](/guide/steps), a flow map: steps are laid out in columns by path, arrows connect them and each arrow is labelled with its condition. Steps are numbered by their position on the path, and a step that ends the form shows Submit.
-
-- For multi-step forms, a clickable prototype: Continue and Skip go to the step the routes pick, Back goes back, and options of a radio that drives a route jump to their branch. The form is added as a flow starting point, so **Present** opens it at the first step.
+- For multi-step forms, a clickable prototype: Continue and Skip go to the step the routes pick with no answers given, Back goes back, and options of a radio that drives a route or advances on its own go to their next step. Steps shown only for certain answers are reached through those options. The form is added as a flow starting point, so **Present** opens it at the first step.
 
 **Update form** keeps the positions of existing steps, redraws the arrows and rewires the prototype.
 
