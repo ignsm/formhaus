@@ -1,13 +1,7 @@
 import type { KitId } from '../config';
 import type { KitFonts } from '../fonts';
 import type { Role } from '../roles';
-import type { KitNode } from './primitives';
-
-export interface TextStyle {
-  font: FontName;
-  size: number;
-  color: string;
-}
+import type { KitNode, TextStyle } from './primitives';
 
 export interface KitTheme {
   fonts: KitFonts;

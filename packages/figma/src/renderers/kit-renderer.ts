@@ -39,7 +39,8 @@ export async function createKitRenderer(config: PluginConfig): Promise<KitRender
     return { component: asComponent(components.get(role)!) };
   }
 
-  const custom = Object.keys(config.bindings).length > 0;
+  const resolved = await Promise.all((Object.keys(config.bindings) as Role[]).map(bound));
+  const custom = resolved.some(Boolean);
   const theme = custom ? await customTheme(kitTheme, (await bound('field.text'))?.component) : kitTheme;
 
   async function instance(role: Role, values: Parameters<typeof applySlots>[1], state?: string): Promise<InstanceNode> {
