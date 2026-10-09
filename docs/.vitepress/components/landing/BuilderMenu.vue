@@ -35,6 +35,11 @@ function onKey(event: KeyboardEvent): boolean {
   return true;
 }
 
+function onBlur() {
+  if (props.passive) return;
+  setTimeout(() => { if (document.activeElement !== list.value) emit('close'); }, 0);
+}
+
 defineExpose({ onKey });
 </script>
 
@@ -50,7 +55,7 @@ defineExpose({ onKey });
       :aria-label="props.label"
       :aria-activedescendant="`${props.id}-menu-${active}`"
       @keydown="onKey"
-      @blur="passive || emit('close')"
+      @blur="onBlur"
     >
       <li v-if="!props.items.length" class="nb-menu__empty">No matches</li>
       <li

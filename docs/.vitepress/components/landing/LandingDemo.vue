@@ -32,7 +32,8 @@ const tab = ref<Tab>('write');
 onMounted(() => { if (window.matchMedia('(max-width: 767px)').matches) tab.value = 'preview'; });
 const edited = ref(false);
 const run = ref(0);
-const first = () => live.value.steps?.[0]?.id ?? '';
+const first = () => live.value.steps?.[0]?.id ?? 'form';
+const path = ref<string[]>([]);
 const history_ = ref<string[]>([first()]);
 const values = ref<Record<string, unknown>>({});
 const done = ref(false);
@@ -50,7 +51,14 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 watch(definition, (next) => {
   clearTimeout(timer);
   timer = setTimeout(() => {
+    const ids = new Set((next.steps ?? []).map((step) => step.id));
+    const keep: string[] = [];
+    for (const id of history_.value) {
+      if (!ids.has(id)) break;
+      keep.push(id);
+    }
     live.value = next;
+    path.value = keep.length > 1 && keep[0] === first() ? keep : [];
     history_.value = [first()];
     done.value = false;
   }, 120);
@@ -58,10 +66,10 @@ watch(definition, (next) => {
 
 const state = computed(() => flowState({ definition: live.value, graph: graph.value, history: history_.value, values: values.value, done: done.value }));
 const progress = computed(() => {
-  const path: string[] = [];
-  for (let id: string | undefined = first(); id && !path.includes(id); id = nextStep(live.value, id, values.value)) path.push(id);
-  const at = path.indexOf(history_.value[history_.value.length - 1]);
-  return path.length > 1 ? `Step ${Math.max(1, at + 1)} of ${path.length}` : 'One page';
+  const route: string[] = [];
+  for (let id: string | undefined = first(); id && !route.includes(id); id = nextStep(live.value, id, values.value)) route.push(id);
+  const at = route.indexOf(history_.value[history_.value.length - 1]);
+  return route.length > 1 ? `Step ${Math.max(1, at + 1)} of ${route.length}` : 'One page';
 });
 
 function onStep(id: string) {
@@ -71,6 +79,7 @@ function onStep(id: string) {
 
 function restart() {
   values.value = {};
+  path.value = [];
   history_.value = [first()];
   done.value = false;
   run.value += 1;
@@ -79,6 +88,7 @@ function restart() {
 function reset() {
   history.replace(fromDefinition(seed as FormDefinition));
   jsonError.value = '';
+  edited.value = false;
   restart();
 }
 
@@ -168,12 +178,12 @@ function onTabKey(event: KeyboardEvent) {
       <div class="sandbox__graph"><LandingFlow :graph="graph" :state="state" /></div>
       <div id="sandbox-preview" class="sandbox__pane sandbox__pane--preview" role="tabpanel" aria-labelledby="sandbox-tab-preview">
         <div class="sandbox__preview">
-          <p class="sandbox__note">The editor is available on desktop.</p>
           <ClientOnly>
             <LandingDemoForm
               :key="`${run}-${formatJson(live)}`"
               :definition="live"
               :initial="values"
+              :path="path"
               @step="onStep"
               @values="(next) => (values = next)"
               @done="(value) => (done = value)"
@@ -182,6 +192,7 @@ function onTabKey(event: KeyboardEvent) {
         </div>
       </div>
     </div>
+    <p class="sandbox__caption">The editor is available on desktop.</p>
   </section>
 </template>
 
