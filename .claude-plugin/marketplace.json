@@ -1,5 +1,5 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "formhaus",
   "description": "Formhaus skills and MCP server for Claude Code.",
   "owner": {

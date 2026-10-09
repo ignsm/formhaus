@@ -70,6 +70,7 @@ interface FormStep {
   routes?: StepRoute[];      // ordered forward destinations
   next?: FormAction | false; // custom "next" or false to hide it
   back?: FormAction | false; // custom "back" or false to hide it
+  skip?: FormAction;         // Skip button: resets the step, moves on without validation
 }
 
 interface StepRoute {
