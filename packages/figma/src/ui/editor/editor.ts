@@ -115,7 +115,7 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
     picker.value = '';
     add.appendChild(picker);
     const count = steps(draft).length;
-    const onePage = layout.steps === 'page' && isMultiStep(draft);
+    const onePage = layout.steps === 'page' && count > 1;
     section.append(list, add);
     if (!onePage || stepIndex === count - 1) section.append(buttonsBlock(step, stepIndex, count, isMultiStep(draft) && !onePage, { draft, changed: onChange, rerender: () => update() }));
     return section;
@@ -139,7 +139,7 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
     const head = element('div', 'form-head');
     head.append(
       labelled('Form title', textInput(draft.title, 'Sign up', 'input title-input', (value) => { draft.title = value; onChange(); }, 'Form title'), 'head-field', 'section-label'),
-      ...(isMultiStep(draft) ? [layoutPicker('steps', 'Steps', [['screens', 'Separate'], ['page', 'One page']])] : []),
+      ...(steps(draft).length > 1 ? [layoutPicker('steps', 'Steps', [['screens', 'Separate'], ['page', 'One page']])] : []),
       layoutPicker('actions', 'Buttons', [['stacked', 'Stacked'], ['inline', 'Side by side']]),
     );
     const addStepButton = addLink(isMultiStep(draft) ? 'Add step' : 'Split into steps', () => { addStep(draft); update(); });
