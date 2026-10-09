@@ -1,6 +1,7 @@
 import type { FormDefinition, FormField } from '@formhaus/core';
 import { element, iconButton } from '../dom';
 import { icon } from '../icons';
+import { buttonsBlock } from './buttons';
 import { labelled, textInput } from './controls';
 import { fieldRow, typeSelect } from './field-row';
 import { addField, addStep, isMultiStep, moveField, removeField, removeStep, steps } from './model';
@@ -110,7 +111,7 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
     picker.prepend(Object.assign(element('option', '', 'Choose type'), { value: '', disabled: true }));
     picker.value = '';
     add.appendChild(picker);
-    section.append(list, add);
+    section.append(list, add, buttonsBlock(step, stepIndex, steps(draft).length, isMultiStep(draft), { draft, changed: onChange, rerender: () => update() }));
     return section;
   }
 
@@ -118,7 +119,6 @@ export function createEditor(container: HTMLElement, onChange: () => void, notif
     const head = element('div', 'form-head');
     head.append(
       labelled('Form title', textInput(draft.title, 'Sign up', 'input title-input', (value) => { draft.title = value; onChange(); }, 'Form title'), 'head-field', 'section-label'),
-      labelled('Submit button', textInput(draft.submit.label, 'Submit', 'input', (value) => { draft.submit = { ...draft.submit, label: value }; onChange(); }, 'Submit button'), 'head-field', 'section-label'),
     );
     const addStepButton = element('button', 'link add-link');
     addStepButton.type = 'button';
