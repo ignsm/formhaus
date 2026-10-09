@@ -1,11 +1,10 @@
 import type { BindingRow } from '../bindings/rows';
 import type { TextSlot } from '../config';
-import { ROLE_LABELS } from '../roles';
+import { ROLE_LABELS, ROLE_SLOTS } from '../roles';
 
 type Post = (message: Record<string, unknown>) => void;
 
 const GROUPS: Record<string, string> = { field: 'Fields', option: 'Options', button: 'Buttons' };
-const SLOTS: TextSlot[] = ['label', 'value', 'helper'];
 let previews: string[] = [];
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
@@ -49,14 +48,15 @@ function rowElement(row: BindingRow, post: Post): HTMLElement {
   const node = element('div', row.name ? 'binding bound' : 'binding');
   const info = element('div', 'info');
   info.append(element('div', 'role', ROLE_LABELS[row.role]), element('div', 'name', row.name ?? 'Built-in kit'));
-  if (row.staleProperties) info.appendChild(element('div', 'warning', `Rebind: ${row.staleProperties.join(', ')} no longer exist`));
+  if (row.missing) info.appendChild(element('div', 'warning', 'Component not found. Select it again or clear the binding.'));
+  if (row.staleProperties) info.appendChild(element('div', 'warning', `Saved properties are gone: ${row.staleProperties.join(', ')}. Bind the instance again.`));
   const actions = element('div', 'actions');
   actions.appendChild(button('Use selection', 'btn-small', () => post({ type: 'bindSelection', role: row.role })));
   if (row.name) actions.appendChild(button('×', 'btn-small btn-clear', () => post({ type: 'unbind', role: row.role })));
   node.append(preview(row), info, actions);
   if (row.candidates?.length) {
     const slots = element('div', 'slots');
-    for (const slot of SLOTS) slots.appendChild(slotPicker(row, slot, post));
+    for (const slot of ROLE_SLOTS[row.role]) slots.appendChild(slotPicker(row, slot, post));
     node.appendChild(slots);
   }
   return node;
