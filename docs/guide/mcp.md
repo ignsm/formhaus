@@ -12,17 +12,12 @@ description: "Check Formhaus definitions from Claude Code, Claude Desktop or Cur
 
 The Formhaus plugin bundles this server with the [`/formhaus:formhaus-create-form`](/guide/formhaus-create-form) and [`/formhaus:formhaus-figma-connect`](/guide/formhaus-figma-connect) skills:
 
-```
-/plugin marketplace add ignsm/formhaus
-/plugin install formhaus@formhaus
-```
-
-From a shell:
-
 ```bash
 claude plugin marketplace add ignsm/formhaus
 claude plugin install formhaus@formhaus
 ```
+
+Inside a Claude Code session, `/plugin marketplace add ignsm/formhaus` and `/plugin install formhaus@formhaus` do the same after a confirmation prompt.
 
 ### Claude Code, server only
 

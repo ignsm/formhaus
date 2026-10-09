@@ -6,10 +6,12 @@ MCP server that lets AI agents check [Formhaus](https://github.com/ignsm/formhau
 
 Claude Code plugin, with the Formhaus skills:
 
+```bash
+claude plugin marketplace add ignsm/formhaus
+claude plugin install formhaus@formhaus
 ```
-/plugin marketplace add ignsm/formhaus
-/plugin install formhaus@formhaus
-```
+
+Inside a Claude Code session, `/plugin marketplace add ignsm/formhaus` and `/plugin install formhaus@formhaus` do the same after a confirmation prompt.
 
 Claude Code, server only:
 
