@@ -61,15 +61,15 @@ export class FormEngine {
   }
 
   get visibleSteps(): FormStep[] {
-    return this.visibility.getVisibleSteps(this.values, this.currentStepIndex);
+    return this.visibility.state(this.values, this.currentStepIndex).visibleSteps;
   }
 
   get currentStep(): FormStep | null {
-    return this.visibility.getCurrentStep(this.values, this.currentStepIndex);
+    return this.visibility.state(this.values, this.currentStepIndex).currentStep;
   }
 
   get visibleFields(): FormField[] {
-    return this.visibility.getVisibleFields(this.values, this.currentStepIndex);
+    return this.visibility.state(this.values, this.currentStepIndex).visibleFields;
   }
 
   get isFirstStep(): boolean {
@@ -119,6 +119,7 @@ export class FormEngine {
     const hadError = this.errors[key] !== undefined;
     this.values[key] = value;
     delete this.errors[key];
+    for (const [stepId, keys] of this.skipped) if (keys.includes(key)) this.skipped.delete(stepId);
     const clearedFields = this.visibility.cascadeHiddenFields(key, this.values, this.errors);
     const revalidated = clearResolvedMatchErrors(this.internals, key);
     const changedFields = new Set([...clearedFields, ...revalidated]);
