@@ -17,8 +17,10 @@ const points = ['Your own components', 'Flow map for every branch', 'Clickable p
         <a class="lp-more" href="/guide/figma">Figma plugin guide <LucideIcon name="arrow-right" /></a>
       </div>
       <img
-        class="figma__image"
-        src="/figma/flow-map.png"
+        v-for="theme in ['light', 'dark']"
+        :key="theme"
+        :class="['figma__image', `figma__image--${theme}`]"
+        :src="theme === 'dark' ? '/figma/flow-map-dark.png' : '/figma/flow-map.png'"
         width="1952"
         height="964"
         loading="lazy"
@@ -74,6 +76,15 @@ const points = ['Your own components', 'Flow map for every branch', 'Clickable p
   border: 1px solid var(--vp-c-divider);
   border-radius: 16px;
   box-shadow: 0 12px 40px rgba(91, 63, 176, 0.14);
+}
+
+.figma__image--dark,
+html.dark .figma__image--light {
+  display: none;
+}
+
+html.dark .figma__image--dark {
+  display: block;
 }
 
 @media (min-width: 960px) {
