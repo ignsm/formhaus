@@ -1,17 +1,22 @@
 import type { FormDefinition, FormField, FormStep, StepRoute } from '@formhaus/core';
 
 export const QUESTION_TYPES = [
-  { type: 'text', label: 'text' },
-  { type: 'email', label: 'email' },
-  { type: 'radio', label: 'choice' },
-  { type: 'multiselect', label: 'checkboxes' },
-  { type: 'textarea', label: 'long text' },
+  { type: 'text', label: 'Short text', hint: 'One line of text', icon: 'type', placeholder: 'Question' },
+  { type: 'textarea', label: 'Long text', hint: 'A paragraph', icon: 'align-left', placeholder: 'Tell us more about…' },
+  { type: 'email', label: 'Email', hint: 'Validated email address', icon: 'mail', placeholder: "What's your email?" },
+  { type: 'number', label: 'Number', hint: 'Digits only', icon: 'hash', placeholder: 'How many…?' },
+  { type: 'phone', label: 'Phone', hint: 'Phone number', icon: 'phone', placeholder: "What's your phone number?" },
+  { type: 'date', label: 'Date', hint: 'Date picker', icon: 'calendar', placeholder: 'When…?' },
+  { type: 'radio', label: 'Multiple choice', hint: 'Pick one, answers can branch', icon: 'circle-dot', placeholder: 'Which one…?' },
+  { type: 'multiselect', label: 'Checkboxes', hint: 'Pick all that apply', icon: 'check-square', placeholder: 'Which of these…?' },
+  { type: 'select', label: 'Dropdown', hint: 'Pick one from a list', icon: 'chevron-down', placeholder: 'Choose a…' },
 ] as const;
 
 export type QuestionType = (typeof QUESTION_TYPES)[number]['type'];
-export interface MenuItem { id: string; label: string }
-export const TYPE_ITEMS: MenuItem[] = QUESTION_TYPES.map((item) => ({ id: item.type, label: item.label }));
-export const SLASH_ITEMS: MenuItem[] = [...TYPE_ITEMS, { id: 'page', label: 'page' }];
+export type IconName = (typeof QUESTION_TYPES)[number]['icon'] | 'file' | 'split' | 'x' | 'plus' | 'trash' | 'asterisk' | 'arrow-up' | 'arrow-down';
+export interface MenuItem { id: string; label: string; hint?: string; icon?: IconName; checked?: boolean; danger?: boolean }
+export const TYPE_ITEMS: MenuItem[] = QUESTION_TYPES.map(({ type, label, hint, icon }) => ({ id: type, label, hint, icon }));
+export const PAGE_ITEM: MenuItem = { id: 'page', label: 'New page', hint: 'Start a new step here', icon: 'file' };
 
 export interface BuilderOption { uid: string; label: string; jump: string | null }
 export interface BuilderQuestion {
@@ -23,15 +28,20 @@ export interface BuilderQuestion {
   options: BuilderOption[];
   extra: Partial<FormField>;
 }
-export interface BuilderPage { kind: 'page'; uid: string; title: string }
+export interface BuilderPage { kind: 'page'; uid: string; title: string; next: string | null }
 export type BuilderBlock = BuilderQuestion | BuilderPage;
 export interface BuilderForm { id: string; title: string; submit: string; blocks: BuilderBlock[] }
+export interface Group { page?: BuilderPage; questions: BuilderQuestion[] }
 
 let counter = 0;
 export const uid = () => `b${(counter += 1)}`;
-export const hasOptions = (type: QuestionType) => type === 'radio' || type === 'multiselect';
-export const newPage = (title = ''): BuilderPage => ({ kind: 'page', uid: uid(), title });
+export const hasOptions = (type: QuestionType) => type === 'radio' || type === 'multiselect' || type === 'select';
+export const canBranch = (type: QuestionType) => type === 'radio' || type === 'select';
+export const placeholderFor = (type: QuestionType) => QUESTION_TYPES.find((item) => item.type === type)?.placeholder ?? 'Question';
+export const typeLabel = (type: QuestionType) => QUESTION_TYPES.find((item) => item.type === type)?.label ?? type;
+export const newPage = (title = ''): BuilderPage => ({ kind: 'page', uid: uid(), title, next: null });
 export const newOption = (label = ''): BuilderOption => ({ uid: uid(), label, jump: null });
+export const pageTitle = (page: BuilderPage | undefined, position: number) => page?.title.trim() || `Page ${position + 1}`;
 
 export function newQuestion(type: QuestionType = 'text'): BuilderQuestion {
   const question: BuilderQuestion = { kind: 'question', uid: uid(), label: '', type, required: false, options: [], extra: {} };
@@ -41,7 +51,25 @@ export function newQuestion(type: QuestionType = 'text'): BuilderQuestion {
 
 export function setType(question: BuilderQuestion, type: QuestionType): void {
   question.type = type;
-  if (hasOptions(type) && !question.options.length) question.options.push(newOption('Option 1'));
+  if (hasOptions(type) && !question.options.length) question.options.push(newOption(), newOption());
+}
+
+export function groups(form: BuilderForm): Group[] {
+  const result: Group[] = [];
+  for (const block of form.blocks) {
+    if (block.kind === 'page') result.push({ page: block, questions: [] });
+    else (result[result.length - 1] ?? (result[0] = { questions: [] })).questions.push(block);
+  }
+  return result;
+}
+
+export function laterPages(form: BuilderForm, index: number): { uid: string; title: string }[] {
+  const offset = form.blocks[0]?.kind === 'page' ? 0 : 1;
+  return form.blocks.slice(index + 1).flatMap((block, at) => {
+    if (block.kind !== 'page') return [];
+    const position = form.blocks.slice(0, index + 1 + at).filter((item) => item.kind === 'page').length + offset;
+    return [{ uid: block.uid, title: pageTitle(block, position) }];
+  });
 }
 
 function words(label: string): string[] {
@@ -62,25 +90,16 @@ function keyFromLabel(label: string, taken: Set<string>): string {
 }
 
 const slug = (label: string, taken: Set<string>, fallback: string) => unique(words(label).join('-') || fallback, taken, '-');
-const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
-export function laterPages(form: BuilderForm, index: number): BuilderPage[] {
-  return form.blocks.slice(index + 1).filter((block): block is BuilderPage => block.kind === 'page');
-}
-
-export function pageOf(form: BuilderForm, index: number): BuilderPage | undefined {
-  return form.blocks.slice(0, index + 1).reverse().find((block): block is BuilderPage => block.kind === 'page');
-}
-
-function question(field: FormField, routes: StepRoute[], titles: Map<string, string>): BuilderQuestion {
+function question(field: FormField, routes: StepRoute[], ids: Map<string, string>): BuilderQuestion {
   const { key, type, label, options, validation, ...extra } = field;
   const { required, ...rules } = validation ?? {};
-  const routed = routes.some((item) => item.show?.some((condition) => condition.field === key));
+  const shown = (value: string) => routes.find((item) => item.show?.length === 1 && item.show[0].field === key && item.show[0].eq === value)?.to;
   const fallback = routes.find((item) => !item.show?.length && !item.showAny?.length)?.to;
+  const open = (options ?? []).filter((option) => !shown(option.value));
   const jump = (value: string) => {
-    const route = routes.find((item) => item.show?.length === 1 && item.show[0].field === key && item.show[0].eq === value);
-    const to = route?.to ?? (routed ? fallback : undefined);
-    return to ? titles.get(to) ?? null : null;
+    const to = shown(value) ?? (routes.some((item) => item.show?.[0]?.field === key) && open.length === 1 && open[0].value === value ? fallback : undefined);
+    return to ? ids.get(to) ?? null : null;
   };
   return {
     kind: 'question',
@@ -96,37 +115,32 @@ function question(field: FormField, routes: StepRoute[], titles: Map<string, str
 export function fromDefinition(definition: FormDefinition): BuilderForm {
   const base = { id: definition.id, title: definition.title ?? '', submit: definition.submit?.label ?? 'Submit' };
   if (!definition.steps) return { ...base, blocks: (definition.fields ?? []).map((field) => question(field, [], new Map())) };
-  const titles = new Map(definition.steps.map((step) => [step.id, step.title ?? step.id]));
-  const blocks = definition.steps.flatMap((step): BuilderBlock[] => [
-    newPage(titles.get(step.id)),
-    ...step.fields.map((field) => question(field, step.routes ?? [], titles)),
-  ]);
+  const steps = definition.steps;
+  const pages = steps.map((step) => newPage(step.title ?? step.id));
+  const ids = new Map(steps.map((step, index) => [step.id, pages[index].uid]));
+  const blocks = steps.flatMap((step, index): BuilderBlock[] => {
+    const questions = step.fields.map((field) => question(field, step.routes ?? [], ids));
+    const fallback = step.routes?.find((item) => !item.show?.length && !item.showAny?.length)?.to;
+    const claimed = questions.some((item) => item.options.some((option) => option.jump === (fallback && ids.get(fallback))));
+    if (fallback && fallback !== steps[index + 1]?.id && !claimed) pages[index].next = ids.get(fallback) ?? null;
+    return [pages[index], ...questions];
+  });
   return { ...base, blocks };
 }
 
 function field(item: BuilderQuestion, keys: Set<string>, values: Map<string, string>): FormField {
   const { validation, ...extra } = item.extra;
   const rules = { ...(item.required ? { required: true } : {}), ...validation };
-  const result: FormField = { key: keyFromLabel(item.label, keys), type: item.type, label: item.label || 'Untitled question', ...extra };
+  const result: FormField = { key: keyFromLabel(item.label, keys), type: item.type, label: item.label.trim() || 'Untitled question', ...extra };
   if (Object.keys(rules).length) result.validation = rules;
   if (hasOptions(item.type)) {
     const taken = new Set<string>();
-    result.options = item.options.map((option) => {
-      const value = slug(option.label, taken, 'option');
+    result.options = item.options.map((option, index) => {
+      const label = option.label.trim() || `Option ${index + 1}`;
+      const value = slug(label, taken, `option-${index + 1}`);
       values.set(option.uid, value);
-      return { value, label: option.label || value };
+      return { value, label };
     });
-  }
-  return result;
-}
-
-interface Group { page?: BuilderPage; questions: BuilderQuestion[] }
-
-function groups(form: BuilderForm): Group[] {
-  const result: Group[] = [];
-  for (const block of form.blocks) {
-    if (block.kind === 'page') result.push({ page: block, questions: [] });
-    else (result[result.length - 1] ?? (result[0] = { questions: [] })).questions.push(block);
   }
   return result;
 }
@@ -135,43 +149,32 @@ export function toDefinition(form: BuilderForm): FormDefinition {
   const keys = new Set<string>();
   const values = new Map<string, string>();
   const parts = groups(form);
-  const head = { $schema: 'https://formhaus.dev/schema/form-definition.json', id: form.id, title: form.title || 'Untitled form', submit: { label: form.submit || 'Submit' } };
+  const head = { $schema: 'https://formhaus.dev/schema/form-definition.json', id: form.id, title: form.title.trim() || 'Untitled form', submit: { label: form.submit.trim() || 'Submit' } };
   if (parts.length < 2) return { ...head, fields: (parts[0]?.questions ?? []).map((item) => field(item, keys, values)) } as FormDefinition;
   const taken = new Set<string>();
-  const ids = parts.map((part, index) => slug(part.page?.title ?? '', taken, `page-${index + 1}`));
+  const ids = parts.map((part, index) => slug(pageTitle(part.page, index), taken, `page-${index + 1}`));
   const fields = parts.map((part) => part.questions.map((item) => field(item, keys, values)));
   const routes: StepRoute[][] = parts.map(() => []);
-  const exits = new Map<number, number>();
   parts.forEach((part, index) => {
-    const targets: number[] = [];
-    let routing = 0;
-    let covered = false;
-    part.questions.forEach((item, position) => {
-      if (item.type !== 'radio') return;
-      const found = item.options.map((option) => parts.findIndex((other, at) => at > index && !!option.jump && same(other.page?.title ?? '', option.jump)));
-      found.forEach((target, at) => {
-        if (target < 0) return;
-        targets.push(target);
-        routes[index].push({ to: ids[target], show: [{ field: fields[index][position].key, eq: values.get(item.options[at].uid)! }] });
-      });
-      if (found.some((target) => target >= 0)) routing += 1;
-      covered = found.length > 0 && found.every((target) => target >= 0);
-    });
-    if (!targets.length) return;
-    if (routing === 1 && covered) delete routes[index][routes[index].length - 1].show;
-    else if (index + 1 < parts.length) routes[index].push({ to: ids[index + 1] });
-    const after = Math.max(...targets) + 1;
-    for (const target of targets) if (after < parts.length && target + 1 < after) exits.set(target, Math.max(exits.get(target) ?? 0, after));
+    const indexOf = (uid: string | null) => parts.findIndex((other, at) => at > index && other.page?.uid === uid);
+    const branching = part.questions.filter((item) => canBranch(item.type) && item.options.some((option) => indexOf(option.jump) >= 0));
+    for (const item of branching) {
+      const key = fields[index][part.questions.indexOf(item)].key;
+      for (const option of item.options) {
+        const target = indexOf(option.jump);
+        if (target >= 0) routes[index].push({ to: ids[target], show: [{ field: key, eq: values.get(option.uid)! }] });
+      }
+    }
+    const covered = branching.length === 1 && branching[0].options.every((option) => indexOf(option.jump) >= 0);
+    const next = indexOf(part.page?.next ?? null);
+    if (covered) delete routes[index][routes[index].length - 1].show;
+    else if (next >= 0) routes[index].push({ to: ids[next] });
+    else if (routes[index].length && index + 1 < parts.length) routes[index].push({ to: ids[index + 1] });
   });
-  for (const [index, after] of exits) if (!routes[index].length) routes[index].push({ to: ids[after] });
   const steps = parts.map((part, index): FormStep => {
-    const step: FormStep = { id: ids[index], title: part.page?.title || `Page ${index + 1}`, fields: fields[index] };
+    const step: FormStep = { id: ids[index], title: pageTitle(part.page, index), fields: fields[index] };
     if (routes[index].length) step.routes = routes[index];
     return step;
   });
   return { ...head, steps } as FormDefinition;
-}
-
-export function jumpKnown(form: BuilderForm, index: number, jump: string): boolean {
-  return laterPages(form, index).some((page) => same(page.title, jump));
 }
