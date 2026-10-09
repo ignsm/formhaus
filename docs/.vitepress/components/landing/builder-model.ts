@@ -18,7 +18,7 @@ export interface MenuItem { id: string; label: string; hint?: string; icon?: Ico
 export const TYPE_ITEMS: MenuItem[] = QUESTION_TYPES.map(({ type, label, hint, icon }) => ({ id: type, label, hint, icon }));
 export const PAGE_ITEM: MenuItem = { id: 'page', label: 'New page', hint: 'Start a new step here', icon: 'file' };
 
-export interface BuilderOption { uid: string; label: string; jump: string | null }
+export interface BuilderOption { uid: string; label: string; jump: string | null; value?: string }
 export interface BuilderQuestion {
   kind: 'question';
   uid: string;
@@ -27,6 +27,7 @@ export interface BuilderQuestion {
   required: boolean;
   options: BuilderOption[];
   extra: Partial<FormField>;
+  key?: string;
 }
 export interface BuilderPage { kind: 'page'; uid: string; title: string; next: string | null; nextLabel: string; backLabel: string }
 export const DEFAULT_NEXT = 'Continue';
@@ -103,15 +104,21 @@ function question(field: FormField, routes: StepRoute[], ids: Map<string, string
     const to = shown(value) ?? (routes.some((item) => item.show?.[0]?.field === key) && open.length === 1 && open[0].value === value ? fallback : undefined);
     return to ? ids.get(to) ?? null : null;
   };
-  return {
+  const result: BuilderQuestion = {
     kind: 'question',
     uid: uid(),
     label: label ?? '',
     type: QUESTION_TYPES.find((item) => item.type === type)?.type ?? 'text',
     required: !!required,
-    options: (options ?? []).map((option) => ({ uid: uid(), label: option.label, jump: jump(option.value) })),
+    options: (options ?? []).map((option) => {
+      const own: BuilderOption = { uid: uid(), label: option.label, jump: jump(option.value) };
+      if (option.value !== words(option.label).join('-')) own.value = option.value;
+      return own;
+    }),
     extra: { ...extra, ...(Object.keys(rules).length ? { validation: rules } : {}) },
   };
+  if (key !== keyFromLabel(label ?? '', new Set())) result.key = key;
+  return result;
 }
 
 export function fromDefinition(definition: FormDefinition): BuilderForm {
@@ -134,13 +141,14 @@ export function fromDefinition(definition: FormDefinition): BuilderForm {
 function field(item: BuilderQuestion, keys: Set<string>, values: Map<string, string>): FormField {
   const { validation, ...extra } = item.extra;
   const rules = { ...(item.required ? { required: true } : {}), ...validation };
-  const result: FormField = { key: keyFromLabel(item.label, keys), type: item.type, label: item.label.trim() || 'Untitled question', ...extra };
+  const key = item.key ? unique(item.key, keys) : keyFromLabel(item.label, keys);
+  const result: FormField = { key, type: item.type, label: item.label.trim() || 'Untitled question', ...extra };
   if (Object.keys(rules).length) result.validation = rules;
   if (hasOptions(item.type)) {
     const taken = new Set<string>();
     result.options = item.options.map((option, index) => {
       const label = option.label.trim() || `Option ${index + 1}`;
-      const value = slug(label, taken, `option-${index + 1}`);
+      const value = option.value ? unique(option.value, taken, '-') : slug(label, taken, `option-${index + 1}`);
       values.set(option.uid, value);
       return { value, label };
     });
