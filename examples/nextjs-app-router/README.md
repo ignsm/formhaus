@@ -22,6 +22,9 @@ Opens at http://localhost:3000. Choose the Team plan and enter `Acme` as the com
 - [app/signup-form.tsx](app/signup-form.tsx) posts values to the route handler and passes returned errors to `FormRenderer`.
 - [app/api/submit/route.ts](app/api/submit/route.ts) runs `FormEngine.validate()` on the posted values and returns `422` with field errors.
 - [form/validators.ts](form/validators.ts) holds the server-only `companyAvailable` validator.
+- [form/parse-values.ts](form/parse-values.ts) rejects bodies that are not an object of string, number, boolean or string array values with `400`.
+
+`FormEngine` does not coerce types: `"5"` sent for a number field is validated as a string. The route handler does not limit the request body size; set a limit in your proxy or hosting platform.
 
 ## Use as a starter
 
