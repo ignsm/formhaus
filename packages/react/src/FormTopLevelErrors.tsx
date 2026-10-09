@@ -8,8 +8,8 @@ export function FormTopLevelErrors({ engine, actionError }: { engine: FormEngine
 
   return (
     <div className="fh-form__top-errors">
-      {errors.map((error) => (
-        <p key={error} className="fh-form__top-error">
+      {errors.map((error, index) => (
+        <p key={index} className="fh-form__top-error">
           {error}
         </p>
       ))}

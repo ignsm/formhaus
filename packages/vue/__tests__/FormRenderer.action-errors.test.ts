@@ -18,3 +18,12 @@ it('clears a failed action error once a retry succeeds', async () => {
   expect(await screen.findByLabelText('Phone')).toBeDefined();
   expect(screen.queryByText('Offline')).toBeNull();
 });
+
+it('drops a failed action error when the definition is replaced', async () => {
+  const fail = () => { throw new Error('Offline'); };
+  const { rerender } = render(FormRenderer, { props: { definition, onBeforeStepChange: fail } });
+  await fireEvent.click(screen.getByText('Continue'));
+  expect(await screen.findByText('Offline')).toBeDefined();
+  await rerender({ definition: { ...definition, id: 'replaced' } });
+  expect(screen.queryByText('Offline')).toBeNull();
+});

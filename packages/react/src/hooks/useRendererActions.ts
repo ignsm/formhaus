@@ -5,16 +5,16 @@ import type { FormRendererProps } from '../types';
 
 export function useRendererActions(engine: FormEngine, props: FormRendererProps) {
   const { loading, onError, onFieldChange, onSubmit, onAnalyticsEvent } = props;
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [failure, setFailure] = useState<{ engine: FormEngine; message: string } | null>(null);
   const run = useCallback(async (action: () => Promise<boolean>) => {
     if (loading) return;
-    setActionError(null);
+    setFailure(null);
     try { await action(); }
     catch (error) {
       if (onError) onError(error);
-      else setActionError(error instanceof Error ? error.message : 'Form action failed');
+      else setFailure({ engine, message: error instanceof Error ? error.message : 'Form action failed' });
     }
-  }, [loading, onError]);
+  }, [engine, loading, onError]);
   const next = useCallback(() => run(() => engine.nextStepAsync()), [run, engine]);
   const prev = useCallback(() => run(() => engine.prevStepAsync()), [run, engine]);
   const update = useCallback((key: string, value: unknown) => {
@@ -44,5 +44,6 @@ export function useRendererActions(engine: FormEngine, props: FormRendererProps)
     }
     return result;
   }), [engine, run, onSubmit, onAnalyticsEvent]);
+  const actionError = failure?.engine === engine ? failure.message : null;
   return { next, prev, update, commit, submit, actionError };
 }

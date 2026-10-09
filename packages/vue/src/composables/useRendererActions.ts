@@ -1,10 +1,11 @@
 import { evaluateCondition } from '@formhaus/core';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import type { FormRendererEmits, FormRendererProps } from '../types';
 import type { UseFormEngineReturn } from './useFormEngine';
 
 export function useRendererActions(form: UseFormEngineReturn, props: FormRendererProps, emit: FormRendererEmits) {
   const actionError = ref<string | null>(null);
+  watch(() => form.engine, () => { actionError.value = null; });
   async function run(action: () => Promise<boolean>) {
     if (props.loading) return;
     const owner = form.engine;
