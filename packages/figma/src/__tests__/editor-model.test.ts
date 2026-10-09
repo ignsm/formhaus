@@ -1,7 +1,7 @@
 import type { FormDefinition } from '@formhaus/core';
 import { describe, expect, it } from 'vitest';
 import {
-  addField, addOption, addStep, keyFromLabel, moveField, removeStep, renameField, renameOption, setRequired, setType, steps,
+  addField, addOption, addStep, keyFromLabel, moveField, removeField, removeStep, renameField, renameOption, setRequired, setType, steps,
 } from '../ui/editor/model';
 
 const form = (): FormDefinition => ({
@@ -18,6 +18,8 @@ describe('keyFromLabel', () => {
     expect(keyFromLabel('E-mail address!', new Set(['eMailAddress']))).toBe('eMailAddress2');
     expect(keyFromLabel('2nd line', new Set())).toBe('field2nd' + 'Line');
     expect(keyFromLabel('   ', new Set())).toBe('field');
+    expect(keyFromLabel('Электронная почта', new Set())).toBe('elektronnayaPochta');
+    expect(keyFromLabel('Café crème', new Set())).toBe('cafeCreme');
   });
 });
 
@@ -66,6 +68,29 @@ describe('editing fields', () => {
     draft.fields!.push({ key: 'seats', type: 'number', label: 'Seats', show: [{ field: 'plan', eq: 'team' }] });
     renameOption(draft, plan, added, 'Business');
     expect(added).toEqual({ value: 'team', label: 'Business' });
+  });
+});
+
+describe('references', () => {
+  it('keeps following the label when the key matches a property name', () => {
+    const draft = form();
+    const field = addField(draft, 0, 'text');
+    renameField(draft, field, 'Type');
+    renameField(draft, field, 'Type of account');
+    expect(field.key).toBe('typeOfAccount');
+  });
+
+  it('refuses to delete a field or step that a condition or route uses', () => {
+    const draft = form();
+    draft.fields!.push({ key: 'seats', type: 'number', label: 'Seats', show: [{ field: 'plan', eq: 'pro' }] });
+    expect(removeField(draft, 0, 1)).toContain('Plan');
+    expect(draft.fields).toHaveLength(3);
+    expect(removeField(draft, 0, 2)).toBeNull();
+    addStep(draft);
+    addStep(draft);
+    draft.steps![0].routes = [{ to: 'step-2' }];
+    expect(removeStep(draft, 1)).toContain('Step 2');
+    expect(removeStep(draft, 2)).toBeNull();
   });
 });
 
