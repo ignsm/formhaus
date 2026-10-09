@@ -154,11 +154,12 @@ describe('FormEngine step skip', () => {
   });
 
   it('warns about skip on a single-step form and with next: false', () => {
-    const warnings = validateDefinition({
-      id: 'one', title: 'One', submit: { label: 'Submit' },
-      steps: [{ id: 'only', title: 'Only', skip: { label: 'Skip' }, next: false, fields: [] }],
-    });
-    expect(warnings).toContain('Step "only" has "skip" on a single-step form. Skipping submits the form without its values.');
-    expect(warnings).toContain('Step "only" has "skip" with "next: false". The Skip button is not rendered.');
+    const warning = 'has "skip" but no Next button or later step.';
+    const step = { title: 'Step', skip: { label: 'Skip' }, fields: [] };
+    expect(validateDefinition({ id: 'one', title: 'One', submit: { label: 'Submit' }, steps: [{ ...step, id: 'only' }] }))
+      .toContain(`Step "only" ${warning}`);
+    expect(validateDefinition({
+      id: 'two', title: 'Two', submit: { label: 'Submit' }, steps: [{ ...step, id: 'a', next: false }, { ...step, id: 'b' }],
+    })).toEqual([`Step "a" ${warning}`]);
   });
 });
