@@ -42,11 +42,11 @@ Click **Load example** in the plugin to load a basic contact form definition, th
 
 ## Flow map
 
-Forms with [routes](/guide/steps#route-between-branches) are laid out as a flow map: one column per position on the path, an arrow per route, and a label with the route's condition. Steps are numbered by their position on the path. A step whose every route ends the form shows Submit.
+Forms with [routes](/guide/steps#route-between-branches) are laid out as a flow map: one column per position on the path and an arrow per exit, labelled with its condition. Steps are numbered by their position on the path. A step with no step after it shows Submit.
 
 ![A branching account form laid out as a flow map with labelled arrows](/figma/flow-map.png)
 
-**Update form** keeps the positions of steps you moved and redraws the arrows.
+**Update form** keeps the positions of steps you moved, redraws the arrows and rewires the prototype.
 
 ## Prototype
 
@@ -56,7 +56,7 @@ Every multi-step form is wired as a Figma prototype and added as a flow starting
 
 - Continue and Skip go to the step the routes pick when nothing is answered.
 - Back goes back.
-- Options of a radio that drives a route or advances on its own go to their own next step, so branches and steps shown only for certain answers are reachable.
+- Options of a radio that drives a route or advances on its own go to their next step.
 
 ## One page
 
@@ -102,7 +102,7 @@ Earlier versions used a JSON component map. If you saved one, the plugin turns i
 
 For each form, the plugin creates:
 
-- A card frame per step, 400px wide with auto-layout. Multi-step forms place the steps side by side.
+- A card frame per step, 400px wide with auto-layout, or one frame with a section per step in the one-page layout.
 - Instances of the bound or kit components for every field, with labels, placeholders and helper text filled in.
 - An actions group with the step's buttons.
 - A [flow map](#flow-map) for forms with routes and a [prototype](#prototype) for multi-step forms.

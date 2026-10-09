@@ -6,6 +6,9 @@ Figma plugin that draws [Formhaus](https://github.com/ignsm/formhaus) form defin
 
 ## Install (local plugin)
 
+Not published to the Figma Community yet. Install it as a local plugin.
+
+
 1. Clone the repo: `git clone https://github.com/ignsm/formhaus.git`
 2. Build the plugin: `cd formhaus && pnpm install && pnpm --filter @formhaus/figma build`
 3. In Figma desktop: **Plugins → Development → Import plugin from manifest...**
@@ -14,8 +17,8 @@ Figma plugin that draws [Formhaus](https://github.com/ignsm/formhaus) form defin
 ## Usage
 
 1. Run **Plugins → Development → Formhaus**.
-2. On **Components**, bind your own components or keep a built-in kit.
-3. On **Form**, build the form in the editor or paste JSON, then click **Generate form**.
+2. On **Form**, pick a built-in kit or **My components**. Bind your own components on the **Components** tab.
+3. Build the form in the editor or paste JSON, then click **Generate form**.
 4. Select a generated form later to edit it and click **Update form**.
 
 Multi-step forms with routes get a flow map with labelled arrows, and every multi-step form is wired as a clickable prototype. **Steps** switches between separate screens and one page.

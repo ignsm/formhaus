@@ -18,7 +18,7 @@ Formhaus draws forms as real component instances: text fields, selects, dates, f
 - Build a form in the editor or paste a Formhaus JSON definition.
 - Multi-step forms get one frame per step, or one page with sections.
 - Forms with routes get a flow map with labelled arrows.
-- Every multi-step form is a clickable prototype: Continue, Back, Skip and branching answers lead to the right step.
+- Forms with separate screens are a clickable prototype: Continue, Back, Skip and branching answers lead to the right step.
 - Select a generated form to edit it and update it in place.
 - Save your bindings as a design system and share it with a setup code.
 
