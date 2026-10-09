@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { simulatePathTool } from '../src/simulate';
 import { branching, linear, skippable } from './fixtures';
 
@@ -76,6 +76,20 @@ describe('simulate_path', () => {
     const refused = await simulatePathTool({ definition: hidden, answers: { name: 'Ada' } });
     expect(refused.currentStep?.id).toBe('name');
     expect(refused.trace?.[0].reason).toMatch(/next: false/);
+  });
+
+  it('treats next on a next: false last step as the end of the path', async () => {
+    const definition = { ...linear, steps: [linear.steps[0], { ...linear.steps[1], next: false }] };
+    const result = await simulatePathTool({ definition, answers: { name: 'Ada', email: 'a@b.co' }, actions: ['next', 'next'] });
+    expect(result.trace?.[1]).toEqual({ action: 'next', from: 'email', to: 'email', moved: false, reason: 'No next step on the active path.' });
+    expect(result.wouldSubmit).toBe(true);
+  });
+
+  it('constructs the engine once', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await simulatePathTool({ definition: { ...linear, steps: [{ ...linear.steps[0], show: [{ field: 'ghost', eq: 1 }] }, linear.steps[1]] } });
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 
   it('applies back after next', async () => {

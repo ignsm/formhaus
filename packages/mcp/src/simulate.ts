@@ -1,5 +1,4 @@
 import { isVisible, type FormEngine, type FormField, type FormStep } from '@formhaus/core';
-import { createEngine } from './engine';
 import { perform, type SimulationAction, type TraceEntry } from './simulate-actions';
 import { inspectDefinition, type ValidationReport } from './validate';
 
@@ -62,11 +61,8 @@ function visitedErrors(engine: FormEngine, visited: Set<string>, errors: Record<
 }
 
 export async function simulatePathTool(input: SimulationInput): Promise<SimulationResult> {
-  const { report, definition } = inspectDefinition(input.definition);
-  if (!definition) return { ok: false, validation: report };
-  const created = createEngine(definition, input.answers);
-  if (!created.ok) return { ok: false, validation: { ...report, valid: false, errors: created.errors } };
-  const { engine } = created;
+  const { report, definition, engine } = inspectDefinition(input.definition, input.answers);
+  if (!definition || !engine) return { ok: false, validation: report };
   const first = engine.currentStep?.id;
   const trace = await run(engine, input.actions);
   const visited = new Set([first, ...trace.map(({ to }) => to)].filter((id): id is string => typeof id === 'string'));
