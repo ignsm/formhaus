@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import Ajv from 'ajv';
 import { describe, expect, it } from 'vitest';
-import { SCHEMA_OUTPUTS, buildSchema, serializeSchema } from '../../scripts/schema.mjs';
+import { SCHEMA_OUTPUTS, buildSchema } from '../../scripts/schema.mjs';
 
 const repoRoot = resolve(__dirname, '../../../..');
 const jsonFiles = (dir: string) =>
@@ -15,10 +15,8 @@ const examples = [
   resolve(repoRoot, 'examples/react-quiz/src/quiz.json'),
 ];
 
-const committed = readFileSync(SCHEMA_OUTPUTS[0], 'utf8');
-const validate = new Ajv({ allErrors: true, allowUnionTypes: true }).compile(JSON.parse(committed));
-
 const readJson = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
+const validate = new Ajv({ allErrors: true, allowUnionTypes: true }).compile(readJson(SCHEMA_OUTPUTS[0]));
 
 const validDefinition = () => ({
   id: 'form',
@@ -36,9 +34,9 @@ const validDefinition = () => ({
 
 describe('form definition JSON Schema', () => {
   it('matches the TypeScript types', () => {
-    const expected = serializeSchema(buildSchema());
+    const expected = buildSchema();
     for (const output of SCHEMA_OUTPUTS) {
-      expect(readFileSync(output, 'utf8'), `${output} is stale, run pnpm --filter @formhaus/core schema`).toBe(expected);
+      expect(readJson(output), `${output} is stale, run pnpm --filter @formhaus/core schema`).toEqual(expected);
     }
   }, 60_000);
 
@@ -59,9 +57,15 @@ describe('form definition JSON Schema', () => {
     expect(validate(definition)).toBe(false);
   });
 
-  it('rejects an unknown field type', () => {
+  it('accepts a custom field type', () => {
     const definition = validDefinition();
     definition.steps[0].fields[0].type = 'colorpicker';
+    expect(validate(definition)).toBe(true);
+  });
+
+  it('rejects a non-string field type', () => {
+    const definition = validDefinition();
+    Object.assign(definition.steps[0].fields[0], { type: 42 });
     expect(validate(definition)).toBe(false);
   });
 
