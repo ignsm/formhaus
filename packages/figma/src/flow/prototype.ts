@@ -1,4 +1,4 @@
-import { isVisible, type FormDefinition, type FormStep } from '@formhaus/core';
+import { isStepVisible, isVisible, type FormDefinition, type FormStep } from '@formhaus/core';
 import { PLUGIN_NAMESPACE } from '../config';
 import { ACTION_KEY, type ButtonAction } from '../render-actions';
 
@@ -6,10 +6,11 @@ const TRANSITION: Transition = { type: 'DISSOLVE', easing: { type: 'EASE_OUT' },
 const FORWARD: ButtonAction[] = ['next', 'skip'];
 
 export function routeTarget(steps: FormStep[], index: number, values: Record<string, unknown>): string | null {
-  const step = steps[index];
-  const route = step.routes?.find((candidate) => isVisible(candidate, values)
-    && (candidate.to === null || steps.findIndex((other) => other.id === candidate.to) > index));
-  return route ? route.to : steps[index + 1]?.id ?? null;
+  const visibleAfter = (target: number) => target > index && isStepVisible(steps[target], values);
+  const route = steps[index].routes?.find((candidate) => isVisible(candidate, values)
+    && (candidate.to === null || visibleAfter(steps.findIndex((other) => other.id === candidate.to))));
+  if (route) return route.to;
+  return steps.find((_, target) => visibleAfter(target))?.id ?? null;
 }
 
 export function optionTargets(steps: FormStep[], index: number): Map<string, Map<string, string | null>> {
@@ -17,7 +18,7 @@ export function optionTargets(steps: FormStep[], index: number): Map<string, Map
   const routed = new Set((step.routes ?? []).flatMap((route) => [...(route.show ?? []), ...(route.showAny ?? [])].map((condition) => condition.field)));
   const result = new Map<string, Map<string, string | null>>();
   for (const field of step.fields) {
-    if (field.type !== 'radio' || !routed.has(field.key) || !field.options?.length) continue;
+    if (field.type !== 'radio' || !(routed.has(field.key) || field.autoAdvance) || !field.options?.length) continue;
     result.set(field.key, new Map(field.options.map((option) => [option.value, routeTarget(steps, index, { [field.key]: option.value })])));
   }
   return result;
@@ -44,12 +45,13 @@ async function wireStep(steps: FormStep[], index: number, frame: FrameNode, fram
   }
 }
 
-export async function wirePrototype(definition: FormDefinition, steps: FormStep[], frames: FrameNode[]): Promise<void> {
+export async function wirePrototype(definition: FormDefinition, source: FormStep[], frames: FrameNode[]): Promise<void> {
+  const steps = source.map((step, index) => ({ ...step, id: step.id ?? `#${index}` }));
   const byId = new Map(steps.map((step, index) => [step.id, frames[index]]));
   for (let index = 0; index < steps.length; index++) await wireStep(steps, index, frames[index], byId);
   const page = figma.currentPage;
   const points = await Promise.all(page.flowStartingPoints.map(async (point) => ({ point, node: await figma.getNodeByIdAsync(point.nodeId) })));
   const ids = new Set(frames.map((frame) => frame.id));
-  const kept = points.filter(({ point, node }) => node && !node.removed && point.name !== definition.title && !ids.has(point.nodeId)).map(({ point }) => point);
+  const kept = points.filter(({ point, node }) => node && !node.removed && !ids.has(point.nodeId)).map(({ point }) => point);
   page.flowStartingPoints = [...kept, { nodeId: frames[0].id, name: definition.title }];
 }
