@@ -30,20 +30,22 @@ export function useRendererActions(engine: FormEngine, props: FormRendererProps)
     update(key, value);
     if (field.autoAdvance && engine.currentStep?.id === step?.id && !engine.isLastStep) void run(() => engine.nextStepAsync('autoAdvance'));
   }, [engine, loading, run, update]);
+  const send = useCallback(async (values: Record<string, unknown>) => {
+    onAnalyticsEvent?.({ type: 'form_submitted', fieldCount: Object.keys(values).length });
+    await onSubmit(values);
+  }, [onSubmit, onAnalyticsEvent]);
   const submit = useCallback(() => run(async () => {
     if (engine.definition.submit.disabled?.every((condition) => evaluateCondition(condition, engine.values))
       && engine.definition.submit.disabled.length > 0) return false;
-    const result = await engine.submitAsync(async (values) => {
-      onAnalyticsEvent?.({ type: 'form_submitted', fieldCount: Object.keys(values).length });
-      await onSubmit(values);
-    });
+    const result = await engine.submitAsync(send);
     if (!result) {
       for (const [key, error] of Object.entries(engine.errors)) {
         onAnalyticsEvent?.({ type: 'field_error', fieldKey: key, error });
       }
     }
     return result;
-  }), [engine, run, onSubmit, onAnalyticsEvent]);
+  }), [engine, run, send, onAnalyticsEvent]);
+  const skip = useCallback(() => run(() => engine.skipStepAsync(send)), [run, engine, send]);
   const actionError = failure?.engine === engine ? failure.message : null;
-  return { next, prev, update, commit, submit, actionError };
+  return { next, prev, skip, update, commit, submit, actionError };
 }

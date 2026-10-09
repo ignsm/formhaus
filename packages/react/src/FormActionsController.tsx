@@ -11,6 +11,7 @@ interface FormActionsControllerProps {
   onSubmit: () => void;
   onNext: () => Promise<void>;
   onPrev: () => void;
+  onSkip: () => void;
   onCancel: () => void;
 }
 
@@ -22,6 +23,7 @@ export function FormActionsController({
   onSubmit,
   onNext,
   onPrev,
+  onSkip,
   onCancel,
 }: FormActionsControllerProps) {
   useFormSnapshot(engine);
@@ -33,6 +35,8 @@ export function FormActionsController({
   const backLabel = typeof engine.currentStep?.back === 'object'
     ? (engine.currentStep.back.label ?? 'Back')
     : 'Back';
+  const skipAction = engine.isMultiStep ? engine.currentStep?.skip : undefined;
+  const showSkip = !!skipAction && engine.currentStep?.next !== false;
   const handlePrimary = useCallback(async () => {
     if (engine.isMultiStep && !isLastStep) await onNext();
     else onSubmit();
@@ -45,6 +49,7 @@ export function FormActionsController({
       submitAction={definition.submit}
       backAction={engine.currentStep?.back}
       cancelAction={definition.cancel}
+      skipAction={skipAction}
       isFirstStep={engine.isFirstStep}
       isLastStep={isLastStep}
       isMultiStep={engine.isMultiStep}
@@ -54,10 +59,13 @@ export function FormActionsController({
       onNext={onNext}
       onPrev={onPrev}
       onCancel={onCancel}
+      onSkip={onSkip}
       primaryLabel={primaryLabel}
       showPrimary={isLastStep || engine.currentStep?.next !== false}
       showBack={showBack}
       backLabel={backLabel}
+      showSkip={showSkip}
+      skipLabel={skipAction?.label ?? 'Skip'}
       onPrimary={handlePrimary}
     />
   );
