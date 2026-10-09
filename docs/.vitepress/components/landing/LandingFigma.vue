@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import LucideIcon from './LucideIcon.vue';
 
-const points = ['Your own components', 'Flow map for every branch', 'Clickable prototype', 'Drafts forms with your own API key'];
+const points = ['Your own components', 'Flow map for every branch', 'Clickable prototype', 'AI drafts from a text prompt'];
 </script>
 
 <template>

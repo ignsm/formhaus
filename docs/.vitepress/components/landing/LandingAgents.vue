@@ -12,7 +12,7 @@ const tools = [
   <section class="lp-section" aria-labelledby="agents-title">
     <p class="lp-eyebrow">AI agents</p>
     <h2 id="agents-title" class="lp-title">Agents write it, the engine checks it</h2>
-    <p class="lp-lead">Generated forms are validated and walked before review.</p>
+    <p class="lp-lead">Generated forms are checked by the MCP tools before you review them.</p>
     <div class="agents">
       <article class="agents__card lp-card">
         <h3 class="agents__title">MCP server</h3>
