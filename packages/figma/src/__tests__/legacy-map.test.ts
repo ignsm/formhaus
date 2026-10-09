@@ -83,7 +83,6 @@ describe('migrateStoredMap', () => {
     expect(await migrateStoredMap()).toBe(0);
     expect(data.get('mapMigrated')).toBeUndefined();
     stored = map;
-  saved = {};
     expect(await migrateStoredMap()).toBe(7);
   });
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultConfig } from '../config';
-import { applyBindings, applyDefaultProfile, importedProfile, listProfiles, saveProfile } from '../profiles';
+import { applyBindings, applyDefaultProfile, importedProfile, listProfiles, saveProfile, updateProfiles } from '../profiles';
 
 let storage: Record<string, unknown>;
 let data: Map<string, string>;
@@ -63,5 +63,24 @@ describe('profiles', () => {
     expect(importedProfile({ name: 'Team DS', bindings })?.bindings['field.text']).toEqual({ source: 'library', key: 'text-key', name: 'Text field' });
     expect(importedProfile({ name: 'Empty', bindings: { 'field.date': bindings['field.date'] } })).toBeNull();
     expect(importedProfile('nonsense')).toBeNull();
+  });
+
+  it('strips unknown and oversized data from imported codes', () => {
+    const profile = importedProfile({
+      name: 'x'.repeat(500),
+      bindings: {
+        'field.text': { source: 'local', id: '1:1', key: 'k', name: 'Text', extra: 'drop', properties: { Size: 'M', Huge: 'y'.repeat(5000) }, text: { label: 'Label' } },
+        'button.primary': { key: { evil: true } },
+      },
+    });
+    expect(profile?.name).toHaveLength(80);
+    expect(profile?.bindings).toEqual({ 'field.text': { source: 'library', key: 'k', name: 'Text', properties: { Size: 'M' }, text: { label: 'Label' } } });
+  });
+
+  it('applies concurrent profile updates in order', async () => {
+    await saveProfile('Acme DS', bindings);
+    const flip = () => updateProfiles((list) => list.map((item) => ({ ...item, useInNewFiles: !item.useInNewFiles })));
+    await Promise.all([flip(), flip()]);
+    expect((await listProfiles())[0].useInNewFiles).toBe(true);
   });
 });
