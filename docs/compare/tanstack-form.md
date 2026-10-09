@@ -31,7 +31,7 @@ TanStack Form is headless, type-safe form state that you drive from TypeScript c
 | Conditional fields | `show` / `showAny`; hidden values cleared ([guide](/guide/conditions)) | Render based on subscribed values ([reactivity guide](https://tanstack.com/form/latest/docs/framework/react/guides/reactivity)) |
 | Validation | Declarative rules, named validators, async step validation ([guide](/guide/validation)) | Functions or Standard Schema, sync and async, per field or form ([validation guide](https://tanstack.com/form/latest/docs/framework/react/guides/validation)) |
 | Custom components | `components` map per field type ([guide](/guide/custom-components)) | Headless; examples for Mantine, Material UI, shadcn/ui and Chakra UI ([UI libraries](https://tanstack.com/form/latest/docs/framework/react/guides/ui-libraries)) |
-| Figma | Plugin draws the definition ([guide](/guide/figma)) | None in the docs |
+| Figma | Plugin draws the definition ([guide](/guide/figma)) | Not documented |
 | AI tooling | JSON Schema, [MCP server](/guide/mcp), Claude Code plugin | Forms are code; docs published as [llms.txt](https://tanstack.com/form/latest/llms.txt) |
 | Frameworks | React 18+, Vue 3.3+, headless engine | React, Vue, Angular, Solid, Lit, Svelte ([installation](https://tanstack.com/form/latest/docs/installation)) |
 | Bundle size (gzipped) | 6.2 KB core + 4.8 KB React | 17.4 KB for `@tanstack/react-form` 1.33.5 ([bundlephobia](https://bundlephobia.com/package/@tanstack/react-form@1.33.5)) |

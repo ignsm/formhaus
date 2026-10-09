@@ -5,7 +5,7 @@ description: "Formhaus vs react-hook-form: JSON definition or React code, multi-
 
 # Formhaus vs react-hook-form
 
-react-hook-form is a hook for forms you write in React code; Formhaus is a JSON definition that an engine runs and React, Vue and Figma render. For one hand-written React form, react-hook-form is the smaller and more flexible choice. For multi-step flows with branching, forms stored as data, or forms that also live in Figma, Formhaus does that work without extra code.
+react-hook-form is a hook for forms you write in React code; Formhaus is a JSON definition that an engine runs and React, Vue and Figma render. For one hand-written React form, react-hook-form is the more flexible choice with a smaller API surface. For multi-step flows with branching, forms stored as data, or forms that also live in Figma, Formhaus does that work without extra code.
 
 ## Choose react-hook-form when
 
@@ -31,7 +31,7 @@ react-hook-form is a hook for forms you write in React code; Formhaus is a JSON 
 | Conditional fields | `show` / `showAny`; hidden values cleared ([guide](/guide/conditions)) | Render based on [`watch`](https://react-hook-form.com/docs/useform/watch); unmounted values dropped with [`shouldUnregister`](https://react-hook-form.com/docs/useform#shouldUnregister) |
 | Validation | Declarative rules, named validators, async step validation ([guide](/guide/validation)) | Rules in `register`, or a schema `resolver` ([docs](https://react-hook-form.com/docs/useform#resolver)) |
 | Custom components | `components` map per field type ([guide](/guide/custom-components)) | Any component through [`Controller`](https://react-hook-form.com/docs/usecontroller/controller) |
-| Figma | Plugin draws the definition ([guide](/guide/figma)) | None in the docs |
+| Figma | Plugin draws the definition ([guide](/guide/figma)) | Not documented |
 | AI tooling | JSON Schema, [MCP server](/guide/mcp), Claude Code plugin | Forms are code; a web [Form Builder](https://react-hook-form.com/form-builder) generates React code |
 | Frameworks | React 18+, Vue 3.3+, headless engine | React ([npm](https://www.npmjs.com/package/react-hook-form)) |
 | Bundle size (gzipped) | 6.2 KB core + 4.8 KB React | 14.4 KB for 7.89.0 ([bundlephobia](https://bundlephobia.com/package/react-hook-form@7.89.0)) |
