@@ -1,24 +1,24 @@
-import type { FormAction, FormDefinition, FormField } from '@formhaus/core';
+import type { FormDefinition, FormField } from '@formhaus/core';
 import { PLUGIN_NAMESPACE } from './config';
 import type { KitTheme } from './kits/kit';
 import { solid, stack, text } from './kits/primitives';
 import { getSteps } from './parse';
+import { appendActions, DEFAULT_LAYOUT, stepButtons, type FormLayout, type StepActions } from './render-actions';
 import type { FormRenderer } from './renderers/types';
 
 const LEGACY_NAMESPACE = 'formGenerator';
 const FRAME_GAP = 40;
 export const DEFINITION_KEY = 'definition';
+export const LAYOUT_KEY = 'layout';
 const MAX_STORED_DEFINITION = 90_000;
 
-interface RenderableStep {
+interface RenderableStep extends StepActions {
   title: string;
   description?: string;
   fields: FormField[];
-  next?: FormAction | false;
-  back?: FormAction | false;
 }
 
-export async function renderForm(definition: FormDefinition, renderer: FormRenderer): Promise<FrameNode[]> {
+export async function renderForm(definition: FormDefinition, renderer: FormRenderer, layout: FormLayout = DEFAULT_LAYOUT): Promise<FrameNode[]> {
   const existingFrames = findExistingFrames(definition.id).sort((left, right) => absolute(left, 0) - absolute(right, 0) || absolute(left, 1) - absolute(right, 1));
   const fallbackX = nextFrameX(figma.currentPage.children, existingFrames);
   const createdFrames: FrameNode[] = [];
@@ -26,9 +26,10 @@ export async function renderForm(definition: FormDefinition, renderer: FormRende
     const steps = getSteps(definition) as RenderableStep[];
     const stored = JSON.stringify(definition);
     for (let index = 0; index < steps.length; index++) {
-      const frame = await renderStep(definition, steps[index], index, steps.length, renderer);
+      const frame = await renderStep(definition, steps[index], index, steps.length, renderer, layout);
       place(frame, existingFrames[index] ?? createdFrames[index - 1], Boolean(existingFrames[index]), fallbackX);
       if (utf8Length(stored) <= MAX_STORED_DEFINITION) frame.setSharedPluginData(PLUGIN_NAMESPACE, DEFINITION_KEY, stored);
+      frame.setSharedPluginData(PLUGIN_NAMESPACE, LAYOUT_KEY, JSON.stringify(layout));
       createdFrames.push(frame);
     }
     for (const frame of existingFrames) frame.remove();
@@ -84,6 +85,7 @@ async function renderStep(
   index: number,
   stepCount: number,
   renderer: FormRenderer,
+  layout: FormLayout,
 ): Promise<FrameNode> {
   const isMultiStep = stepCount > 1;
   const name = isMultiStep ? `${definition.title} — Step ${index + 1}: ${step.title}` : definition.title;
@@ -93,7 +95,8 @@ async function renderStep(
   append(frame, text(isMultiStep ? step.title : definition.title, { font: theme.fonts.semibold, size: theme.titleSize, color: theme.text }, 'Title'));
   if (step.description) append(frame, text(step.description, { font: theme.fonts.regular, size: theme.bodySize, color: theme.muted }, 'Description'));
   for (const field of step.fields) append(frame, await renderer.field(field));
-  await appendButtons(frame, definition, step, renderer, { isFirst: index === 0, isLast: index === stepCount - 1, isMultiStep });
+  const buttons = stepButtons(definition, step, { isFirst: index === 0, isLast: index === stepCount - 1, isMultiStep });
+  await appendActions(frame, buttons, renderer, layout, append);
   return frame;
 }
 
@@ -118,31 +121,3 @@ function createCard(name: string, definitionId: string, theme: KitTheme): FrameN
   return frame;
 }
 
-function actionLabel(action: FormAction | false | undefined, fallback: string): string | null {
-  if (action === false) return null;
-  return action?.label || fallback;
-}
-
-export function stepButtons(definition: FormDefinition, step: RenderableStep, isFirst: boolean, isLast: boolean, isMultiStep: boolean) {
-  return {
-    primary: isLast ? definition.submit.label : actionLabel(step.next, 'Continue'),
-    back: isMultiStep && !isFirst ? actionLabel(step.back, 'Back') : null,
-    cancel: definition.cancel?.label ?? null,
-  };
-}
-
-async function appendButtons(
-  frame: FrameNode,
-  definition: FormDefinition,
-  step: RenderableStep,
-  renderer: FormRenderer,
-  position: { isFirst: boolean; isLast: boolean; isMultiStep: boolean },
-): Promise<void> {
-  const labels = stepButtons(definition, step, position.isFirst, position.isLast, position.isMultiStep);
-  if (!labels.primary && !labels.back && !labels.cancel) return;
-  const actions = stack('VERTICAL', 'Actions', { itemSpacing: renderer.theme.actionsGap });
-  append(frame, actions);
-  if (labels.primary) append(actions, await renderer.button(labels.primary, true));
-  if (labels.back) append(actions, await renderer.button(labels.back, false));
-  if (labels.cancel) append(actions, await renderer.button(labels.cancel, false));
-}
