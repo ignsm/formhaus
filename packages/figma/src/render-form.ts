@@ -1,4 +1,4 @@
-import type { FormDefinition, FormField } from '@formhaus/core';
+import type { FormDefinition, FormField, FormStep } from '@formhaus/core';
 import { PLUGIN_NAMESPACE } from './config';
 import type { KitTheme } from './kits/kit';
 import { solid, stack, text } from './kits/primitives';
@@ -7,6 +7,7 @@ import { appendActions, DEFAULT_LAYOUT, stepButtons, type FormLayout, type StepA
 import { drawFlow, removeFlow } from './flow/arrows';
 import { buildGraph, type FlowGraph } from './flow/graph';
 import { flowPositions } from './flow/layout';
+import { wirePrototype } from './flow/prototype';
 import type { FormRenderer } from './renderers/types';
 
 const LEGACY_NAMESPACE = 'formGenerator';
@@ -66,6 +67,7 @@ export async function renderForm(definition: FormDefinition, renderer: FormRende
     for (const frame of existingFrames) frame.remove();
     removeFlow(definition.id);
     if (graph?.branching) await arrangeFlow(definition, steps, graph, createdFrames, existingFrames.length === 0 ? { x: fallbackX, y: 0 } : null, renderer);
+    if (graph) await wirePrototype(definition, steps as FormStep[], createdFrames);
     return createdFrames;
   } catch (error) {
     for (const frame of createdFrames) frame.remove();
