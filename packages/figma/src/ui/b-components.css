@@ -40,8 +40,6 @@
 .tray-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tray-sub { color: var(--text-2); font-size: 11px; }
 
-.toolbar { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
-
 .groups { display: flex; flex-direction: column; gap: 20px; }
 .group { display: flex; flex-direction: column; gap: 8px; }
 .group-header { align-items: baseline; display: flex; justify-content: space-between; }
@@ -61,8 +59,6 @@
   transition: border-color 0.12s, box-shadow 0.12s;
 }
 .card:hover { border-color: var(--border-strong); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
-.card.tone-brand { border-color: color-mix(in srgb, var(--brand) 35%, var(--border)); }
-.card.tone-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
 .card-preview {
   align-items: center;
   background: var(--preview);

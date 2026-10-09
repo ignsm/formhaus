@@ -16,6 +16,7 @@
   --danger: var(--figma-color-text-danger, #dc3412);
   --danger-soft: var(--figma-color-bg-danger-tertiary, #ffe2e0);
   --warning: var(--figma-color-text-warning, #b86200);
+  --warning-soft: var(--figma-color-bg-warning-tertiary, #fff1db);
   --success: var(--figma-color-text-success, #14ae5c);
   --success-soft: var(--figma-color-bg-success-tertiary, #dcf5e6);
   --preview: #f5f5f7;
