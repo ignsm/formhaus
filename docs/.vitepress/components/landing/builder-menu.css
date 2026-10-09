@@ -116,6 +116,18 @@
     opacity: 1;
   }
 
+  .nb-row[data-kind='page'] > .nb-gutter {
+    margin-top: 26px;
+  }
+
+  .nb-row[data-index='0'] > .nb-gutter {
+    margin-top: 8px;
+  }
+
+  .nb-page__count {
+    display: none;
+  }
+
   .nb-option .nb-tag--ghost,
   .nb-tool--ghost {
     opacity: 1;
