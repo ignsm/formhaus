@@ -1,6 +1,8 @@
 .source-row { align-items: center; display: flex; gap: 10px; }
 .source-row select { flex: 1; }
 .form-bar { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+.form-status-row { align-items: baseline; display: flex; gap: 6px; min-width: 0; }
+.form-status-row .link[hidden] { display: none; }
 .form-status { color: var(--text-2); font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .form-status.is-editing { color: var(--brand-text); font-weight: 600; }
 .segmented.small { flex-shrink: 0; }
@@ -63,7 +65,8 @@
 .field-row.drop-before::before { top: -5px; }
 .field-row.drop-after::after { bottom: -5px; }
 .field-main { align-items: center; display: flex; gap: 6px; padding: 6px 6px 6px 4px; }
-.drag-handle { color: var(--text-3); cursor: grab; display: flex; flex-shrink: 0; }
+.drag-handle { background: none; border: 0; border-radius: 4px; color: var(--text-3); cursor: grab; display: flex; flex-shrink: 0; padding: 0; }
+.drag-handle:focus-visible, .add-field:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
 .type-select { flex-shrink: 0; font-size: 11px; padding: 5px 26px 5px 8px; width: 108px; }
 .label-input { flex: 1; }
 .chip {

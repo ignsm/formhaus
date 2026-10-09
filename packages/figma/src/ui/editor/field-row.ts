@@ -1,6 +1,7 @@
 import type { FormDefinition, FormField } from '@formhaus/core';
 import { element, iconButton } from '../dom';
 import { icon } from '../icons';
+import { labelled, textInput } from './controls';
 import { addOption, FIELD_TYPES, hasOptions, renameField, renameOption, setRequired, setType } from './model';
 
 export interface RowContext {
@@ -20,6 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 export function typeSelect(value: string, onChange: (type: string) => void, className = 'type-select'): HTMLSelectElement {
   const select = element('select', className);
+  select.setAttribute('aria-label', 'Field type');
   const types = (FIELD_TYPES as readonly string[]).includes(value) ? FIELD_TYPES : [...FIELD_TYPES, value];
   for (const type of types) {
     const option = element('option', '', TYPE_LABELS[type] ?? type);
@@ -31,18 +33,8 @@ export function typeSelect(value: string, onChange: (type: string) => void, clas
   return select;
 }
 
-function input(value: string, placeholder: string, onInput: (value: string) => void, className = 'input'): HTMLInputElement {
-  const node = element('input', className);
-  node.value = value;
-  node.placeholder = placeholder;
-  node.oninput = () => onInput(node.value);
-  return node;
-}
-
 function detail(label: string, control: HTMLElement): HTMLElement {
-  const node = element('label', 'detail');
-  node.append(element('span', '', label), control);
-  return node;
+  return labelled(label, control, 'detail');
 }
 
 function options(field: FormField, context: RowContext): HTMLElement {
@@ -50,7 +42,7 @@ function options(field: FormField, context: RowContext): HTMLElement {
   for (const [index, option] of (field.options ?? []).entries()) {
     const row = element('div', 'option-row');
     row.append(
-      input(option.label, 'Option label', (value) => {
+      textInput(option.label, 'Option label', 'input', (value) => {
         renameOption(context.draft, field, option, value);
         context.changed();
       }),
@@ -74,17 +66,17 @@ function options(field: FormField, context: RowContext): HTMLElement {
 
 function details(field: FormField, context: RowContext): HTMLElement {
   const node = element('div', 'field-details');
-  const key = input(field.key, 'key', (value) => {
+  const key = textInput(field.key, 'key', 'input mono', (value) => {
     field.key = value.trim();
     context.changed();
-  }, 'input mono');
+  }, 'Field key');
   node.append(
-    detail('Placeholder', input(field.placeholder ?? '', 'Shown inside the empty field', (value) => {
+    detail('Placeholder', textInput(field.placeholder ?? '', 'Shown inside the empty field', 'input', (value) => {
       if (value) field.placeholder = value;
       else delete field.placeholder;
       context.changed();
     })),
-    detail('Helper text', input(field.helperText ?? '', 'Shown under the field', (value) => {
+    detail('Helper text', textInput(field.helperText ?? '', 'Shown under the field', 'input', (value) => {
       if (value) field.helperText = value;
       else delete field.helperText;
       context.changed();
@@ -98,18 +90,23 @@ function details(field: FormField, context: RowContext): HTMLElement {
 export function fieldRow(field: FormField, context: RowContext): HTMLElement {
   const row = element('div', context.isOpen(field) ? 'field-row is-open' : 'field-row');
   const main = element('div', 'field-main');
-  const handle = element('span', 'drag-handle');
-  handle.title = 'Drag to reorder';
+  row.dataset.key = field.key;
+  const handle = element('button', 'drag-handle');
+  handle.type = 'button';
+  handle.title = 'Drag to reorder, or use the arrow keys';
+  handle.setAttribute('aria-label', `Move ${field.label}`);
   handle.appendChild(icon('drag'));
-  const label = input(field.label, 'Field label', (value) => {
+  const label = textInput(field.label, 'Field label', 'input label-input', (value) => {
     const before = field.key;
     renameField(context.draft, field, value);
     const keyInput = row.querySelector<HTMLInputElement>('.field-details .mono');
     if (keyInput && before !== field.key) keyInput.value = field.key;
+    row.dataset.key = field.key;
     context.changed();
-  }, 'input label-input');
+  });
   const required = element('button', field.validation?.required ? 'chip is-on' : 'chip', 'Required');
   required.type = 'button';
+  required.setAttribute('aria-label', `${field.label} is required`);
   required.setAttribute('aria-pressed', String(Boolean(field.validation?.required)));
   required.onclick = () => {
     setRequired(field, !field.validation?.required);
