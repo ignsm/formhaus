@@ -7,13 +7,11 @@ import { submitAsync } from './submission';
 import type { StepChangeContext, SubmitFn } from './engine-options';
 import type { EngineInternals } from './runtime-internals';
 
-function getStepErrors(engine: EngineInternals): Record<string, string> | null {
+function hasStepErrors(engine: EngineInternals): boolean {
   const step = engine.currentStep;
-  if (!step) return null;
-  return validateStep(step, getValidationValues(engine), engine.validators);
-}
-
-function publishStepErrors(engine: EngineInternals, errors: Record<string, string>): boolean {
+  if (!step) return true;
+  includeCurrentStep(engine);
+  const errors = validateStep(step, getValidationValues(engine), engine.validators);
   if (Object.keys(errors).length === 0) return false;
   const previousErrors = { ...engine.errors };
   Object.assign(engine.errors, errors);
@@ -30,42 +28,28 @@ function advance(engine: EngineInternals): boolean {
 }
 
 export function nextStep(engine: EngineInternals): boolean {
-  if (!engine.isMultiStep) return false;
-  includeCurrentStep(engine);
-  const errors = getStepErrors(engine);
-  if (!errors || publishStepErrors(engine, errors)) return false;
-  return advance(engine);
-}
-
-export function nextStepAsync(engine: EngineInternals, reason: 'next' | 'autoAdvance' = 'next'): Promise<boolean> {
-  return changeStep(engine, 'next', reason);
+  return engine.isMultiStep && !hasStepErrors(engine) && advance(engine);
 }
 
 export function skipStep(engine: EngineInternals): boolean {
-  if (!engine.isMultiStep || engine.isLastStep || !skipCurrentStep(engine)) return false;
+  if (!engine.isMultiStep || engine.isLastStep) return false;
+  skipCurrentStep(engine);
   return advance(engine);
 }
 
-export function skipStepAsync(engine: EngineInternals, submit?: SubmitFn): Promise<boolean> {
-  if (!engine.isMultiStep || engine.stepValidating || engine.submitting) return Promise.resolve(false);
-  if (engine.isLastStep && !submit) return Promise.resolve(false);
+export async function skipStepAsync(engine: EngineInternals, submit?: SubmitFn): Promise<boolean> {
+  if (!engine.isMultiStep || engine.stepValidating || engine.submitting) return false;
   skipCurrentStep(engine);
-  if (!engine.isLastStep) return changeStep(engine, 'next', 'skip');
-  return submit ? submitAsync(engine, submit, true) : Promise.resolve(false);
+  return engine.isLastStep ? !!submit && submitAsync(engine, submit, true) : changeStep(engine, 'next', 'skip');
 }
 
-export function prevStepAsync(engine: EngineInternals): Promise<boolean> {
-  return changeStep(engine, 'back');
-}
-
-async function changeStep(engine: EngineInternals, direction: 'next' | 'back', reason: StepChangeContext['reason'] = direction): Promise<boolean> {
+export async function changeStep(engine: EngineInternals, direction: 'next' | 'back', reason: StepChangeContext['reason'] = direction): Promise<boolean> {
   if (!engine.isMultiStep || engine.stepValidating || engine.submitting) return false;
   if (direction === 'next' ? engine.isLastStep : engine.isFirstStep) return false;
   const step = engine.currentStep;
   if (!step) return false;
   const validating = direction === 'next' && reason !== 'skip';
-  if (validating) includeCurrentStep(engine);
-  if (validating && publishStepErrors(engine, validateStep(step, getValidationValues(engine), engine.validators))) return false;
+  if (validating && hasStepErrors(engine)) return false;
   const lifecycle = { ...engine.lifecycle };
   const validate = engine.onStepValidate;
   let committed = false;
@@ -96,7 +80,7 @@ async function changeStep(engine: EngineInternals, direction: 'next' | 'back', r
       if (stale() || allowed === false) return false;
     }
     if (stale()) return false;
-    if (validating && publishStepErrors(engine, validateStep(step, getValidationValues(engine), engine.validators))) return false;
+    if (validating && hasStepErrors(engine)) return false;
     committed = true;
     engine.currentStepIndex = toIndex;
     engine.validationEpoch++;

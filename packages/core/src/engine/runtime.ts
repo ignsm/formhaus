@@ -3,7 +3,7 @@ import type { ValidatorFn } from '../validation';
 import type { FormDefinition, FormField, FormStep } from '../types';
 import type { FormEngineOptions, StepValidateFn, SubmitFn } from './engine-options';
 import { createValues, getChangedKeys } from './engine-utils';
-import { goToStepWithField, nextStep, nextStepAsync, prevStep, prevStepAsync, skipStep, skipStepAsync } from './navigation';
+import { changeStep, goToStepWithField, nextStep, prevStep, skipStep, skipStepAsync } from './navigation';
 import type { EngineInternals, RuntimeNotifyOptions } from './runtime-internals';
 import { FormSubscriptions, type NotifyOptions } from './subscriptions';
 import {
@@ -28,7 +28,7 @@ export class FormEngine {
   fieldLoading: Record<string, boolean> = {};
   stepValidating = false;
   submitting = false;
-  private readonly skippedSteps = new Set<string>();
+  private readonly skipped = new Map<string, string[]>();
   private validationEpoch = 0;
   private operationEpoch = 0;
   private readonly lifecycle: FormEngineOptions;
@@ -153,11 +153,11 @@ export class FormEngine {
   }
 
   nextStep(): boolean { return nextStep(this.internals); }
-  nextStepAsync(reason: 'next' | 'autoAdvance' = 'next'): Promise<boolean> { return nextStepAsync(this.internals, reason); }
-  prevStepAsync(): Promise<boolean> { return prevStepAsync(this.internals); }
+  nextStepAsync(reason: 'next' | 'autoAdvance' = 'next'): Promise<boolean> { return changeStep(this.internals, 'next', reason); }
+  prevStepAsync(): Promise<boolean> { return changeStep(this.internals, 'back'); }
   skipStep(): boolean { return skipStep(this.internals); }
   skipStepAsync(submit?: SubmitFn): Promise<boolean> { return skipStepAsync(this.internals, submit); }
-  isStepSkipped(stepId: string): boolean { return this.skippedSteps.has(stepId); }
+  isStepSkipped(stepId: string): boolean { return this.skipped.has(stepId); }
   submitAsync(submit: SubmitFn): Promise<boolean> { return submitAsync(this.internals, submit); }
   prevStep(): void { prevStep(this.internals); }
   validate(): Record<string, string> { return validateForm(this.internals); }

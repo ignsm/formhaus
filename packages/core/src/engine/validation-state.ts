@@ -1,6 +1,6 @@
 import { validateField, validateFields, validateStep } from '../validation';
 import type { FormDefinition } from '../types';
-import { createValues, getChangedKeys } from './engine-utils';
+import { createValues, getChangedKeys, hasFieldsAndSteps } from './engine-utils';
 import type { EngineInternals } from './runtime-internals';
 
 function replaceErrors(engine: EngineInternals, errors: Record<string, string>): Set<string> {
@@ -63,7 +63,7 @@ export function validateForm(engine: EngineInternals): Record<string, string> {
   const errors: Record<string, string> = {};
   if (engine.isMultiStep) {
     for (const step of engine.visibleSteps) {
-      if (engine.skippedSteps.has(step.id)) continue;
+      if (engine.skipped.has(step.id)) continue;
       Object.assign(errors, validateStep(step, getValidationValues(engine), engine.validators));
     }
   } else {
@@ -91,16 +91,14 @@ export function validateOne(engine: EngineInternals, key: string): string | null
 
 export function getSubmitValues(engine: EngineInternals): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const skipped = new Set((engine.definition.steps ?? [])
-    .filter((step) => engine.skippedSteps.has(step.id))
-    .flatMap((step) => step.fields.map((field) => field.key)));
   const visibleKeys = engine.visibility.getVisibleFieldKeys(
     engine.values,
     engine.currentStepIndex,
   );
   for (const key of visibleKeys) {
-    if (engine.values[key] !== undefined && !skipped.has(key)) result[key] = engine.values[key];
+    if (engine.values[key] !== undefined) result[key] = engine.values[key];
   }
+  for (const key of [...engine.skipped.values()].flat()) delete result[key];
   return result;
 }
 
@@ -117,7 +115,7 @@ export function resetEngine(engine: EngineInternals, values?: Record<string, unk
   engine.fieldLoading = {};
   engine.stepValidating = false;
   engine.currentStepIndex = 0;
-  engine.skippedSteps.clear();
+  engine.skipped.clear();
   engine.visibility.reconcileHidden(engine.values, engine.errors);
   const changedValues = getChangedKeys(previousValues, engine.values);
   const changedFields = new Set([
@@ -133,9 +131,7 @@ export function resetEngine(engine: EngineInternals, values?: Record<string, unk
 }
 
 export function assertDefinitionShape(definition: FormDefinition): void {
-  const hasFields = (definition.fields?.length ?? 0) > 0;
-  const hasSteps = (definition.steps?.length ?? 0) > 0;
-  if (hasFields && hasSteps) {
+  if (hasFieldsAndSteps(definition)) {
     throw new Error('FormDefinition cannot have both "fields" and "steps" as non-empty arrays.');
   }
 }
