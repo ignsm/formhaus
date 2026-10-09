@@ -1,15 +1,41 @@
 <script setup lang="ts">
+import { computed, nextTick, ref } from 'vue';
 import AutoInput from './AutoInput.vue';
-import type { BuilderPage } from './builder-model';
+import BuilderMenu from './BuilderMenu.vue';
+import LucideIcon from './LucideIcon.vue';
+import type { BuilderPage, MenuItem } from './builder-model';
 
-defineProps<{ page: BuilderPage }>();
+const props = defineProps<{ page: BuilderPage; position: number; pages: { uid: string; title: string }[] }>();
 const emit = defineEmits<{ after: []; remove: []; edit: [] }>();
 
-function onKey(event: KeyboardEvent, empty: boolean) {
+const root = ref<HTMLElement>();
+const anchor = ref<HTMLElement>();
+const open = ref(false);
+const title = computed(() => props.pages.find((page) => page.uid === props.page.next)?.title);
+const items = computed<MenuItem[]>(() => [
+  { id: 'next', label: 'Next page', hint: 'Continue in order', icon: 'arrow-down' },
+  ...props.pages.map((page) => ({ id: page.uid, label: page.title, hint: 'Skip ahead to this page', icon: 'file' as const })),
+]);
+
+async function focusText() {
+  await nextTick();
+  const input = root.value?.querySelector<HTMLInputElement>('.auto__input');
+  input?.focus();
+  input?.setSelectionRange(input.value.length, input.value.length);
+}
+
+function pick(id: string) {
+  open.value = false;
+  props.page.next = id === 'next' ? null : id;
+  emit('edit');
+  focusText();
+}
+
+function onKey(event: KeyboardEvent) {
   if (event.key === 'Enter') {
     event.preventDefault();
     emit('after');
-  } else if (event.key === 'Backspace' && empty) {
+  } else if (event.key === 'Backspace' && !props.page.title) {
     event.preventDefault();
     emit('remove');
   }
@@ -17,15 +43,28 @@ function onKey(event: KeyboardEvent, empty: boolean) {
 </script>
 
 <template>
-  <div class="nb-block nb-page" :data-uid="page.uid">
-    <div class="nb-line">
-      <AutoInput
-        v-model="page.title"
-        placeholder="Page name"
-        label="Page name"
-        @keydown="onKey($event, !page.title)"
-        @input="emit('edit')"
-      />
+  <div ref="root" class="nb-block nb-page" :data-uid="page.uid">
+    <div class="nb-line nb-page__line">
+      <span class="nb-page__icon" aria-hidden="true"><LucideIcon name="file" /></span>
+      <AutoInput v-model="page.title" placeholder="Page title" :label="`Page ${position + 1} title`" @keydown="onKey" @input="emit('edit')" />
+      <span v-if="pages.length" ref="anchor" class="nb-anchor">
+        <button
+          type="button"
+          class="nb-tag"
+          :class="page.next ? 'nb-tag--branch' : 'nb-tag--ghost'"
+          :data-warn="!!page.next && !title"
+          data-tip="Where this page continues after its questions"
+          :aria-label="`After this page: ${page.next ? title ?? 'missing page' : 'next page'}`"
+          @click="open = true"
+        >
+          then
+          <LucideIcon name="arrow-right" />
+          {{ page.next ? title ?? 'Missing page' : 'next' }}
+          <LucideIcon name="chevron-down" class="nb-tag__chevron" />
+        </button>
+        <BuilderMenu v-if="open" :id="`${page.uid}-next`" :items="items" :current="page.next ?? 'next'" :anchor="anchor" label="Where this page continues" @pick="pick" @close="open = false; focusText()" />
+      </span>
+      <span class="nb-page__count">Page {{ position + 1 }}</span>
     </div>
   </div>
 </template>
