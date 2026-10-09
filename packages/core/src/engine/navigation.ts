@@ -1,3 +1,4 @@
+import { getChangedKeys } from './engine-utils';
 import { afterCommit } from './lifecycle-error';
 import { watchCheckedInputs } from './pending-inputs';
 import { validateStep } from '../validation';
@@ -14,7 +15,7 @@ function hasStepErrors(engine: EngineInternals): boolean {
   if (Object.keys(errors).length === 0) return false;
   const previousErrors = { ...engine.errors };
   Object.assign(engine.errors, errors);
-  engine.notify({ fieldKeys: engine.getChangedKeys(previousErrors, engine.errors) });
+  engine.notify({ fieldKeys: getChangedKeys(previousErrors, engine.errors) });
   return true;
 }
 
@@ -47,21 +48,26 @@ export async function skipStepAsync(engine: EngineInternals, submit?: SubmitFn):
   if (skipTarget(engine)) return changeStep(engine, 'next', 'skip');
   const step = engine.currentStep;
   if (!submit || !step) return false;
+  const values = engine.values;
   let submitted = false;
-  engine.skipped.set(step.id, step.fields.map(({ key }) => key));
+  const fieldKeys = skipCurrentStep(engine);
+  const skippedValues = engine.values;
   try {
     return submitted = await submitAsync(engine, submit, true);
   } finally {
-    if (!submitted) engine.skipped.delete(step.id);
+    if (!submitted && engine.values === skippedValues) {
+      engine.values = values;
+      engine.skipped.delete(step.id);
+      engine.notify({ fieldKeys, structureChanged: true, valuesChanged: true });
+    }
   }
 }
 
 export async function changeStep(engine: EngineInternals, direction: 'next' | 'back', reason: StepChangeContext['reason'] = direction): Promise<boolean> {
-  if (!engine.isMultiStep || engine.stepValidating || engine.submitting) return false;
-  if (direction === 'next' ? engine.isLastStep : engine.isFirstStep) return false;
-  const step = engine.currentStep;
-  if (!step) return false;
   const skipping = reason === 'skip';
+  if (!engine.isMultiStep || engine.stepValidating || engine.submitting) return false;
+  if (!skipping && (direction === 'next' ? engine.isLastStep : engine.isFirstStep)) return false;
+  const step = engine.currentStep!;
   const validating = direction === 'next' && !skipping;
   if (validating) includeCurrentStep(engine);
   if (validating && hasStepErrors(engine)) return false;

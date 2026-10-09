@@ -14,7 +14,7 @@ export function skipTarget(engine: EngineInternals): FormStep | undefined {
   return activeSteps(engine.definition, resetValues(engine))[engine.currentStepIndex + 1];
 }
 
-export function skipCurrentStep(engine: EngineInternals): void {
+export function skipCurrentStep(engine: EngineInternals): string[] {
   const step = engine.currentStep!;
   const fieldKeys = step.fields.map(({ key }) => key);
   engine.values = resetValues(engine);
@@ -22,6 +22,7 @@ export function skipCurrentStep(engine: EngineInternals): void {
   engine.skipped.set(step.id, fieldKeys);
   engine.visibility.reconcileHidden(engine.values, engine.errors);
   engine.notify({ fieldKeys, structureChanged: true, valuesChanged: true });
+  return fieldKeys;
 }
 
 export function includeCurrentStep(engine: EngineInternals): void {
