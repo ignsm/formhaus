@@ -1,4 +1,4 @@
-import type { FormDefinition, FormField, FormStep, StepRoute } from '@formhaus/core';
+import type { FieldType, FormDefinition, FormField, FormStep, StepRoute } from '@formhaus/core';
 
 export const QUESTION_TYPES = [
   { type: 'text', label: 'Short text', hint: 'One line of text', icon: 'type', placeholder: 'Question' },
@@ -23,13 +23,13 @@ export interface BuilderQuestion {
   kind: 'question';
   uid: string;
   label: string;
-  type: QuestionType;
+  type: FieldType;
   required: boolean;
   options: BuilderOption[];
   extra: Partial<FormField>;
   key?: string;
 }
-export interface BuilderPage { kind: 'page'; uid: string; title: string; next: string | null; nextLabel: string; backLabel: string }
+export interface BuilderPage { kind: 'page'; uid: string; title: string; next: string | null; nextLabel: string; backLabel: string; id?: string }
 export const DEFAULT_NEXT = 'Continue';
 export const DEFAULT_BACK = 'Back';
 export type BuilderBlock = BuilderQuestion | BuilderPage;
@@ -38,10 +38,10 @@ export interface Group { page?: BuilderPage; questions: BuilderQuestion[] }
 
 let counter = 0;
 export const uid = () => `b${(counter += 1)}`;
-export const hasOptions = (type: QuestionType) => type === 'radio' || type === 'multiselect' || type === 'select';
-export const canBranch = (type: QuestionType) => type === 'radio' || type === 'select';
-export const placeholderFor = (type: QuestionType) => QUESTION_TYPES.find((item) => item.type === type)?.placeholder ?? 'Question';
-export const typeLabel = (type: QuestionType) => QUESTION_TYPES.find((item) => item.type === type)?.label ?? type;
+export const hasOptions = (type: FieldType) => type === 'radio' || type === 'multiselect' || type === 'select';
+export const canBranch = (type: FieldType) => type === 'radio' || type === 'select';
+export const placeholderFor = (type: FieldType) => QUESTION_TYPES.find((item) => item.type === type)?.placeholder ?? 'Question';
+export const typeLabel = (type: FieldType) => QUESTION_TYPES.find((item) => item.type === type)?.label ?? type.charAt(0).toUpperCase() + type.slice(1);
 export const newPage = (title = ''): BuilderPage => ({ kind: 'page', uid: uid(), title, next: null, nextLabel: '', backLabel: '' });
 export const newOption = (label = ''): BuilderOption => ({ uid: uid(), label, jump: null });
 export const pageTitle = (page: BuilderPage | undefined, position: number) => page?.title.trim() || `Page ${position + 1}`;
@@ -66,13 +66,21 @@ export function groups(form: BuilderForm): Group[] {
   return result;
 }
 
-export function laterPages(form: BuilderForm, index: number): { uid: string; title: string }[] {
+export interface PageRef { uid: string; title: string }
+
+export function pagesAfter(form: BuilderForm): PageRef[][] {
   const offset = form.blocks[0]?.kind === 'page' ? 0 : 1;
-  return form.blocks.slice(index + 1).flatMap((block, at) => {
-    if (block.kind !== 'page') return [];
-    const position = form.blocks.slice(0, index + 1 + at).filter((item) => item.kind === 'page').length + offset;
-    return [{ uid: block.uid, title: pageTitle(block, position) }];
-  });
+  const result: PageRef[][] = [];
+  let tail: PageRef[] = [];
+  let position = form.blocks.filter((block) => block.kind === 'page').length + offset;
+  for (let index = form.blocks.length - 1; index >= 0; index--) {
+    result[index] = tail;
+    const block = form.blocks[index];
+    if (block.kind !== 'page') continue;
+    position -= 1;
+    tail = [{ uid: block.uid, title: pageTitle(block, position) }, ...tail];
+  }
+  return result;
 }
 
 function words(label: string): string[] {
@@ -97,6 +105,7 @@ const slug = (label: string, taken: Set<string>, fallback: string) => unique(wor
 function question(field: FormField, routes: StepRoute[], ids: Map<string, string>): BuilderQuestion {
   const { key, type, label, options, validation, ...extra } = field;
   const { required, ...rules } = validation ?? {};
+  if (typeof required === 'string') (rules as Record<string, unknown>).required = required;
   const shown = (value: string) => routes.find((item) => item.show?.length === 1 && item.show[0].field === key && item.show[0].eq === value)?.to;
   const fallback = routes.find((item) => !item.show?.length && !item.showAny?.length)?.to;
   const open = (options ?? []).filter((option) => !shown(option.value));
@@ -108,7 +117,7 @@ function question(field: FormField, routes: StepRoute[], ids: Map<string, string
     kind: 'question',
     uid: uid(),
     label: label ?? '',
-    type: QUESTION_TYPES.find((item) => item.type === type)?.type ?? 'text',
+    type,
     required: !!required,
     options: (options ?? []).map((option) => {
       const own: BuilderOption = { uid: uid(), label: option.label, jump: jump(option.value) };
@@ -126,7 +135,11 @@ export function fromDefinition(definition: FormDefinition): BuilderForm {
   if (!definition.steps) return { ...base, blocks: (definition.fields ?? []).map((field) => question(field, [], new Map())) };
   const steps = definition.steps;
   const label = (action: FormStep['next']) => (typeof action === 'object' && action ? action.label : '');
-  const pages = steps.map((step) => ({ ...newPage(step.title ?? step.id), nextLabel: label(step.next), backLabel: label(step.back) }));
+  const pages = steps.map((step) => {
+    const page = { ...newPage(step.title ?? step.id), nextLabel: label(step.next), backLabel: label(step.back) };
+    if (step.id !== words(step.title ?? '').join('-')) page.id = step.id;
+    return page;
+  });
   const ids = new Map(steps.map((step, index) => [step.id, pages[index].uid]));
   const blocks = steps.flatMap((step, index): BuilderBlock[] => {
     const questions = step.fields.map((field) => question(field, step.routes ?? [], ids));
@@ -163,7 +176,7 @@ export function toDefinition(form: BuilderForm): FormDefinition {
   const head = { $schema: 'https://formhaus.dev/schema/form-definition.json', id: form.id, title: form.title.trim() || 'Untitled form', submit: { label: form.submit.trim() || 'Submit' } };
   if (parts.length < 2) return { ...head, fields: (parts[0]?.questions ?? []).map((item) => field(item, keys, values)) } as FormDefinition;
   const taken = new Set<string>();
-  const ids = parts.map((part, index) => slug(pageTitle(part.page, index), taken, `page-${index + 1}`));
+  const ids = parts.map((part, index) => (part.page?.id ? unique(part.page.id, taken, '-') : slug(pageTitle(part.page, index), taken, `page-${index + 1}`)));
   const fields = parts.map((part) => part.questions.map((item) => field(item, keys, values)));
   const routes: StepRoute[][] = parts.map(() => []);
   parts.forEach((part, index) => {
