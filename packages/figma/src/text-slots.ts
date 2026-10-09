@@ -56,13 +56,31 @@ function nearestInstance(node: BaseNode): BaseNode | null {
   return current;
 }
 
+const FALLBACK_FONT: FontName = { family: 'Inter', style: 'Regular' };
+
 async function loadFonts(instance: InstanceNode): Promise<void> {
-  const fonts = new Map<string, FontName>();
+  const nodesByFont = new Map<string, { font: FontName; nodes: TextNode[] }>();
   for (const node of instance.findAllWithCriteria({ types: ['TEXT'] })) {
     const used = node.characters.length > 0
       ? node.getRangeAllFontNames(0, node.characters.length)
       : node.fontName === figma.mixed ? [] : [node.fontName];
-    for (const font of used) fonts.set(`${font.family}/${font.style}`, font);
+    for (const font of used) {
+      const key = `${font.family}/${font.style}`;
+      const entry = nodesByFont.get(key) ?? { font, nodes: [] };
+      entry.nodes.push(node);
+      nodesByFont.set(key, entry);
+    }
   }
-  await Promise.all([...fonts.values()].map((font) => figma.loadFontAsync(font)));
+  const missing = await Promise.all([...nodesByFont.values()].map(async (entry) => {
+    try {
+      await figma.loadFontAsync(entry.font);
+      return [];
+    } catch {
+      return entry.nodes;
+    }
+  }));
+  const fallbackNodes = missing.flat();
+  if (fallbackNodes.length === 0) return;
+  await figma.loadFontAsync(FALLBACK_FONT);
+  for (const node of fallbackNodes) node.fontName = FALLBACK_FONT;
 }

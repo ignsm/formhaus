@@ -19,8 +19,9 @@ describe('roleForField', () => {
     expect(roleForField(field('checkbox', [{ value: 'a', label: 'A' }]))).toBe('option.checkbox');
   });
 
-  it('covers every role a kit must provide', () => {
-    expect(ROLES).toHaveLength(11);
+  it('maps every field type to a role that kits provide', () => {
+    const types = ['text', 'email', 'select', 'textarea', 'date', 'file', 'checkbox', 'switch', 'radio', 'multiselect', 'other'];
+    for (const type of types) expect(ROLES).toContain(roleForField(field(type)));
   });
 });
 
