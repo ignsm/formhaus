@@ -19,15 +19,33 @@ describe('validate_definition', () => {
     expect(report.errors[0]).toMatch(/not valid JSON/);
   });
 
-  it('reports missing required props', async () => {
-    const report = await validateDefinitionTool({ definition: { steps: [{ id: 's', fields: [{ key: 'a' }] }] } });
+  it('reports JSON Schema errors', async () => {
+    const report = await validateDefinitionTool({ definition: { steps: [{ id: 's', fields: [{ key: 'a', colour: 'red' }] }] } });
     expect(report.valid).toBe(false);
     expect(report.errors).toEqual(expect.arrayContaining([
-      'Definition is missing "id".',
-      'submit must be an object with a non-empty "label".',
-      'steps[0] is missing "title".',
-      'steps[0].fields[0] is missing "type".',
+      "Schema: / must have required property 'id'",
+      "Schema: / must have required property 'submit'",
+      "Schema: /steps/0 must have required property 'title'",
+      "Schema: /steps/0/fields/0 must have required property 'type'",
+      'Schema: /steps/0/fields/0 must NOT have additional properties "colour"',
     ]));
+  });
+
+  it('reports wrong value types from the schema', async () => {
+    const report = await validateDefinitionTool({ definition: { ...linear, steps: [{ ...linear.steps[0], routes: [{ to: 3 }] }] } });
+    expect(report.errors).toContain('Schema: /steps/0/routes/0/to must be string,null');
+  });
+
+  it('rejects duplicate step ids without routes', async () => {
+    const report = await validateDefinitionTool({ definition: { ...linear, steps: [linear.steps[0], { ...linear.steps[1], id: 'name' }] } });
+    expect(report.valid).toBe(false);
+    expect(report.errors).toEqual(['Duplicate step id "name" at steps[1].']);
+  });
+
+  it('warns about next: false without an autoAdvance radio', async () => {
+    const report = await validateDefinitionTool({ definition: { ...linear, steps: [{ ...linear.steps[0], next: false }, linear.steps[1]] } });
+    expect(report.valid).toBe(true);
+    expect(report.warnings).toContain('steps[0] has next: false but no autoAdvance radio, so users cannot move forward.');
   });
 
   it('reports route errors the engine rejects', async () => {

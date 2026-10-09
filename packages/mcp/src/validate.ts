@@ -1,14 +1,13 @@
 import { validateDefinition, type FormDefinition } from '@formhaus/core';
 import { parseDefinition } from './definition-input';
 import { createEngine } from './engine';
-import { loadSchemaValidator } from './schema-validation';
+import { schemaErrors } from './schema-validation';
 import { checkStructure } from './structure';
 
 export interface ValidationReport {
   valid: boolean;
   errors: string[];
   warnings: string[];
-  schemaChecked: boolean;
 }
 
 export interface Inspection {
@@ -16,30 +15,24 @@ export interface Inspection {
   definition?: FormDefinition;
 }
 
-function unique(items: string[]): string[] {
-  return [...new Set(items)];
+function finish(errors: string[], warnings: string[]): ValidationReport {
+  return { valid: errors.length === 0, errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
 }
 
-export async function inspectDefinition(input: unknown): Promise<Inspection> {
+export function inspectDefinition(input: unknown): Inspection {
   const parsed = parseDefinition(input);
-  if (!parsed.ok) return { report: { valid: false, errors: [parsed.error], warnings: [], schemaChecked: false } };
-  const schema = await loadSchemaValidator();
-  const { errors, warnings } = checkStructure(parsed.value);
-  errors.push(...(schema?.(parsed.value) ?? []));
-  const report = (): ValidationReport => ({
-    valid: errors.length === 0,
-    errors: unique(errors),
-    warnings: unique(warnings),
-    schemaChecked: schema !== null,
-  });
-  if (errors.length > 0) return { report: report() };
+  if (!parsed.ok) return { report: finish([parsed.error], []) };
+  const invalid = schemaErrors(parsed.value);
+  if (invalid.length > 0) return { report: finish(invalid, []) };
   const definition = parsed.value as unknown as FormDefinition;
+  const { errors, warnings } = checkStructure(definition);
+  if (errors.length > 0) return { report: finish(errors, warnings) };
   const engine = createEngine(definition);
   if (!engine.ok) errors.push(...engine.errors);
   warnings.push(...validateDefinition(definition).filter((warning) => !errors.includes(warning)));
-  return { report: report(), definition: engine.ok ? definition : undefined };
+  return { report: finish(errors, warnings), definition: engine.ok ? definition : undefined };
 }
 
-export async function validateDefinitionTool(input: { definition: unknown }): Promise<ValidationReport> {
-  return (await inspectDefinition(input.definition)).report;
+export function validateDefinitionTool(input: { definition: unknown }): ValidationReport {
+  return inspectDefinition(input.definition).report;
 }

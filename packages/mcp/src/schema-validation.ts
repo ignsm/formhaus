@@ -1,33 +1,23 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import type { ErrorObject, ValidateFunction } from 'ajv';
+import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 
-type SchemaValidator = (definition: unknown) => string[];
+let compiled: ValidateFunction | undefined;
 
-let cached: Promise<SchemaValidator | null> | undefined;
-
-function readSchema(): Record<string, unknown> | null {
-  try {
-    const path = createRequire(import.meta.url).resolve('@formhaus/core/schema.json');
-    return JSON.parse(readFileSync(path, 'utf8'));
-  } catch {
-    return null;
-  }
+function schemaValidator(): ValidateFunction {
+  if (compiled) return compiled;
+  const path = createRequire(import.meta.url).resolve('@formhaus/core/schema.json');
+  compiled = new Ajv({ allErrors: true, strict: false }).compile(JSON.parse(readFileSync(path, 'utf8')));
+  return compiled;
 }
 
-function formatError({ instancePath, message }: ErrorObject): string {
-  return `Schema: ${instancePath || '/'} ${message ?? 'is invalid'}`;
+function formatError({ instancePath, message, params }: ErrorObject): string {
+  const extra = 'additionalProperty' in params ? ` "${params.additionalProperty}"` : '';
+  return `Schema: ${instancePath || '/'} ${message ?? 'is invalid'}${extra}`;
 }
 
-async function compile(): Promise<SchemaValidator | null> {
-  const schema = readSchema();
-  if (!schema) return null;
-  const { default: Ajv } = await import('ajv');
-  const validate: ValidateFunction = new Ajv({ allErrors: true, strict: false }).compile(schema);
-  return (definition) => (validate(definition) ? [] : (validate.errors ?? []).map(formatError));
-}
-
-export function loadSchemaValidator(): Promise<SchemaValidator | null> {
-  cached ??= compile().catch(() => null);
-  return cached;
+export function schemaErrors(definition: unknown): string[] {
+  const validate = schemaValidator();
+  if (validate(definition)) return [];
+  return [...new Set((validate.errors ?? []).map(formatError))];
 }
