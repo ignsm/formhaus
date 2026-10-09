@@ -80,6 +80,20 @@ describe('references', () => {
     expect(field.key).toBe('typeOfAccount');
   });
 
+  it('treats disabled conditions on actions and array defaults as references', () => {
+    const draft = form();
+    const terms = addField(draft, 0, 'checkbox');
+    renameField(draft, terms, 'Terms');
+    draft.submit = { label: 'Go', disabled: [{ field: 'terms', neq: true }] };
+    renameField(draft, terms, 'Accept terms');
+    expect(terms.key).toBe('terms');
+    expect(removeField(draft, 0, 2)).toContain('Accept terms');
+    const plan = draft.fields![1];
+    plan.defaultValue = ['pro'];
+    renameOption(draft, plan, plan.options![0], 'Professional');
+    expect(plan.options![0].value).toBe('pro');
+  });
+
   it('refuses to delete a field or step that a condition or route uses', () => {
     const draft = form();
     draft.fields!.push({ key: 'seats', type: 'number', label: 'Seats', show: [{ field: 'plan', eq: 'pro' }] });

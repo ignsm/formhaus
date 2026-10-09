@@ -1,4 +1,4 @@
-import type { FormDefinition, FormField, ShowCondition } from '@formhaus/core';
+import type { FormAction, FormDefinition, FormField, ShowCondition } from '@formhaus/core';
 
 interface Conditional {
   show?: ShowCondition[];
@@ -15,7 +15,12 @@ function conditions(draft: FormDefinition): ShowCondition[] {
     ...(draft.steps ?? []),
     ...(draft.steps ?? []).flatMap((step) => step.routes ?? []),
   ];
-  return owners.flatMap((owner) => [...(owner.show ?? []), ...(owner.showAny ?? [])]);
+  const actions = [draft.submit, draft.cancel, ...(draft.steps ?? []).flatMap((step) => [step.next, step.back])]
+    .filter((action): action is FormAction => Boolean(action));
+  return [
+    ...owners.flatMap((owner) => [...(owner.show ?? []), ...(owner.showAny ?? [])]),
+    ...actions.flatMap((action) => action.disabled ?? []),
+  ];
 }
 
 export function referencedKeys(draft: FormDefinition): Set<string> {
@@ -35,7 +40,8 @@ export function referencedValues(draft: FormDefinition, key: string): Set<string
     }
   }
   const field = allFields(draft).find((item) => item.key === key);
-  if (field?.defaultValue !== undefined) values.add(String(field.defaultValue));
+  const defaults = field?.defaultValue === undefined ? [] : [field.defaultValue].flat();
+  for (const value of defaults) values.add(String(value));
   return values;
 }
 
