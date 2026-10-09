@@ -90,3 +90,10 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+@media (max-width: 639px) {
+  .vp-doc .lp-section .lp-more {
+    min-height: 44px;
+    margin-top: 12px;
+  }
+}

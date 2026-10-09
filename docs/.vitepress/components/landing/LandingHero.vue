@@ -157,4 +157,15 @@ const facts = ['MIT', 'Core 6.2 KB gzipped', 'Zero dependencies', 'Any framework
     font-size: 20px;
   }
 }
+
+@media (max-width: 479px) {
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero .hero__button {
+    justify-content: center;
+  }
+}
 </style>

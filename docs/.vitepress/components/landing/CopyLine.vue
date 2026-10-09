@@ -67,8 +67,8 @@ async function copy() {
   display: grid;
   place-items: center;
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   color: var(--vp-c-text-2);
   transition: background-color 0.2s, color 0.2s;
