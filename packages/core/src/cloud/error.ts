@@ -1,4 +1,5 @@
 const MESSAGES: Record<number, string> = {
+  422: 'Some answers were not accepted. Check the highlighted fields.',
   402: 'This form cannot accept submissions right now.',
   409: 'This form is not accepting submissions.',
   410: 'This form no longer accepts submissions.',
