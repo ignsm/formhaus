@@ -23,7 +23,7 @@ export default defineConfig({
       fileName: (_format, name) => `${name}.js`,
     },
     rollupOptions: {
-      external: ['vue', '@formhaus/core', '@formhaus/core/cloud'],
+      external: ['vue', '@formhaus/core', '@formhaus/core/cloud', '@formhaus/vue'],
     },
   },
 });
