@@ -122,9 +122,9 @@ See the [privacy policy](/legal/privacy), the [terms](/legal/terms) and the [DPA
 
 | | Free | Pro |
 |---|---|---|
-| Price | $0 | [PRICE]/month |
+| Price | $0 | $19/month or $190/year |
 | Forms | 3 | Unlimited |
-| Submissions per month | 100 | 5,000 |
+| Submissions per month | 100 | 25,000 |
 | Retention | 90 days | Unlimited |
 | Webhooks | Yes | Yes |
 | Email notifications | Yes | Yes |
