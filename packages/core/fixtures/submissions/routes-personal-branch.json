@@ -1,0 +1,113 @@
+{
+  "name": "routes-personal-branch",
+  "definition": {
+    "id": "routed",
+    "title": "Routed",
+    "submit": {
+      "label": "Submit"
+    },
+    "steps": [
+      {
+        "id": "kind",
+        "title": "Kind",
+        "routes": [
+          {
+            "to": "business",
+            "show": [
+              {
+                "field": "kind",
+                "eq": "business"
+              }
+            ]
+          },
+          {
+            "to": "personal"
+          }
+        ],
+        "fields": [
+          {
+            "key": "kind",
+            "type": "select",
+            "label": "Kind",
+            "options": [
+              {
+                "value": "business",
+                "label": "Business"
+              },
+              {
+                "value": "personal",
+                "label": "Personal"
+              }
+            ],
+            "validation": {
+              "required": true
+            }
+          }
+        ]
+      },
+      {
+        "id": "business",
+        "title": "Business",
+        "routes": [
+          {
+            "to": "contact"
+          }
+        ],
+        "fields": [
+          {
+            "key": "companyName",
+            "type": "text",
+            "label": "Company",
+            "validation": {
+              "required": true
+            }
+          }
+        ]
+      },
+      {
+        "id": "personal",
+        "title": "Personal",
+        "fields": [
+          {
+            "key": "firstName",
+            "type": "text",
+            "label": "First name",
+            "validation": {
+              "required": true
+            }
+          }
+        ]
+      },
+      {
+        "id": "contact",
+        "title": "Contact",
+        "fields": [
+          {
+            "key": "phone",
+            "type": "phone",
+            "label": "Phone",
+            "validation": {
+              "required": true
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "input": {
+    "values": {
+      "kind": "personal",
+      "companyName": "Acme"
+    },
+    "skippedSteps": []
+  },
+  "expected": {
+    "values": {
+      "kind": "personal"
+    },
+    "errors": {
+      "firstName": "This field is required",
+      "phone": "This field is required"
+    }
+  }
+}
