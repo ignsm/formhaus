@@ -1,0 +1,38 @@
+{
+  "name": "custom-validator-ignored",
+  "definition": {
+    "id": "custom",
+    "title": "Custom",
+    "submit": {
+      "label": "Submit"
+    },
+    "fields": [
+      {
+        "key": "username",
+        "type": "text",
+        "label": "Username",
+        "validation": {
+          "required": true,
+          "validator": "usernameAvailable"
+        }
+      },
+      {
+        "key": "website",
+        "type": "text",
+        "label": "Website"
+      }
+    ]
+  },
+  "input": {
+    "values": {
+      "username": "taken"
+    },
+    "skippedSteps": []
+  },
+  "expected": {
+    "values": {
+      "username": "taken"
+    },
+    "errors": {}
+  }
+}
