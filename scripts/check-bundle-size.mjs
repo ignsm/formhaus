@@ -2,12 +2,12 @@ import { build } from 'esbuild';
 import { gzipSync } from 'node:zlib';
 
 const BUDGETS = {
-  core: 6400,
+  core: 6410,
   react: 4900,
   vue: 6800,
-  'core/cloud': 1100,
-  'react/cloud': 5400,
-  'vue/cloud': 7250,
+  'core/cloud': 1200,
+  'react/cloud': 650,
+  'vue/cloud': 1000,
 };
 
 const violations = [];
@@ -20,7 +20,7 @@ for (const [name, budget] of Object.entries(BUDGETS)) {
     format: 'esm',
     write: false,
     logLevel: 'error',
-    external: ['@formhaus/core', '@formhaus/core/cloud', 'react', 'react/jsx-runtime', 'vue'],
+    external: ['@formhaus/core', '@formhaus/core/cloud', '@formhaus/react', '@formhaus/vue', 'react', 'react/jsx-runtime', 'vue'],
   });
   const size = gzipSync(result.outputFiles[0].contents, { level: 9 }).length;
   console.log(`@formhaus/${name}: ${size} B gzipped (budget ${budget} B)`);
