@@ -1,5 +1,5 @@
 {
-  "name": "multi-step-visible-step",
+  "name": "multi-step",
   "definition": {
     "id": "plans",
     "title": "Plans",
@@ -83,20 +83,68 @@
       }
     ]
   },
-  "input": {
-    "values": {
-      "email": "a@b.co",
-      "plan": "pro"
+  "cases": [
+    {
+      "name": "validates a visible step",
+      "input": {
+        "values": {
+          "email": "a@b.co",
+          "plan": "pro"
+        },
+        "skippedSteps": []
+      },
+      "expected": {
+        "values": {
+          "email": "a@b.co",
+          "plan": "pro"
+        },
+        "errors": {
+          "company": "This field is required"
+        }
+      }
     },
-    "skippedSteps": []
-  },
-  "expected": {
-    "values": {
-      "email": "a@b.co",
-      "plan": "pro"
+    {
+      "name": "drops values of a hidden step",
+      "input": {
+        "values": {
+          "email": "a@b.co",
+          "plan": "free",
+          "company": "Acme",
+          "vatId": "X1",
+          "notes": "hi"
+        },
+        "skippedSteps": []
+      },
+      "expected": {
+        "values": {
+          "email": "a@b.co",
+          "plan": "free",
+          "notes": "hi"
+        },
+        "errors": {}
+      }
     },
-    "errors": {
-      "company": "This field is required"
+    {
+      "name": "drops values of a hidden field",
+      "input": {
+        "values": {
+          "email": "a@b.co",
+          "plan": "pro",
+          "company": "",
+          "vatId": "X1"
+        },
+        "skippedSteps": []
+      },
+      "expected": {
+        "values": {
+          "email": "a@b.co",
+          "plan": "pro",
+          "company": ""
+        },
+        "errors": {
+          "company": "This field is required"
+        }
+      }
     }
-  }
+  ]
 }

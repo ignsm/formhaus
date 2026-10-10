@@ -1,5 +1,5 @@
 {
-  "name": "skip-not-allowed",
+  "name": "skip",
   "definition": {
     "id": "skippable",
     "title": "Skippable",
@@ -90,23 +90,74 @@
       }
     ]
   },
-  "input": {
-    "values": {
-      "tier": "basic",
-      "terms": true
+  "cases": [
+    {
+      "name": "drops values of a skipped step and the steps it hides",
+      "input": {
+        "values": {
+          "name": "Ada",
+          "phone": "",
+          "tier": "gold",
+          "perk": "Lounge",
+          "terms": true
+        },
+        "skippedSteps": [
+          "extras"
+        ]
+      },
+      "expected": {
+        "values": {
+          "name": "Ada",
+          "terms": true
+        },
+        "errors": {}
+      }
     },
-    "skippedSteps": [
-      "profile"
-    ]
-  },
-  "expected": {
-    "values": {
-      "tier": "basic",
-      "terms": true
+    {
+      "name": "ignores a skip on a step without skip",
+      "input": {
+        "values": {
+          "tier": "basic",
+          "terms": true
+        },
+        "skippedSteps": [
+          "profile"
+        ]
+      },
+      "expected": {
+        "values": {
+          "tier": "basic",
+          "terms": true
+        },
+        "errors": {
+          "name": "This field is required",
+          "phone": "This field is required"
+        }
+      }
     },
-    "errors": {
-      "name": "This field is required",
-      "phone": "This field is required"
+    {
+      "name": "ignores an unknown step id",
+      "input": {
+        "values": {
+          "name": "Ada",
+          "phone": "+1",
+          "terms": false
+        },
+        "skippedSteps": [
+          "nope"
+        ]
+      },
+      "expected": {
+        "values": {
+          "name": "Ada",
+          "phone": "+1",
+          "tier": "basic",
+          "terms": false
+        },
+        "errors": {
+          "terms": "Accept the terms"
+        }
+      }
     }
-  }
+  ]
 }
