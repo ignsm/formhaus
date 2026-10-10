@@ -9,5 +9,6 @@ export interface DefinitionCheck {
 
 export function checkDefinition(definition: FormDefinition): DefinitionCheck {
   const errors = definitionErrors(definition);
-  return { errors, warnings: validateDefinition(definition).slice(errors.length) };
+  const rejected = new Set(errors);
+  return { errors, warnings: validateDefinition(definition).filter((message) => !rejected.has(message)) };
 }
