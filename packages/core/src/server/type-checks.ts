@@ -4,6 +4,7 @@ import { BOOLEAN_TYPES } from '../validation/validate-field';
 
 export const MAX_STRING_LENGTH = 10000;
 const MAX_EMAIL_LENGTH = 254;
+const MAX_ITEMS = 1000;
 const EMAIL = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
 const DECIMAL = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
 const DATE = '\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])';
@@ -34,6 +35,7 @@ function lengthError(field: FormField, value: string): string | null {
 
 function multiselectError(field: FormField, value: unknown): string | null {
   if (!Array.isArray(value)) return TYPE_MESSAGES.options;
+  if (value.length > (field.options?.length ?? MAX_ITEMS)) return TYPE_MESSAGES.option;
   const valid = value.every((item) => typeof item === 'string' && item.length <= MAX_STRING_LENGTH && isOption(field, item));
   return valid ? null : TYPE_MESSAGES.option;
 }

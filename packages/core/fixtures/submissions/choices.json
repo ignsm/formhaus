@@ -186,6 +186,31 @@
         },
         "errors": {}
       }
+    },
+    {
+      "name": "rejects more multiselect items than options",
+      "input": {
+        "values": {
+          "tags": [
+            "a",
+            "a",
+            "b"
+          ]
+        },
+        "skippedSteps": []
+      },
+      "expected": {
+        "values": {
+          "tags": [
+            "a",
+            "a",
+            "b"
+          ]
+        },
+        "errors": {
+          "tags": "Select one of the available options"
+        }
+      }
     }
   ]
 }
