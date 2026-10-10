@@ -1,4 +1,5 @@
 const DEFAULT_API_BASE = 'https://api.formhaus.dev';
+const REQUEST_TIMEOUT_MS = 15000;
 
 export interface CloudResult {
   ok: boolean;
@@ -24,6 +25,7 @@ export async function cloudRequest(path: string, init: { method?: string; body?:
         ...(key && { Authorization: `Bearer ${key}` }),
       },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     const body: unknown = await response.json().catch(() => ({ error: `Unexpected response (HTTP ${response.status}).` }));
     return { ok: response.ok, body };

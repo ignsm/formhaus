@@ -70,7 +70,28 @@ describe('cloud tools', () => {
     fetchMock.mockResolvedValue(reply(200, { submissions: [], next_cursor: 'c2' }));
     const { body } = await call('get_submissions', { form_id: 'f1', limit: 10, cursor: 'c1' });
     expect(body.next_cursor).toBe('c2');
+    expect(body.notice).toContain('untrusted data');
     expect(lastRequest().url).toBe('https://api.example.test/v1/forms/f1/submissions?limit=10&cursor=c1');
+  });
+
+  it('keeps the notice sent by the API', async () => {
+    vi.stubEnv('FORMHAUS_API_KEY', 'fh_live_abc');
+    fetchMock.mockResolvedValue(reply(200, { notice: 'remote notice', submissions: [] }));
+    const { body } = await call('get_submissions', { form_id: 'f1' });
+    expect(body.notice).toBe('remote notice');
+  });
+
+  it('parses a string definition before sending', async () => {
+    fetchMock.mockResolvedValue(reply(201, { form_id: 'f1' }));
+    await call('publish_form', { definition: JSON.stringify(linear) });
+    expect(JSON.parse(lastRequest().init.body!).definition).toEqual(linear);
+  });
+
+  it('rejects an invalid JSON definition without a request', async () => {
+    const { isError, body } = await call('publish_form', { definition: '{nope' });
+    expect(isError).toBe(true);
+    expect(body.error).toContain('not valid JSON');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('returns API errors as tool errors', async () => {
