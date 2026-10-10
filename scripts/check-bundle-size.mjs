@@ -5,9 +5,9 @@ const BUDGETS = {
   core: 6400,
   react: 4900,
   vue: 6800,
-  'core/cloud': 1500,
-  'react/cloud': 6700,
-  'vue/cloud': 8400,
+  'core/cloud': 1100,
+  'react/cloud': 5400,
+  'vue/cloud': 7250,
 };
 
 const violations = [];
