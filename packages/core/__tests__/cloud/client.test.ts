@@ -1,15 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CloudError, createSubmitter, fetchDefinition, findSkippedSteps } from '../../src/cloud';
+import { CloudError, createCloudController, createSubmitter, fetchDefinition, type CloudState } from '../../src/cloud';
 import type { FormDefinition } from '../../src';
 
 const definition: FormDefinition = {
   id: 'wizard',
   title: 'Wizard',
   submit: { label: 'Send' },
-  steps: [
-    { id: 'one', title: 'One', fields: [{ key: 'name', type: 'text', label: 'Name' }] },
-    { id: 'two', title: 'Two', skip: { label: 'Skip' }, fields: [{ key: 'bio', type: 'text', label: 'Bio' }] },
-  ],
+  fields: [{ key: 'name', type: 'text', label: 'Name' }],
 };
 
 function reply(status: number, body: unknown) {
@@ -38,9 +35,9 @@ describe('cloud client', () => {
       .mockResolvedValue(reply(201, { id: 's2', values: {} }));
     vi.stubGlobal('fetch', fetchMock);
     const submit = createSubmitter({ id: 'abc' });
-    await expect(submit(definition, { name: 'Ada' })).rejects.toBeInstanceOf(CloudError);
-    await submit(definition, { name: 'Ada' });
-    await submit(definition, { name: 'Ada' });
+    await expect(submit({ name: 'Ada' })).rejects.toBeInstanceOf(CloudError);
+    await submit({ name: 'Ada' });
+    await submit({ name: 'Ada' });
     const keys = fetchMock.mock.calls.map(([, init]) => init.headers['Idempotency-Key']);
     expect(keys[0]).toBe(keys[1]);
     expect(keys[2]).not.toBe(keys[1]);
@@ -48,11 +45,54 @@ describe('cloud client', () => {
 
   it('exposes field errors from a 422', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(422, { errors: { name: 'Required' } })));
-    await expect(createSubmitter({ id: 'abc' })(definition, {})).rejects.toMatchObject({ status: 422, errors: { name: 'Required' } });
+    await expect(createSubmitter({ id: 'abc' })({})).rejects.toMatchObject({ status: 422, errors: { name: 'Required' } });
   });
 
-  it('lists skippable steps whose fields are absent from the values', () => {
-    expect(findSkippedSteps(definition, { name: 'Ada' })).toEqual(['two']);
-    expect(findSkippedSteps(definition, { name: 'Ada', bio: '' })).toEqual([]);
+  it('sends skipped steps and falls back when randomUUID is missing', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(reply(201, { id: 's1', values: {} }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('crypto', { getRandomValues: (array: Uint8Array) => array.fill(7) });
+    await createSubmitter({ id: 'abc' })({ name: 'Ada' }, ['two']);
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(init.body)).toEqual({ values: { name: 'Ada' }, skippedSteps: ['two'] });
+    expect(init.headers['Idempotency-Key']).toMatch(/^[0-9a-f-]{36}$/);
+  });
+});
+
+describe('cloud controller', () => {
+  function setup() {
+    const states: CloudState[] = [];
+    const onSuccess = vi.fn();
+    const controller = createCloudController({ id: 'abc' }, { onChange: (state) => states.push(state), onSuccess });
+    return { states, onSuccess, controller };
+  }
+
+  it('loads the definition and ignores results after dispose', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(200, definition)));
+    const loaded = setup();
+    loaded.controller.start();
+    await vi.waitFor(() => expect(loaded.states.at(-1)?.definition).toEqual(definition));
+    const disposed = setup();
+    disposed.controller.start();
+    disposed.controller.dispose();
+    await Promise.resolve();
+    expect(disposed.states).toEqual([]);
+  });
+
+  it('does not report success after dispose', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(201, { id: 's1', values: {} })));
+    const { states, onSuccess, controller } = setup();
+    const pending = controller.submit({ name: 'Ada' });
+    controller.dispose();
+    await pending;
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(states).toEqual([]);
+  });
+
+  it('keeps field errors from a 422 and rethrows', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(422, { errors: { name: 'Required' } })));
+    const { states, controller } = setup();
+    await expect(controller.submit({})).rejects.toBeInstanceOf(CloudError);
+    expect(states.at(-1)?.errors).toEqual({ name: 'Required' });
   });
 });
