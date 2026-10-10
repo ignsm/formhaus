@@ -23,6 +23,6 @@ export default defineConfig([
     globalName: 'Formhaus',
     target: 'es2017',
     outExtension: () => ({ js: '.iife.js' }),
-    banner: { js: 'typeof console>"u"&&(globalThis.console={log:function(){},warn:function(){},error:function(){}});' },
+    banner: { js: 'typeof console==="undefined"&&(globalThis.console={log:function(){},warn:function(){},error:function(){}});' },
   },
 ]);

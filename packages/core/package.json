@@ -4,7 +4,8 @@
   "description": "JSON form definition engine: validation, conditional visibility, multi-step and branching routes. Zero dependencies, works in React, Vue, Svelte or vanilla.",
   "type": "module",
   "sideEffects": [
-    "**/*.css"
+    "**/*.css",
+    "dist/server.iife.js"
   ],
   "engines": {
     "node": ">=18"
