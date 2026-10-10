@@ -6,14 +6,23 @@ import { FormhausForm } from '../src/cloud';
 const definition: FormDefinition = { id: 'contact', title: 'Contact', submit: { label: 'Send' },
   fields: [{ key: 'email', type: 'text', label: 'Email', validation: { required: true } }] };
 
+const wizard: FormDefinition = { id: 'wizard', title: 'Wizard', submit: { label: 'Send' }, steps: [
+  { id: 'one', title: 'One', fields: [{ key: 'name', type: 'text', label: 'Name' }] },
+  { id: 'two', title: 'Two', skip: { label: 'Skip' }, fields: [{ key: 'bio', type: 'text', label: 'Bio' }] },
+] };
+
 function reply(status: number, body: unknown) {
   return { ok: status < 400, status, json: async () => body };
 }
 
 function stubApi(...submitReplies: ReturnType<typeof reply>[]) {
+  return stubDefinition(definition, ...submitReplies);
+}
+
+function stubDefinition(loaded: FormDefinition, ...submitReplies: ReturnType<typeof reply>[]) {
   const submits = [...submitReplies];
   const fetchMock = vi.fn(async (url: string, init?: { method?: string }) => (
-    init?.method === 'POST' ? submits.shift()! : reply(200, definition)
+    init?.method === 'POST' ? submits.shift()! : reply(200, loaded)
   ));
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
@@ -74,4 +83,48 @@ it('reuses the idempotency key when retrying the same body', async () => {
   const [first, second] = posts(fetchMock).map(([, init]) => init.headers['Idempotency-Key']);
   expect(first).toBeTruthy();
   expect(second).toBe(first);
+});
+
+it('sends the steps the engine skipped', async () => {
+  const fetchMock = stubDefinition(wizard, reply(201, { id: 's1', values: {} }));
+  render(<FormhausForm id="abc" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Skip' }));
+  await waitFor(() => expect(posts(fetchMock)).toHaveLength(1));
+  expect(JSON.parse(posts(fetchMock)[0][1].body).skippedSteps).toEqual(['two']);
+});
+
+it('does not report an optional empty step that was visited as skipped', async () => {
+  const fetchMock = stubDefinition(wizard, reply(201, { id: 's1', values: {} }));
+  render(<FormhausForm id="abc" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Send' }));
+  await waitFor(() => expect(posts(fetchMock)).toHaveLength(1));
+  expect(JSON.parse(posts(fetchMock)[0][1].body).skippedSteps).toEqual([]);
+});
+
+it('loads the new definition when the id changes and ignores the old response', async () => {
+  let resolveFirst: (value: ReturnType<typeof reply>) => void = () => {};
+  const fetchMock = vi.fn(async (url: string) => (
+    url.includes('/f/one/') ? new Promise<ReturnType<typeof reply>>((resolve) => { resolveFirst = resolve; })
+      : reply(200, { ...definition, fields: [{ key: 'other', type: 'text', label: 'Other' }] })
+  ));
+  vi.stubGlobal('fetch', fetchMock);
+  const { rerender } = render(<FormhausForm id="one" />);
+  rerender(<FormhausForm id="two" />);
+  expect(await screen.findByText('Other')).toBeDefined();
+  resolveFirst(reply(200, definition));
+  await Promise.resolve();
+  expect(screen.queryByText('Email')).toBeNull();
+});
+
+it('aborts the request on unmount', async () => {
+  const signals: { aborted: boolean }[] = [];
+  vi.stubGlobal('fetch', vi.fn(async (url: string, init?: { signal: { aborted: boolean } }) => {
+    signals.push(init!.signal);
+    return new Promise(() => {});
+  }));
+  const { unmount } = render(<FormhausForm id="abc" />);
+  unmount();
+  expect(signals[0].aborted).toBe(true);
 });

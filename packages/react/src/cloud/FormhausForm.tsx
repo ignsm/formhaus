@@ -1,4 +1,4 @@
-import { FormRenderer } from '../FormRenderer';
+import { FormRenderer } from '@formhaus/react';
 import type { FormhausFormProps } from './types';
 import { useCloudForm } from './useCloudForm';
 
