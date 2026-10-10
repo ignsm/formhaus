@@ -151,7 +151,7 @@ They are unclaimed. An unclaimed form accepts up to 100 submissions, expires aft
 
 ### How do I verify webhooks?
 
-Each delivery carries a `Formhaus-Signature` header of the form `t=<timestamp>, v1=<signature>`, where `v1` is an HMAC-SHA256 made with the secret of the form. Recompute the HMAC on your side and compare it in constant time before trusting the body. The body is JSON with `form_id`, `submission_id`, `values` and `created_at`. Deliveries are at-least-once, so deduplicate on `submission_id`.
+Each delivery carries a `Formhaus-Signature: t=<unix seconds>,v1=<hex>` header, where `v1` is HMAC-SHA256 of `t + "." + body` keyed with the webhook secret of the form. Recompute it, compare in constant time and reject deliveries whose `t` is more than 5 minutes old. The body is JSON with `form_id`, `submission_id`, `version`, `values` and `created_at`. Deliveries are at-least-once, so deduplicate on `Formhaus-Submission-Id`.
 
 ### Is the form definition format open source?
 
