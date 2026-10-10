@@ -1,0 +1,47 @@
+{
+  "name": "type-text-not-string",
+  "definition": {
+    "id": "custom",
+    "title": "Custom",
+    "submit": {
+      "label": "Submit"
+    },
+    "fields": [
+      {
+        "key": "username",
+        "type": "text",
+        "label": "Username",
+        "validation": {
+          "required": true,
+          "validator": "usernameAvailable"
+        }
+      },
+      {
+        "key": "website",
+        "type": "text",
+        "label": "Website"
+      }
+    ]
+  },
+  "input": {
+    "values": {
+      "username": {
+        "$ne": null
+      },
+      "website": 42
+    },
+    "skippedSteps": []
+  },
+  "expected": {
+    "values": {
+      "username": {
+        "$ne": null
+      },
+      "website": 42
+    },
+    "errors": {
+      "username": "Must be text",
+      "website": "Must be text"
+    }
+  }
+}
